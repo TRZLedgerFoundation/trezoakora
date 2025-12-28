@@ -271,7 +271,7 @@ mod tests {
         }
 
         let mock_response = r#"{
-            "So11111111111111111111111111111111111111112": {
+            "tr11111111111111111111111111111111111111112": {
                 "usdPrice": 100.0,
                 "blockId": 12345,
                 "decimals": 9,
@@ -297,7 +297,7 @@ mod tests {
         let mut oracle = JupiterPriceOracle::new();
         oracle.lite_api_url = format!("{}/price/v3", server.url());
 
-        let result = oracle.get_price(&client, "So11111111111111111111111111111111111111112").await;
+        let result = oracle.get_price(&client, "tr11111111111111111111111111111111111111112").await;
         assert!(result.is_ok());
         let price = result.unwrap();
         assert_eq!(price.price, Decimal::from(1));
@@ -323,7 +323,7 @@ mod tests {
         oracle2.pro_api_url = format!("{}/price/v3", server2.url());
 
         let result =
-            oracle2.get_price(&client, "So11111111111111111111111111111111111111112").await;
+            oracle2.get_price(&client, "tr11111111111111111111111111111111111111112").await;
         assert!(result.is_ok());
         let price = result.unwrap();
         assert_eq!(price.price, Decimal::from(1));
@@ -336,7 +336,7 @@ mod tests {
         }
 
         let no_price_response = r#"{
-            "So11111111111111111111111111111111111111112": {
+            "tr11111111111111111111111111111111111111112": {
                 "usdPrice": 100.0,
                 "blockId": 12345,
                 "decimals": 9,

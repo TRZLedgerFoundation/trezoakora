@@ -4,7 +4,7 @@ use std::time::Duration;
 
 #[tokio::test]
 async fn test_jupiter_integration_usdc() {
-    const USDC_MINT: &str = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+    const USDC_MINT: &str = "EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS";
 
     let oracle = get_price_oracle(PriceSource::Jupiter);
     let retrying_oracle = RetryingPriceOracle::new(3, Duration::from_millis(500), oracle);

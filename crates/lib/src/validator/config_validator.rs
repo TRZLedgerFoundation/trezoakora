@@ -687,9 +687,9 @@ mod tests {
                     SYSTEM_PROGRAM_ID.to_string(),
                     TPL_TOKEN_PROGRAM_ID.to_string(),
                 ],
-                allowed_tokens: vec!["4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()],
+                allowed_tokens: vec!["EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS".to_string()],
                 allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![
-                    "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string(),
+                    "EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS".to_string(),
                 ]),
                 disallowed_accounts: vec![],
                 price_source: PriceSource::Jupiter,
@@ -725,7 +725,7 @@ mod tests {
                 max_allowed_lamports: 0,  // Should warn
                 max_signatures: 0,        // Should warn
                 allowed_programs: vec![], // Should warn
-                allowed_tokens: vec!["4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()],
+                allowed_tokens: vec!["EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS".to_string()],
                 allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![]),
                 disallowed_accounts: vec![],
                 price_source: PriceSource::Mock, // Should warn
@@ -783,7 +783,7 @@ mod tests {
                 max_allowed_lamports: 1_000_000,
                 max_signatures: 10,
                 allowed_programs: vec!["SomeOtherProgram".to_string()], // Missing system program
-                allowed_tokens: vec!["4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()],
+                allowed_tokens: vec!["EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS".to_string()],
                 allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![]),
                 disallowed_accounts: vec![],
                 price_source: PriceSource::Jupiter,
@@ -858,9 +858,9 @@ mod tests {
                 max_allowed_lamports: 1_000_000,
                 max_signatures: 10,
                 allowed_programs: vec![SYSTEM_PROGRAM_ID.to_string()],
-                allowed_tokens: vec!["4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()],
+                allowed_tokens: vec!["EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS".to_string()],
                 allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![
-                    "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string(),
+                    "EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS".to_string(),
                 ]),
                 disallowed_accounts: vec![],
                 price_source: PriceSource::Jupiter,
@@ -899,9 +899,9 @@ mod tests {
                 max_allowed_lamports: 1_000_000,
                 max_signatures: 10,
                 allowed_programs: vec![SYSTEM_PROGRAM_ID.to_string()],
-                allowed_tokens: vec!["4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()],
+                allowed_tokens: vec!["EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS".to_string()],
                 allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![
-                    "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string(),
+                    "EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS".to_string(),
                 ]),
                 disallowed_accounts: vec![],
                 price_source: PriceSource::Jupiter,
@@ -909,7 +909,7 @@ mod tests {
                 price: PriceConfig {
                     model: PriceModel::Fixed {
                         amount: 1000,
-                        token: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v".to_string(), // Valid but not in allowed
+                        token: "EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS".to_string(), // Valid but not in allowed
                         strict: false,
                     },
                 },
@@ -948,9 +948,9 @@ mod tests {
                     SYSTEM_PROGRAM_ID.to_string(),
                     TPL_TOKEN_PROGRAM_ID.to_string(),
                 ],
-                allowed_tokens: vec!["4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()],
+                allowed_tokens: vec!["EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS".to_string()],
                 allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![
-                    "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string(),
+                    "EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS".to_string(),
                 ]),
                 disallowed_accounts: vec![],
                 price_source: PriceSource::Jupiter,
@@ -958,7 +958,7 @@ mod tests {
                 price: PriceConfig {
                     model: PriceModel::Fixed {
                         amount: 0, // Should warn
-                        token: "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string(),
+                        token: "EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS".to_string(),
                         strict: false,
                     },
                 },
@@ -991,7 +991,7 @@ mod tests {
                 max_allowed_lamports: 1_000_000,
                 max_signatures: 10,
                 allowed_programs: vec![SYSTEM_PROGRAM_ID.to_string()], // Missing token programs
-                allowed_tokens: vec!["4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()],
+                allowed_tokens: vec!["EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS".to_string()],
                 allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![]), // Empty when fees enabled - should error
                 disallowed_accounts: vec![],
                 price_source: PriceSource::Jupiter,
@@ -1030,7 +1030,7 @@ mod tests {
                     SYSTEM_PROGRAM_ID.to_string(),
                     TPL_TOKEN_PROGRAM_ID.to_string(),
                 ],
-                allowed_tokens: vec!["4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()],
+                allowed_tokens: vec!["EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS".to_string()],
                 allowed_tpl_paid_tokens: TplTokenConfig::All, // All tokens are allowed
                 disallowed_accounts: vec![],
                 price_source: PriceSource::Jupiter,
@@ -1066,9 +1066,9 @@ mod tests {
                     SYSTEM_PROGRAM_ID.to_string(),
                     TPL_TOKEN_PROGRAM_ID.to_string(),
                 ],
-                allowed_tokens: vec!["4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()],
+                allowed_tokens: vec!["EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS".to_string()],
                 allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![
-                    "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v".to_string(), // Not in allowed_tokens
+                    "EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS".to_string(), // Not in allowed_tokens
                 ]),
                 disallowed_accounts: vec![],
                 price_source: PriceSource::Jupiter,
@@ -1087,7 +1087,7 @@ mod tests {
         assert!(result.is_err());
         let errors = result.unwrap_err();
 
-        assert!(errors.iter().any(|e| e.contains("Token EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v in allowed_tpl_paid_tokens must also be in allowed_tokens")));
+        assert!(errors.iter().any(|e| e.contains("Token EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS in allowed_tpl_paid_tokens must also be in allowed_tokens")));
     }
 
     // Helper to create a simple test that only validates programs (no tokens)
@@ -1097,9 +1097,9 @@ mod tests {
                 max_allowed_lamports: 1_000_000,
                 max_signatures: 10,
                 allowed_programs: vec![SYSTEM_PROGRAM_ID.to_string()],
-                allowed_tokens: vec!["4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()], // Required to pass basic validation
+                allowed_tokens: vec!["EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS".to_string()], // Required to pass basic validation
                 allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![
-                    "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string(),
+                    "EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS".to_string(),
                 ]),
                 disallowed_accounts: vec![],
                 price_source: PriceSource::Jupiter,
@@ -1119,7 +1119,7 @@ mod tests {
                 max_allowed_lamports: 1_000_000,
                 max_signatures: 10,
                 allowed_programs: vec![], // No programs
-                allowed_tokens: vec!["4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()],
+                allowed_tokens: vec!["EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS".to_string()],
                 allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![]), // Empty to avoid duplicate validation
                 disallowed_accounts: vec![],
                 price_source: PriceSource::Jupiter,
@@ -1181,7 +1181,7 @@ mod tests {
                 max_allowed_lamports: 1_000_000,
                 max_signatures: 10,
                 allowed_programs: vec![SYSTEM_PROGRAM_ID.to_string()],
-                allowed_tokens: vec!["4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()],
+                allowed_tokens: vec!["EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS".to_string()],
                 allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![]),
                 disallowed_accounts: vec![],
                 price_source: PriceSource::Jupiter,
@@ -1213,7 +1213,7 @@ mod tests {
                 max_allowed_lamports: 1_000_000,
                 max_signatures: 10,
                 allowed_programs: vec![SYSTEM_PROGRAM_ID.to_string()],
-                allowed_tokens: vec!["4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()],
+                allowed_tokens: vec!["EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS".to_string()],
                 allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![]),
                 disallowed_accounts: vec![],
                 price_source: PriceSource::Jupiter,
@@ -1244,7 +1244,7 @@ mod tests {
                 max_allowed_lamports: 1_000_000,
                 max_signatures: 10,
                 allowed_programs: vec![SYSTEM_PROGRAM_ID.to_string()],
-                allowed_tokens: vec!["4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()],
+                allowed_tokens: vec!["EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS".to_string()],
                 allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![]),
                 disallowed_accounts: vec![],
                 price_source: PriceSource::Jupiter,
@@ -1274,7 +1274,7 @@ mod tests {
                 max_allowed_lamports: 1_000_000,
                 max_signatures: 10,
                 allowed_programs: vec![SYSTEM_PROGRAM_ID.to_string()],
-                allowed_tokens: vec!["4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()],
+                allowed_tokens: vec!["EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS".to_string()],
                 allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![]),
                 disallowed_accounts: vec![],
                 price_source: PriceSource::Jupiter,
@@ -1311,7 +1311,7 @@ mod tests {
                 max_allowed_lamports: 1_000_000,
                 max_signatures: 10,
                 allowed_programs: vec![SYSTEM_PROGRAM_ID.to_string()],
-                allowed_tokens: vec!["4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()],
+                allowed_tokens: vec!["EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS".to_string()],
                 allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![]),
                 disallowed_accounts: vec![],
                 price_source: PriceSource::Jupiter,
@@ -1348,7 +1348,7 @@ mod tests {
                 max_allowed_lamports: 1_000_000,
                 max_signatures: 10,
                 allowed_programs: vec![SYSTEM_PROGRAM_ID.to_string()],
-                allowed_tokens: vec!["4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()],
+                allowed_tokens: vec!["EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS".to_string()],
                 allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![]),
                 disallowed_accounts: vec![],
                 price_source: PriceSource::Jupiter,
@@ -1432,9 +1432,9 @@ mod tests {
                     TPL_TOKEN_PROGRAM_ID.to_string(),
                     TOKEN_2022_PROGRAM_ID.to_string(),
                 ],
-                allowed_tokens: vec!["4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()],
+                allowed_tokens: vec!["EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS".to_string()],
                 allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![
-                    "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string(),
+                    "EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS".to_string(),
                 ]),
                 disallowed_accounts: vec![],
                 price_source: PriceSource::Jupiter,

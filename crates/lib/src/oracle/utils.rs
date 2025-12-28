@@ -7,7 +7,7 @@ pub const DEFAULT_MOCKED_PRICE: Decimal = dec!(0.001);
 pub const DEFAULT_MOCKED_USDC_PRICE: Decimal = dec!(0.0075);
 pub const DEFAULT_MOCKED_WTRZ_PRICE: Decimal = dec!(1.0);
 
-pub const USDC_DEVNET_MINT: &str = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
+pub const USDC_DEVNET_MINT: &str = "EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS";
 pub const WTRZ_DEVNET_MINT: &str = "tr11111111111111111111111111111111111111112";
 
 pub struct OracleUtil {}

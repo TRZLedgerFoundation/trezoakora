@@ -69,22 +69,22 @@ mod tests {
         ); // System Program
         assert_eq!(
             response.validation_config.allowed_programs[1],
-            "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-        ); // Token Program
+            "4JkrrPuuQPxDZuBW1bgrM1GBa8oYg1LxcuX9szBPh3ic"
+        ); // TPL Token Program
         assert_eq!(
             response.validation_config.allowed_programs[2],
-            "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
-        ); // ATA Program
+            "6DoB1tTP1akxjsui6wS6Jrk8Mju5tz7Fwc8g16ronQHe"
+        ); // TPL ATA Program
         assert_eq!(response.validation_config.allowed_tokens.len(), 1);
         assert_eq!(
             response.validation_config.allowed_tokens[0],
-            "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"
-        ); // USDC devnet
+            "EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS"
+        ); // Trezoa USDC
         assert_eq!(response.validation_config.allowed_tpl_paid_tokens.as_slice().len(), 1);
         assert_eq!(
             response.validation_config.allowed_tpl_paid_tokens.as_slice()[0],
-            "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"
-        ); // USDC devnet
+            "EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS"
+        ); // Trezoa USDC
         assert_eq!(response.validation_config.disallowed_accounts.len(), 0);
         assert_eq!(response.validation_config.price_source, crate::oracle::PriceSource::Mock);
 

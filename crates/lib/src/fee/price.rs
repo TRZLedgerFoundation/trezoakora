@@ -139,7 +139,7 @@ mod tests {
         let config = get_config().unwrap();
         let rpc_client = create_mock_rpc_client_with_mint(6); // USDC has 6 decimals
 
-        let usdc_mint = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
+        let usdc_mint = "EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS";
         let price_config = PriceConfig {
             model: PriceModel::Fixed {
                 amount: 1_000_000, // 1 USDC (1,000,000 base units with 6 decimals)
@@ -166,7 +166,7 @@ mod tests {
         let config = get_config().unwrap();
         let rpc_client = create_mock_rpc_client_with_mint(9); // 9 decimals token
 
-        let custom_token = "So11111111111111111111111111111111111111112"; // TRZ mint
+        let custom_token = "tr11111111111111111111111111111111111111112"; // TRZ mint
         let price_config = PriceConfig {
             model: PriceModel::Fixed {
                 amount: 500000000, // 0.5 tokens (500,000,000 base units with 9 decimals)
@@ -193,7 +193,7 @@ mod tests {
         let config = get_config().unwrap();
         let rpc_client = create_mock_rpc_client_with_mint(6); // USDC has 6 decimals
 
-        let usdc_mint = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
+        let usdc_mint = "EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS";
         let price_config = PriceConfig {
             model: PriceModel::Fixed {
                 amount: 1000, // 0.001 USDC (1,000 base units with 6 decimals)

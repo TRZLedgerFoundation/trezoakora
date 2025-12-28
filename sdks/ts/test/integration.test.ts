@@ -355,7 +355,7 @@ describe(`TrezoaKoraClient Integration Tests (${AUTH_ENABLED ? 'with auth' : 'wi
         });
 
         it('should reject transaction with non-allowed token', async () => {
-            const invalidTokenMint = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'; // Mainnet USDC mint
+            const invalidTokenMint = 'EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS'; // Mainnet USDC mint
             const request = {
                 amount: 1000000,
                 token: invalidTokenMint,

@@ -163,10 +163,10 @@ function generateJsonRpcExamples(methodName, methodInfo) {
       // For now, use smart defaults based on method name
       if (methodName === 'estimateTransactionFee') {
         params.transaction = "base64EncodedTransaction";
-        params.fee_token = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+        params.fee_token = "EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS";
       } else if (methodName === 'transferTransaction') {
         params.amount = 1000000;
-        params.token = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+        params.token = "EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS";
         params.source = "sourcePublicKey";
         params.destination = "destinationPublicKey";
       } else if (methodName.includes('sign')) {

@@ -654,14 +654,14 @@ mod tests {
     #[test]
     fn test_parse_fixed_price_config() {
         let config = ConfigBuilder::new()
-            .with_fixed_price(1000000, "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU")
+            .with_fixed_price(1000000, "EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS")
             .build_config()
             .unwrap();
 
         match &config.validation.price.model {
             PriceModel::Fixed { amount, token, strict } => {
                 assert_eq!(*amount, 1000000);
-                assert_eq!(token, "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU");
+                assert_eq!(token, "EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS");
                 assert!(!strict);
             }
             _ => panic!("Expected Fixed price model"),

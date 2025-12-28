@@ -370,7 +370,7 @@ describe('TrezoaKoraClient Unit Tests', () => {
                 price_source: 'Jupiter',
                 allowed_programs: ['program1'],
                 allowed_tokens: ['token1'],
-                allowed_tpl_paid_tokens: ['4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU'],
+                allowed_tpl_paid_tokens: ['EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS'],
                 disallowed_accounts: [],
                 fee_payer_policy: {
                     system: {
@@ -443,9 +443,9 @@ describe('TrezoaKoraClient Unit Tests', () => {
 
         const validRequest = {
             transaction: mockTransactionBase64,
-            fee_token: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+            fee_token: 'EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS',
             source_wallet: '11111111111111111111111111111111',
-            token_program_id: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+            token_program_id: '4JkrrPuuQPxDZuBW1bgrM1GBa8oYg1LxcuX9szBPh3ic',
         };
 
         beforeEach(() => {

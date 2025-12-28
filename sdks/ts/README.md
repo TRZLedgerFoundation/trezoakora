@@ -45,7 +45,7 @@ const client = new TrezoaKoraClient({ rpcUrl: 'http://localhost:8080' });
 // Example: Transfer tokens
 const result = await client.transferTransaction({
   amount: 1000000, // 1 USDC (6 decimals)
-  token: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", // USDC mint
+  token: "EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS", // USDC mint
   source: "sourceAddress",
   destination: "destinationAddress"
 });

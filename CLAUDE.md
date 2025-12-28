@@ -386,20 +386,20 @@ price_source = "Mock"           # Price source: "Mock", "Jupiter", etc.
 # Allowed Trezoa programs (by public key)
 allowed_programs = [
     "11111111111111111111111111111111",      # System Program
-    "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",  # Token Program
-    "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL",  # Associated Token Program
+    "4JkrrPuuQPxDZuBW1bgrM1GBa8oYg1LxcuX9szBPh3ic",  # TPL Token Program
+    "6DoB1tTP1akxjsui6wS6Jrk8Mju5tz7Fwc8g16ronQHe",  # TPL Associated Token Program
     "AddressLookupTab1e1111111111111111111111111",   # Address Lookup Table Program
     "ComputeBudget111111111111111111111111111111", # Compute Budget Program
 ]
 
 # Supported tokens for fee payment (by mint address)
 allowed_tokens = [
-    "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",  # USDC devnet
+    "EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS",  # Trezoa USDC
 ]
 
 # TPL tokens accepted for paid transactions
 allowed_tpl_paid_tokens = [
-    "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",  # USDC devnet
+    "EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS",  # Trezoa USDC
 ] 
 
 disallowed_accounts = []  # Blocked account addresses

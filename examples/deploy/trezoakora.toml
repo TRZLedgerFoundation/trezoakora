@@ -20,19 +20,17 @@ max_allowed_lamports = 1000000
 max_signatures = 10
 allowed_programs = [
     "11111111111111111111111111111111",              # System Program
-    "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",   # Token Program
-    "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL",  # Associated Token Program
+    "4JkrrPuuQPxDZuBW1bgrM1GBa8oYg1LxcuX9szBPh3ic",   # TPL Token Program
+    "6DoB1tTP1akxjsui6wS6Jrk8Mju5tz7Fwc8g16ronQHe",  # TPL Associated Token Program
     "AddressLookupTab1e1111111111111111111111111",   # Address Lookup Table Program
     "ComputeBudget111111111111111111111111111111", # Compute Budget Program
 ]
 allowed_tokens = [
-    "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", # mainnet USDC
-    "So11111111111111111111111111111111111111112",  # TRZ
-    "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU", # devnet USDC
+    "EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS", # Trezoa USDC
+    "tr11111111111111111111111111111111111111112",  # TRZ
 ]
 allowed_tpl_paid_tokens = [
-    "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", # mainnet USDC
-    "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU", # devnet USDC
+    "EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS", # Trezoa USDC
 ]
 disallowed_accounts = []
 

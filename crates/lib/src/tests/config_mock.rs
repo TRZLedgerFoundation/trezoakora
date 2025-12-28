@@ -77,14 +77,14 @@ impl ConfigMockBuilder {
                     max_signatures: 10,
                     allowed_programs: vec![
                         "11111111111111111111111111111111".parse().unwrap(), // System Program
-                        "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA".parse().unwrap(), // Token Program
-                        "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL".parse().unwrap(), // ATA Program
+                        "4JkrrPuuQPxDZuBW1bgrM1GBa8oYg1LxcuX9szBPh3ic".parse().unwrap(), // TPL Token Program
+                        "6DoB1tTP1akxjsui6wS6Jrk8Mju5tz7Fwc8g16ronQHe".parse().unwrap(), // TPL ATA Program
                     ],
                     allowed_tokens: vec![
-                        "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".parse().unwrap(), // USDC devnet
+                        "EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS".parse().unwrap(), // Trezoa USDC
                     ],
                     allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![
-                        "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".parse().unwrap(), // USDC devnet
+                        "EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS".parse().unwrap(), // Trezoa USDC
                     ]),
                     disallowed_accounts: vec![],
                     price_source: PriceSource::Mock,

@@ -87,7 +87,7 @@ When the RPC call fails, the transaction is invalid, or the token is not support
 ```typescript
 const fees = await client.estimateTransactionFee({
   transaction: 'base64EncodedTransaction',
-  fee_token: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' // USDC
+  fee_token: 'EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS' // USDC
 });
 console.log('Fee in lamports:', fees.fee_in_lamports);
 console.log('Fee in USDC:', fees.fee_in_token);
@@ -201,7 +201,7 @@ When the token is not supported, payment is not required, or invalid addresses a
 ```typescript
 const paymentInfo = await client.getPaymentInstruction({
   transaction: 'base64EncodedTransaction',
-  fee_token: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+  fee_token: 'EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS',
   source_wallet: 'sourceWalletPublicKey'
 });
 // Append paymentInfo.payment_instruction to your transaction
@@ -230,7 +230,7 @@ When the RPC call fails
 ```typescript
 const { tokens } = await client.getSupportedTokens();
 console.log('Supported tokens:', tokens);
-// Output: ['EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', ...]
+// Output: ['EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS', ...]
 ```
 
 ##### signAndSendTransaction()
@@ -329,7 +329,7 @@ When the RPC call fails or token is not supported
 ```typescript
 const transfer = await client.transferTransaction({
   amount: 1000000, // 1 USDC (6 decimals)
-  token: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+  token: 'EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS',
   source: 'sourceWalletPublicKey',
   destination: 'destinationWalletPublicKey'
 });

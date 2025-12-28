@@ -1779,7 +1779,7 @@ mod tests {
         let mut config = ConfigMockBuilder::new().build();
         config.validation.price.model = PriceModel::Fixed {
             amount: 5000,
-            token: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v".to_string(),
+            token: "EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS".to_string(),
             strict: true,
         };
         let _ = update_config(config);
@@ -1805,7 +1805,7 @@ mod tests {
         let mut config = ConfigMockBuilder::new().build();
         config.validation.price.model = PriceModel::Fixed {
             amount: 5000,
-            token: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v".to_string(),
+            token: "EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS".to_string(),
             strict: true,
         };
         let _ = update_config(config);
@@ -1825,7 +1825,7 @@ mod tests {
         let mut config = ConfigMockBuilder::new().build();
         config.validation.price.model = PriceModel::Fixed {
             amount: 5000,
-            token: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v".to_string(),
+            token: "EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS".to_string(),
             strict: false, // Disabled
         };
         let _ = update_config(config);
@@ -1867,7 +1867,7 @@ mod tests {
         let mut config = ConfigMockBuilder::new().build();
         config.validation.price.model = PriceModel::Fixed {
             amount: 5000,
-            token: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v".to_string(),
+            token: "EFewYfHeQhkKpbDzpmyygdT54hn85dUj3VZ8b7dC21KS".to_string(),
             strict: true,
         };
         let _ = update_config(config);
