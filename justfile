@@ -23,22 +23,22 @@ build:
 # Build the lib crate
 [group('build')]
 build-lib:
-    cargo build -p kora-lib
+    cargo build -p trezoakora-lib
 
 # Build the CLI tool
 [group('build')]
 build-cli:
-    cargo build -p kora-cli
+    cargo build -p trezoakora-cli
 
 # Build specific binary
 [group('build')]
-build-bin bin='kora':
+build-bin bin='trezoakora':
     cargo build --bin {{bin}}
 
-# Install kora binary
+# Install trezoakora binary
 [group('build')]
 install:
-    cargo install --path crates/cli --bin kora
+    cargo install --path crates/cli --bin trezoakora
 
 # Remove build artifacts
 [group('build')]
@@ -106,14 +106,14 @@ _ensure-transfer-hook:
 
 # Start RPC server
 [group('run')]
-run config='kora.toml' rpc='http://127.0.0.1:8899':
-    cargo run -p kora-cli --bin kora -- --config {{config}} --rpc-url {{rpc}} rpc start --signers-config tests/src/common/fixtures/signers.toml
+run config='trezoakora.toml' rpc='http://127.0.0.1:8899':
+    cargo run -p trezoakora-cli --bin trezoakora -- --config {{config}} --rpc-url {{rpc}} rpc start --signers-config tests/src/common/fixtures/signers.toml
 
-# Run Kora in Docker (no metrics)
+# Run TrezoaKora in Docker (no metrics)
 [group('run')]
 run-docker:
     docker compose down
-    docker compose build --no-cache kora
+    docker compose build --no-cache trezoakora
     docker compose up
 
 # Run metrics stack (Prometheus + Grafana)
@@ -124,7 +124,7 @@ run-metrics: _update-metrics-config
 
 [private]
 _update-metrics-config:
-    cargo run -p kora-lib --bin update-config
+    cargo run -p trezoakora-lib --bin update-config
 
 # ******************************************************************************
 # TypeScript SDK
@@ -152,7 +152,7 @@ gen-ts-client: openapi
         -i /local/crates/lib/src/rpc_server/openapi/spec/combined_api.json \
         -g typescript-fetch \
         -o /local/generated/typescript-client \
-        --additional-properties=supportsES6=true,npmName=kora-client,npmVersion=0.1.0
+        --additional-properties=supportsES6=true,npmName=trezoakora-client,npmVersion=0.1.0
 
 # ******************************************************************************
 # Documentation & Coverage
@@ -161,7 +161,7 @@ gen-ts-client: openapi
 # Generate OpenAPI documentation
 [group('docs')]
 openapi:
-    cargo run -p kora-cli --bin kora --features docs -- openapi -o openapi.json
+    cargo run -p trezoakora-cli --bin trezoakora --features docs -- openapi -o openapi.json
 
 # Generate HTML coverage report
 [group('docs')]
@@ -217,7 +217,7 @@ release:
     command -v cargo-set-version &>/dev/null || { echo "Install cargo-edit: cargo install cargo-edit"; exit 1; }
     command -v git-cliff &>/dev/null || { echo "Install git-cliff: cargo install git-cliff"; exit 1; }
 
-    current=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[] | select(.name == "kora-lib") | .version')
+    current=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[] | select(.name == "trezoakora-lib") | .version')
     echo "Current version: $current"
 
     read -p "New version: " version

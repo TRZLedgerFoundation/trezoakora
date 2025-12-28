@@ -1,6 +1,6 @@
 use crate::token::{
     interface::TokenMint,
-    spl_token_2022_util::{
+    tpl_token_2022_util::{
         try_parse_account_extension, try_parse_mint_extension, AccountExtension, MintExtension,
         ParsedExtension,
     },
@@ -8,13 +8,13 @@ use crate::token::{
 
 use super::interface::{TokenInterface, TokenState};
 use async_trait::async_trait;
-use solana_program::{program_pack::Pack, pubkey::Pubkey};
-use solana_sdk::instruction::Instruction;
-use spl_associated_token_account_interface::{
+use trezoa_program::{program_pack::Pack, pubkey::Pubkey};
+use trezoa_sdk::instruction::Instruction;
+use tpl_associated_token_account_interface::{
     address::get_associated_token_address_with_program_id,
     instruction::create_associated_token_account,
 };
-use spl_token_2022_interface::{
+use tpl_token_2022_interface::{
     extension::{transfer_fee::TransferFeeConfig, ExtensionType, StateWithExtensions},
     state::{Account as Token2022AccountState, AccountState, Mint as Token2022MintState},
 };
@@ -163,7 +163,7 @@ impl Token2022Mint {
         &self,
         amount: u64,
         current_epoch: u64,
-    ) -> Result<Option<u64>, crate::error::KoraError> {
+    ) -> Result<Option<u64>, crate::error::TrezoaKoraError> {
         if let Some(fee_config) = self.get_transfer_fee() {
             let transfer_fee = if current_epoch >= u64::from(fee_config.newer_transfer_fee.epoch) {
                 &fee_config.newer_transfer_fee
@@ -186,7 +186,7 @@ impl Token2022Mint {
                         amount,
                         basis_points
                     );
-                    crate::error::KoraError::ValidationError(format!(
+                    crate::error::TrezoaKoraError::ValidationError(format!(
                         "Transfer fee calculation overflow: amount={}, basis_points={}",
                         amount, basis_points
                     ))
@@ -261,7 +261,7 @@ impl Default for Token2022Program {
 #[async_trait]
 impl TokenInterface for Token2022Program {
     fn program_id(&self) -> Pubkey {
-        spl_token_2022_interface::id()
+        tpl_token_2022_interface::id()
     }
 
     fn unpack_token_account(
@@ -308,7 +308,7 @@ impl TokenInterface for Token2022Program {
         mint: &Pubkey,
         owner: &Pubkey,
     ) -> Result<Instruction, Box<dyn std::error::Error + Send + Sync>> {
-        Ok(spl_token_2022_interface::instruction::initialize_account3(
+        Ok(tpl_token_2022_interface::instruction::initialize_account3(
             &self.program_id(),
             account,
             mint,
@@ -325,7 +325,7 @@ impl TokenInterface for Token2022Program {
     ) -> Result<Instruction, Box<dyn std::error::Error + Send + Sync>> {
         // Get the mint from the source account data
         #[allow(deprecated)]
-        Ok(spl_token_2022_interface::instruction::transfer(
+        Ok(tpl_token_2022_interface::instruction::transfer(
             &self.program_id(),
             source,
             destination,
@@ -344,7 +344,7 @@ impl TokenInterface for Token2022Program {
         amount: u64,
         decimals: u8,
     ) -> Result<Instruction, Box<dyn std::error::Error + Send + Sync>> {
-        Ok(spl_token_2022_interface::instruction::transfer_checked(
+        Ok(tpl_token_2022_interface::instruction::transfer_checked(
             &self.program_id(),
             source,
             mint,
@@ -445,12 +445,12 @@ mod tests {
     };
 
     use super::*;
-    use solana_sdk::pubkey::Pubkey;
-    use spl_pod::{
+    use trezoa_sdk::pubkey::Pubkey;
+    use tpl_pod::{
         optional_keys::OptionalNonZeroPubkey,
         primitives::{PodU16, PodU64},
     };
-    use spl_token_2022_interface::extension::{
+    use tpl_token_2022_interface::extension::{
         transfer_fee::{TransferFee, TransferFeeConfig},
         ExtensionType,
     };
@@ -469,13 +469,13 @@ mod tests {
     #[test]
     fn test_token_program_token2022() {
         let program = Token2022Program::new();
-        assert_eq!(program.program_id(), spl_token_2022_interface::id());
+        assert_eq!(program.program_id(), tpl_token_2022_interface::id());
     }
 
     #[test]
     fn test_token2022_program_creation() {
         let program = Token2022Program::new();
-        assert_eq!(program.program_id(), spl_token_2022_interface::id());
+        assert_eq!(program.program_id(), tpl_token_2022_interface::id());
     }
 
     #[test]
@@ -518,7 +518,7 @@ mod tests {
         let program = Token2022Program::new();
         let ix = program.create_transfer_instruction(&source, &dest, &authority, amount).unwrap();
 
-        assert_eq!(ix.program_id, spl_token_2022_interface::id());
+        assert_eq!(ix.program_id, tpl_token_2022_interface::id());
         // Verify accounts are in correct order
         assert_eq!(ix.accounts[0].pubkey, source);
         assert_eq!(ix.accounts[1].pubkey, dest);
@@ -541,7 +541,7 @@ mod tests {
             )
             .unwrap();
 
-        assert_eq!(ix.program_id, spl_token_2022_interface::id());
+        assert_eq!(ix.program_id, tpl_token_2022_interface::id());
         // Verify accounts are in correct order
         assert_eq!(ix.accounts[0].pubkey, source);
         assert_eq!(ix.accounts[1].pubkey, mint);
@@ -557,12 +557,12 @@ mod tests {
 
         let ata = program.get_associated_token_address(&wallet, &mint);
 
-        // Verify ATA derivation matches spl-token-2022
+        // Verify ATA derivation matches tpl-token-2022
         let expected_ata =
-            spl_associated_token_account_interface::address::get_associated_token_address_with_program_id(
+            tpl_associated_token_account_interface::address::get_associated_token_address_with_program_id(
                 &wallet,
                 &mint,
-                &spl_token_2022_interface::id(),
+                &tpl_token_2022_interface::id(),
             );
         assert_eq!(ata, expected_ata);
     }
@@ -714,11 +714,11 @@ mod tests {
         // Create config with different fees for different epochs
         let transfer_fee_config = TransferFeeConfig {
             transfer_fee_config_authority: OptionalNonZeroPubkey::try_from(Some(
-                spl_pod::solana_pubkey::Pubkey::new_unique(),
+                tpl_pod::trezoa_pubkey::Pubkey::new_unique(),
             ))
             .unwrap(),
             withdraw_withheld_authority: OptionalNonZeroPubkey::try_from(Some(
-                spl_pod::solana_pubkey::Pubkey::new_unique(),
+                tpl_pod::trezoa_pubkey::Pubkey::new_unique(),
             ))
             .unwrap(),
             withheld_amount: PodU64::from(0),

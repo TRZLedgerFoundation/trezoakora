@@ -1,6 +1,6 @@
-use crate::{error::KoraError, sanitize_error, signer::utils::get_env_var_for_signer};
+use crate::{error::TrezoaKoraError, sanitize_error, signer::utils::get_env_var_for_signer};
 use serde::{Deserialize, Serialize};
-use solana_keychain::Signer;
+use trezoa_keychain::Signer;
 use std::{fmt, fs, path::Path};
 
 /// Configuration for a pool of signers
@@ -118,16 +118,16 @@ pub enum SignerTypeConfig {
 
 impl SignerPoolConfig {
     /// Load signer pool configuration from TOML file
-    pub fn load_config<P: AsRef<Path>>(path: P) -> Result<Self, KoraError> {
+    pub fn load_config<P: AsRef<Path>>(path: P) -> Result<Self, TrezoaKoraError> {
         let contents = fs::read_to_string(path).map_err(|e| {
-            KoraError::InternalServerError(format!(
+            TrezoaKoraError::InternalServerError(format!(
                 "Failed to read signer config file: {}",
                 sanitize_error!(e)
             ))
         })?;
 
         let config: SignerPoolConfig = toml::from_str(&contents).map_err(|e| {
-            KoraError::ValidationError(format!(
+            TrezoaKoraError::ValidationError(format!(
                 "Failed to parse signers config TOML: {}",
                 sanitize_error!(e)
             ))
@@ -139,7 +139,7 @@ impl SignerPoolConfig {
     }
 
     /// Validate the signer pool configuration
-    pub fn validate_signer_config(&self) -> Result<(), KoraError> {
+    pub fn validate_signer_config(&self) -> Result<(), TrezoaKoraError> {
         self.validate_signer_not_empty()?;
 
         for (index, signer) in self.signers.iter().enumerate() {
@@ -152,20 +152,20 @@ impl SignerPoolConfig {
         Ok(())
     }
 
-    pub fn validate_signer_not_empty(&self) -> Result<(), KoraError> {
+    pub fn validate_signer_not_empty(&self) -> Result<(), TrezoaKoraError> {
         if self.signers.is_empty() {
-            return Err(KoraError::ValidationError(
+            return Err(TrezoaKoraError::ValidationError(
                 "At least one signer must be configured".to_string(),
             ));
         }
         Ok(())
     }
 
-    pub fn validate_signer_names(&self) -> Result<(), KoraError> {
+    pub fn validate_signer_names(&self) -> Result<(), TrezoaKoraError> {
         let mut names = std::collections::HashSet::new();
         for signer in &self.signers {
             if !names.insert(&signer.name) {
-                return Err(KoraError::ValidationError(format!(
+                return Err(TrezoaKoraError::ValidationError(format!(
                     "Duplicate signer name: {}",
                     signer.name
                 )));
@@ -174,12 +174,12 @@ impl SignerPoolConfig {
         Ok(())
     }
 
-    pub fn validate_strategy_weights(&self) -> Result<(), KoraError> {
+    pub fn validate_strategy_weights(&self) -> Result<(), TrezoaKoraError> {
         if matches!(self.signer_pool.strategy, SelectionStrategy::Weighted) {
             for signer in &self.signers {
                 if let Some(weight) = signer.weight {
                     if weight == 0 {
-                        return Err(KoraError::ValidationError(format!(
+                        return Err(TrezoaKoraError::ValidationError(format!(
                             "Signer '{}' has weight of 0 in weighted strategy",
                             signer.name
                         )));
@@ -193,7 +193,7 @@ impl SignerPoolConfig {
 
 impl SignerConfig {
     /// Build an external signer from configuration by resolving environment variables
-    pub async fn build_signer_from_config(config: &SignerConfig) -> Result<Signer, KoraError> {
+    pub async fn build_signer_from_config(config: &SignerConfig) -> Result<Signer, TrezoaKoraError> {
         match &config.config {
             SignerTypeConfig::Memory { config: memory_config } => {
                 Self::build_memory_signer(memory_config, &config.name)
@@ -213,10 +213,10 @@ impl SignerConfig {
     fn build_memory_signer(
         config: &MemorySignerConfig,
         signer_name: &str,
-    ) -> Result<Signer, KoraError> {
+    ) -> Result<Signer, TrezoaKoraError> {
         let private_key = get_env_var_for_signer(&config.private_key_env, signer_name)?;
         Signer::from_memory(&private_key).map_err(|e| {
-            KoraError::SigningError(format!(
+            TrezoaKoraError::SigningError(format!(
                 "Failed to create memory signer '{signer_name}': {}",
                 sanitize_error!(e)
             ))
@@ -226,7 +226,7 @@ impl SignerConfig {
     fn build_turnkey_signer(
         config: &TurnkeySignerConfig,
         signer_name: &str,
-    ) -> Result<Signer, KoraError> {
+    ) -> Result<Signer, TrezoaKoraError> {
         let api_public_key = get_env_var_for_signer(&config.api_public_key_env, signer_name)?;
         let api_private_key = get_env_var_for_signer(&config.api_private_key_env, signer_name)?;
         let organization_id = get_env_var_for_signer(&config.organization_id_env, signer_name)?;
@@ -241,7 +241,7 @@ impl SignerConfig {
             public_key,
         )
         .map_err(|e| {
-            KoraError::SigningError(format!(
+            TrezoaKoraError::SigningError(format!(
                 "Failed to create Turnkey signer '{signer_name}': {}",
                 sanitize_error!(e)
             ))
@@ -251,13 +251,13 @@ impl SignerConfig {
     async fn build_privy_signer(
         config: &PrivySignerConfig,
         signer_name: &str,
-    ) -> Result<Signer, KoraError> {
+    ) -> Result<Signer, TrezoaKoraError> {
         let app_id = get_env_var_for_signer(&config.app_id_env, signer_name)?;
         let app_secret = get_env_var_for_signer(&config.app_secret_env, signer_name)?;
         let wallet_id = get_env_var_for_signer(&config.wallet_id_env, signer_name)?;
 
         Signer::from_privy(app_id, app_secret, wallet_id).await.map_err(|e| {
-            KoraError::SigningError(format!(
+            TrezoaKoraError::SigningError(format!(
                 "Failed to create Privy signer '{signer_name}': {}",
                 sanitize_error!(e)
             ))
@@ -267,14 +267,14 @@ impl SignerConfig {
     fn build_vault_signer(
         config: &VaultSignerConfig,
         signer_name: &str,
-    ) -> Result<Signer, KoraError> {
+    ) -> Result<Signer, TrezoaKoraError> {
         let vault_addr = get_env_var_for_signer(&config.vault_addr_env, signer_name)?;
         let vault_token = get_env_var_for_signer(&config.vault_token_env, signer_name)?;
         let key_name = get_env_var_for_signer(&config.key_name_env, signer_name)?;
         let pubkey = get_env_var_for_signer(&config.pubkey_env, signer_name)?;
 
         Signer::from_vault(vault_addr, vault_token, key_name, pubkey).map_err(|e| {
-            KoraError::SigningError(format!(
+            TrezoaKoraError::SigningError(format!(
                 "Failed to create Vault signer '{signer_name}': {}",
                 sanitize_error!(e)
             ))
@@ -282,9 +282,9 @@ impl SignerConfig {
     }
 
     /// Validate an individual signer configuration
-    pub fn validate_individual_signer_config(&self, index: usize) -> Result<(), KoraError> {
+    pub fn validate_individual_signer_config(&self, index: usize) -> Result<(), TrezoaKoraError> {
         if self.name.is_empty() {
-            return Err(KoraError::ValidationError(format!(
+            return Err(TrezoaKoraError::ValidationError(format!(
                 "Signer at index {index} must have a non-empty name"
             )));
         }
@@ -302,9 +302,9 @@ impl SignerConfig {
     fn validate_memory_config(
         config: &MemorySignerConfig,
         signer_name: &str,
-    ) -> Result<(), KoraError> {
+    ) -> Result<(), TrezoaKoraError> {
         if config.private_key_env.is_empty() {
-            return Err(KoraError::ValidationError(format!(
+            return Err(TrezoaKoraError::ValidationError(format!(
                 "Memory signer '{signer_name}' must specify non-empty private_key_env"
             )));
         }
@@ -314,7 +314,7 @@ impl SignerConfig {
     fn validate_turnkey_config(
         config: &TurnkeySignerConfig,
         signer_name: &str,
-    ) -> Result<(), KoraError> {
+    ) -> Result<(), TrezoaKoraError> {
         let env_vars = [
             ("api_public_key_env", &config.api_public_key_env),
             ("api_private_key_env", &config.api_private_key_env),
@@ -325,7 +325,7 @@ impl SignerConfig {
 
         for (field_name, env_var) in env_vars {
             if env_var.is_empty() {
-                return Err(KoraError::ValidationError(format!(
+                return Err(TrezoaKoraError::ValidationError(format!(
                     "Turnkey signer '{signer_name}' must specify non-empty {field_name}"
                 )));
             }
@@ -336,7 +336,7 @@ impl SignerConfig {
     fn validate_privy_config(
         config: &PrivySignerConfig,
         signer_name: &str,
-    ) -> Result<(), KoraError> {
+    ) -> Result<(), TrezoaKoraError> {
         let env_vars = [
             ("app_id_env", &config.app_id_env),
             ("app_secret_env", &config.app_secret_env),
@@ -345,7 +345,7 @@ impl SignerConfig {
 
         for (field_name, env_var) in env_vars {
             if env_var.is_empty() {
-                return Err(KoraError::ValidationError(format!(
+                return Err(TrezoaKoraError::ValidationError(format!(
                     "Privy signer '{signer_name}' must specify non-empty {field_name}"
                 )));
             }
@@ -356,7 +356,7 @@ impl SignerConfig {
     fn validate_vault_config(
         config: &VaultSignerConfig,
         signer_name: &str,
-    ) -> Result<(), KoraError> {
+    ) -> Result<(), TrezoaKoraError> {
         let env_vars = [
             ("vault_addr_env", &config.vault_addr_env),
             ("vault_token_env", &config.vault_token_env),
@@ -366,7 +366,7 @@ impl SignerConfig {
 
         for (field_name, env_var) in env_vars {
             if env_var.is_empty() {
-                return Err(KoraError::ValidationError(format!(
+                return Err(TrezoaKoraError::ValidationError(format!(
                     "Vault signer '{signer_name}' must specify non-empty {field_name}"
                 )));
             }

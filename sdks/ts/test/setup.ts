@@ -1,4 +1,4 @@
-import { getCreateAccountInstruction } from '@solana-program/system';
+import { getCreateAccountInstruction } from '@trezoa-program/system';
 import {
     findAssociatedTokenPda,
     getCreateAssociatedTokenIdempotentInstructionAsync,
@@ -6,11 +6,11 @@ import {
     getMintSize,
     getMintToInstruction,
     TOKEN_PROGRAM_ADDRESS,
-} from '@solana-program/token';
+} from '@trezoa-program/token';
 import {
     airdropFactory,
-    createSolanaRpc,
-    createSolanaRpcSubscriptions,
+    createTrezoaRpc,
+    createTrezoaRpcSubscriptions,
     lamports,
     sendAndConfirmTransactionFactory,
     pipe,
@@ -19,10 +19,10 @@ import {
     setTransactionMessageFeePayerSigner,
     appendTransactionMessageInstructions,
     TransactionSigner,
-    SolanaRpcApi,
+    TrezoaRpcApi,
     RpcSubscriptions,
     Rpc,
-    SolanaRpcSubscriptionsApi,
+    TrezoaRpcSubscriptionsApi,
     MicroLamports,
     CompilableTransactionMessage,
     TransactionMessageWithBlockhashLifetime,
@@ -36,48 +36,48 @@ import {
     assertIsAddress,
     createKeyPairSignerFromBytes,
     getBase58Encoder,
-} from '@solana/kit';
+} from '@trezoa/kit';
 import {
     updateOrAppendSetComputeUnitLimitInstruction,
     updateOrAppendSetComputeUnitPriceInstruction,
     MAX_COMPUTE_UNIT_LIMIT,
     estimateComputeUnitLimitFactory,
-} from '@solana-program/compute-budget';
+} from '@trezoa-program/compute-budget';
 import { config } from 'dotenv';
 import path from 'path';
-import { KoraClient } from '../src/index.js';
+import { TrezoaKoraClient } from '../src/index.js';
 
 config({ path: path.resolve(process.cwd(), '.env') });
 
 const DEFAULTS = {
     DECIMALS: 6,
     TOKEN_DROP_AMOUNT: 100_000,
-    KORA_RPC_URL: 'http://localhost:8080/',
-    SOLANA_RPC_URL: 'http://127.0.0.1:8899',
-    SOLANA_WS_URL: 'ws://127.0.0.1:8900',
+    TREZOAKORA_RPC_URL: 'http://localhost:8080/',
+    TREZOA_RPC_URL: 'http://127.0.0.1:8899',
+    TREZOA_WS_URL: 'ws://127.0.0.1:8900',
     COMMITMENT: 'processed' as Commitment,
-    SOL_DROP_AMOUNT: 1_000_000_000,
+    TRZ_DROP_AMOUNT: 1_000_000_000,
 
     // DO NOT USE THESE KEYPAIRS IN PRODUCTION, TESTING KEYPAIRS ONLY
-    KORA_ADDRESS: '7AqpcUvgJ7Kh1VmJZ44rWp2XDow33vswo9VK9VqpPU2d', // Make sure this matches the kora-rpc signer address on launch (root .env)
+    TREZOAKORA_ADDRESS: '7AqpcUvgJ7Kh1VmJZ44rWp2XDow33vswo9VK9VqpPU2d', // Make sure this matches the trezoakora-rpc signer address on launch (root .env)
     SENDER_SECRET: 'tzgfgSWTE3KUA6qfRoFYLaSfJm59uUeZRDy4ybMrLn1JV2drA1mftiaEcVFvq1Lok6h6EX2C4Y9kSKLvQWyMpS5', // HhA5j2rRiPbMrpF2ZD36r69FyZf3zWmEHRNSZbbNdVjf
-    TEST_USDC_MINT_SECRET: '59kKmXphL5UJANqpFFjtH17emEq3oRNmYsx6a3P3vSGJRmhMgVdzH77bkNEi9bArRViT45e8L2TsuPxKNFoc3Qfg', // Make sure this matches the USDC mint in kora.toml (9BgeTKqmFsPVnfYscfM6NvsgmZxei7XfdciShQ6D3bxJ)
+    TEST_USDC_MINT_SECRET: '59kKmXphL5UJANqpFFjtH17emEq3oRNmYsx6a3P3vSGJRmhMgVdzH77bkNEi9bArRViT45e8L2TsuPxKNFoc3Qfg', // Make sure this matches the USDC mint in trezoakora.toml (9BgeTKqmFsPVnfYscfM6NvsgmZxei7XfdciShQ6D3bxJ)
     DESTINATION_ADDRESS: 'AVmDft8deQEo78bRKcGN5ZMf3hyjeLBK4Rd4xGB46yQM',
-    KORA_SIGNER_TYPE: 'memory', // Default signer type
+    TREZOAKORA_SIGNER_TYPE: 'memory', // Default signer type
 };
 
 interface TestSuite {
-    koraClient: KoraClient;
-    koraRpcUrl: string;
+    trezoakoraClient: TrezoaKoraClient;
+    trezoakoraRpcUrl: string;
     testWallet: KeyPairSigner<string>;
     usdcMint: Address<string>;
     destinationAddress: Address<string>;
-    koraAddress: Address<string>;
+    trezoakoraAddress: Address<string>;
 }
 
 interface Client {
-    rpc: Rpc<SolanaRpcApi>;
-    rpcSubscriptions: RpcSubscriptions<SolanaRpcSubscriptionsApi>;
+    rpc: Rpc<TrezoaRpcApi>;
+    rpcSubscriptions: RpcSubscriptions<TrezoaRpcSubscriptionsApi>;
 }
 
 const createKeyPairSignerFromB58Secret = async (b58Secret: string) => {
@@ -85,55 +85,55 @@ const createKeyPairSignerFromB58Secret = async (b58Secret: string) => {
     const b58SecretEncoded = base58Encoder.encode(b58Secret);
     return await createKeyPairSignerFromBytes(b58SecretEncoded);
 };
-// TODO Add KORA_PRIVATE_KEY_2= support for multi-signer configs
+// TODO Add TREZOAKORA_PRIVATE_KEY_2= support for multi-signer configs
 export function loadEnvironmentVariables() {
-    const koraSignerType = process.env.KORA_SIGNER_TYPE || DEFAULTS.KORA_SIGNER_TYPE;
+    const trezoakoraSignerType = process.env.TREZOAKORA_SIGNER_TYPE || DEFAULTS.TREZOAKORA_SIGNER_TYPE;
 
-    let koraAddress = process.env.KORA_ADDRESS;
-    if (!koraAddress) {
-        switch (koraSignerType) {
+    let trezoakoraAddress = process.env.TREZOAKORA_ADDRESS;
+    if (!trezoakoraAddress) {
+        switch (trezoakoraSignerType) {
             case 'turnkey':
-                koraAddress = process.env.TURNKEY_PUBLIC_KEY;
-                if (!koraAddress) {
+                trezoakoraAddress = process.env.TURNKEY_PUBLIC_KEY;
+                if (!trezoakoraAddress) {
                     throw new Error('TURNKEY_PUBLIC_KEY must be set when using Turnkey signer');
                 }
                 break;
             case 'privy':
-                koraAddress = process.env.PRIVY_PUBLIC_KEY;
-                if (!koraAddress) {
+                trezoakoraAddress = process.env.PRIVY_PUBLIC_KEY;
+                if (!trezoakoraAddress) {
                     throw new Error('PRIVY_PUBLIC_KEY must be set when using Privy signer');
                 }
                 break;
             case 'memory':
             default:
-                koraAddress = DEFAULTS.KORA_ADDRESS;
+                trezoakoraAddress = DEFAULTS.TREZOAKORA_ADDRESS;
                 break;
         }
     }
 
-    const koraRpcUrl = process.env.KORA_RPC_URL || DEFAULTS.KORA_RPC_URL;
-    const solanaRpcUrl = process.env.SOLANA_RPC_URL || DEFAULTS.SOLANA_RPC_URL;
-    const solanaWsUrl = process.env.SOLANA_WS_URL || DEFAULTS.SOLANA_WS_URL;
+    const trezoakoraRpcUrl = process.env.TREZOAKORA_RPC_URL || DEFAULTS.TREZOAKORA_RPC_URL;
+    const trezoaRpcUrl = process.env.TREZOA_RPC_URL || DEFAULTS.TREZOA_RPC_URL;
+    const trezoaWsUrl = process.env.TREZOA_WS_URL || DEFAULTS.TREZOA_WS_URL;
     const commitment = (process.env.COMMITMENT || DEFAULTS.COMMITMENT) as Commitment;
     const tokenDecimals = Number(process.env.TOKEN_DECIMALS || DEFAULTS.DECIMALS);
     const tokenDropAmount = Number(process.env.TOKEN_DROP_AMOUNT || DEFAULTS.TOKEN_DROP_AMOUNT);
-    const solDropAmount = BigInt(process.env.SOL_DROP_AMOUNT || DEFAULTS.SOL_DROP_AMOUNT);
+    const trzDropAmount = BigInt(process.env.TRZ_DROP_AMOUNT || DEFAULTS.TRZ_DROP_AMOUNT);
     const testWalletSecret = process.env.SENDER_SECRET || DEFAULTS.SENDER_SECRET;
     const testUsdcMintSecret = process.env.TEST_USDC_MINT_SECRET || DEFAULTS.TEST_USDC_MINT_SECRET;
     const destinationAddress = process.env.DESTINATION_ADDRESS || DEFAULTS.DESTINATION_ADDRESS;
     assertIsAddress(destinationAddress);
-    assertIsAddress(koraAddress);
+    assertIsAddress(trezoakoraAddress);
 
     return {
-        koraRpcUrl,
-        koraAddress,
-        koraSignerType,
+        trezoakoraRpcUrl,
+        trezoakoraAddress,
+        trezoakoraSignerType,
         commitment,
         tokenDecimals,
         tokenDropAmount,
-        solDropAmount,
-        solanaRpcUrl,
-        solanaWsUrl,
+        trzDropAmount,
+        trezoaRpcUrl,
+        trezoaWsUrl,
         testWalletSecret,
         testUsdcMintSecret,
         destinationAddress,
@@ -291,28 +291,28 @@ async function initializeToken({
 
 async function setupTestSuite(): Promise<TestSuite> {
     const {
-        koraAddress,
-        koraRpcUrl,
+        trezoakoraAddress,
+        trezoakoraRpcUrl,
         commitment,
         tokenDecimals,
         tokenDropAmount,
-        solDropAmount,
-        solanaRpcUrl,
-        solanaWsUrl,
+        trzDropAmount,
+        trezoaRpcUrl,
+        trezoaWsUrl,
     } = await loadEnvironmentVariables();
 
     // Load auth config from environment if not provided
     const authConfig =
         process.env.ENABLE_AUTH === 'true'
             ? {
-                  apiKey: process.env.KORA_API_KEY || 'test-api-key-123',
-                  hmacSecret: process.env.KORA_HMAC_SECRET || 'test-hmac-secret-456',
+                  apiKey: process.env.TREZOAKORA_API_KEY || 'test-api-key-123',
+                  hmacSecret: process.env.TREZOAKORA_HMAC_SECRET || 'test-hmac-secret-456',
               }
             : undefined;
 
-    // Create Solana client
-    const rpc = createSolanaRpc(solanaRpcUrl);
-    const rpcSubscriptions = createSolanaRpcSubscriptions(solanaWsUrl);
+    // Create Trezoa client
+    const rpc = createTrezoaRpc(trezoaRpcUrl);
+    const rpcSubscriptions = createTrezoaRpcSubscriptions(trezoaWsUrl);
     const airdrop = airdropFactory({ rpc, rpcSubscriptions });
     const client: Client = { rpc, rpcSubscriptions };
 
@@ -320,16 +320,16 @@ async function setupTestSuite(): Promise<TestSuite> {
     const { testWallet, usdcMint, destinationAddress } = await createKeyPairSigners();
     const mintAuthority = testWallet; // test wallet can be used as mint authority for the test
 
-    // Airdrop SOL to test sender and kora wallets
+    // Airdrop TRZ to test sender and trezoakora wallets
     await Promise.all([
         airdrop({
             commitment: 'finalized',
-            lamports: lamports(solDropAmount),
-            recipientAddress: koraAddress,
+            lamports: lamports(trzDropAmount),
+            recipientAddress: trezoakoraAddress,
         }),
         airdrop({
             commitment: 'finalized',
-            lamports: lamports(solDropAmount),
+            lamports: lamports(trzDropAmount),
             recipientAddress: testWallet.address,
         }),
     ]);
@@ -343,16 +343,16 @@ async function setupTestSuite(): Promise<TestSuite> {
         mint: usdcMint,
         dropAmount: tokenDropAmount,
         decimals: tokenDecimals,
-        otherAtaWallets: [testWallet.address, koraAddress, destinationAddress],
+        otherAtaWallets: [testWallet.address, trezoakoraAddress, destinationAddress],
     });
 
     return {
-        koraClient: new KoraClient({ rpcUrl: koraRpcUrl, ...authConfig }),
-        koraRpcUrl,
+        trezoakoraClient: new TrezoaKoraClient({ rpcUrl: trezoakoraRpcUrl, ...authConfig }),
+        trezoakoraRpcUrl,
         testWallet,
         usdcMint: usdcMint.address,
         destinationAddress,
-        koraAddress,
+        trezoakoraAddress,
     };
 }
 

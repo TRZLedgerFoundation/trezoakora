@@ -1,4 +1,4 @@
-use solana_program::{
+use trezoa_program::{
     account_info::{next_account_info, AccountInfo},
     entrypoint,
     entrypoint::ProgramResult,
@@ -11,11 +11,11 @@ use solana_program::{
     sysvar::Sysvar,
 };
 
-use spl_transfer_hook_interface::instruction::{ExecuteInstruction, TransferHookInstruction};
+use tpl_transfer_hook_interface::instruction::{ExecuteInstruction, TransferHookInstruction};
 
-use spl_tlv_account_resolution::{account::ExtraAccountMeta, state::ExtraAccountMetaList};
+use tpl_tlv_account_resolution::{account::ExtraAccountMeta, state::ExtraAccountMetaList};
 
-solana_program::declare_id!("Bcdikjss8HWzKEuj6gEQoFq9TCnGnk6v3kUnRU1gb6hA");
+trezoa_program::declare_id!("Bcdikjss8HWzKEuj6gEQoFq9TCnGnk6v3kUnRU1gb6hA");
 
 // Program entrypoint
 entrypoint!(process_instruction);

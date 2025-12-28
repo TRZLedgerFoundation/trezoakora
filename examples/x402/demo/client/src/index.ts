@@ -1,18 +1,18 @@
 import { config } from "dotenv";
 import { x402HTTPClient, wrapFetchWithPayment, x402Client } from "@x402/fetch";
 import { registerExactSvmScheme } from "@x402/svm/exact/client";
-import { createKeyPairSignerFromBytes, getBase58Encoder } from "@solana/kit";
+import { createKeyPairSignerFromBytes, getBase58Encoder } from "@trezoa/kit";
 import path from "path";
 
 config({ path: path.join(process.cwd(), '..', '.env') });
 
 const PAYER_PRIVATE_KEY = process.env.PAYER_PRIVATE_KEY as string;
 const PROTECTED_API_URL = process.env.PROTECTED_API_URL || "http://localhost:4021/protected";
-const NETWORK = process.env.NETWORK || "solana-devnet";
+const NETWORK = process.env.NETWORK || "trezoa-devnet";
 
 async function main() {
     console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('X402 + KORA PAYMENT FLOW DEMONSTRATION');
+    console.log('X402 + TREZOAKORA PAYMENT FLOW DEMONSTRATION');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     if (!PAYER_PRIVATE_KEY) {
@@ -42,11 +42,11 @@ async function main() {
 
         console.log('\n[3/4] Accessing protected endpoint with x402 payment');
         console.log('  → Using x402 fetch wrapper');
-        console.log('  → Payment will be processed via Kora facilitator');
+        console.log('  → Payment will be processed via TrezoaKora facilitator');
         const response = await fetchWithPayment(PROTECTED_API_URL, {
             method: "GET",
         });
-        console.log('  → Transaction submitted to Solana');
+        console.log('  → Transaction submitted to Trezoa');
         console.log(`  ${response.status === 200 ? "✅" : "❌"} Status code: ${response.status}`);
 
         console.log('\n[4/4] Processing response data');
@@ -81,9 +81,9 @@ async function main() {
             console.log('\nTransaction signature:');
             console.log(paymentResponse.transaction);
             console.log('\nView on explorer:');
-            const explorerUrl = NETWORK === 'solana-devnet'
-                ? `https://explorer.solana.com/tx/${paymentResponse.transaction}?cluster=devnet`
-                : `https://explorer.solana.com/tx/${paymentResponse.transaction}?cluster=custom&customUrl=http%3A%2F%2Flocalhost%3A8899`;
+            const explorerUrl = NETWORK === 'trezoa-devnet'
+                ? `https://explorer.trezoa.com/tx/${paymentResponse.transaction}?cluster=devnet`
+                : `https://explorer.trezoa.com/tx/${paymentResponse.transaction}?cluster=custom&customUrl=http%3A%2F%2Flocalhost%3A8899`;
             console.log(explorerUrl);
         }
 
@@ -103,10 +103,10 @@ async function main() {
         console.log(JSON.stringify(errorResult, null, 2));
 
         console.log('\nTroubleshooting tips:');
-        console.log('  → Ensure all services are running (Kora, Facilitator, API)');
+        console.log('  → Ensure all services are running (TrezoaKora, Facilitator, API)');
         console.log('  → Verify your account has sufficient USDC balance');
-        console.log('  → Check that Kora fee payer has SOL for gas');
-        console.log('  → Confirm API key matches in .env and kora.toml');
+        console.log('  → Check that TrezoaKora fee payer has TRZ for gas');
+        console.log('  → Confirm API key matches in .env and trezoakora.toml');
 
         process.exit(1);
     }

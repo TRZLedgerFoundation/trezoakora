@@ -1,9 +1,9 @@
 use anyhow::Result;
-use solana_address_lookup_table_interface::instruction::{
+use trezoa_address_lookup_table_interface::instruction::{
     create_lookup_table, extend_lookup_table,
 };
-use solana_client::nonblocking::rpc_client::RpcClient;
-use solana_sdk::{pubkey::Pubkey, signature::Keypair, signer::Signer, transaction::Transaction};
+use trezoa_client::nonblocking::rpc_client::RpcClient;
+use trezoa_sdk::{pubkey::Pubkey, signature::Keypair, signer::Signer, transaction::Transaction};
 use std::{str::FromStr, sync::Arc};
 
 use crate::common::{constants::*, SenderTestHelper, USDCMintTestHelper};
@@ -133,7 +133,7 @@ impl LookupTableHelper {
         let allowed_lookup_table = Self::create_lookup_table(
             rpc_client,
             authority,
-            vec![solana_system_interface::program::ID],
+            vec![trezoa_system_interface::program::ID],
         )
         .await?;
 
@@ -152,7 +152,7 @@ impl LookupTableHelper {
     }
 
     // ============================================================================
-    // Transaction-Specific Lookup Tables (for SPL transfers with mint)
+    // Transaction-Specific Lookup Tables (for TPL transfers with mint)
     // ============================================================================
     pub async fn create_transaction_lookup_table(
         rpc_client: Arc<RpcClient>,
@@ -160,7 +160,7 @@ impl LookupTableHelper {
     ) -> Result<Pubkey> {
         let usdc_mint = USDCMintTestHelper::get_test_usdc_mint_pubkey();
 
-        let addresses = vec![usdc_mint, spl_token_interface::ID];
+        let addresses = vec![usdc_mint, tpl_token_interface::ID];
 
         Self::create_lookup_table(rpc_client, authority, addresses).await
     }

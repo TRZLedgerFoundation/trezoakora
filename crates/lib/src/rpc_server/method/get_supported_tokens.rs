@@ -1,4 +1,4 @@
-use crate::{error::KoraError, state::get_config};
+use crate::{error::TrezoaKoraError, state::get_config};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
@@ -7,12 +7,12 @@ pub struct GetSupportedTokensResponse {
     pub tokens: Vec<String>,
 }
 
-pub async fn get_supported_tokens() -> Result<GetSupportedTokensResponse, KoraError> {
+pub async fn get_supported_tokens() -> Result<GetSupportedTokensResponse, TrezoaKoraError> {
     let config = &get_config()?;
     let tokens = &config.validation.allowed_tokens;
 
     if tokens.is_empty() {
-        return Err(KoraError::InternalServerError("No tokens provided".to_string()));
+        return Err(TrezoaKoraError::InternalServerError("No tokens provided".to_string()));
     }
 
     let response = GetSupportedTokensResponse { tokens: tokens.to_vec() };
@@ -37,7 +37,7 @@ mod tests {
         assert!(result.is_err(), "Should fail when no tokens configured");
         let error = result.unwrap_err();
         assert!(
-            matches!(error, KoraError::InternalServerError(_)),
+            matches!(error, TrezoaKoraError::InternalServerError(_)),
             "Should return InternalServerError"
         );
     }

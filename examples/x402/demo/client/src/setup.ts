@@ -1,8 +1,8 @@
-import { getBase58Decoder, getBase58Encoder, createKeyPairSignerFromBytes, Address, lamports, createSolanaRpc } from "@solana/kit";
+import { getBase58Decoder, getBase58Encoder, createKeyPairSignerFromBytes, Address, lamports, createTrezoaRpc } from "@trezoa/kit";
 import { appendFile } from 'fs/promises';
 import path from "path";
 
-const LAMPORTS_PER_SOL = 1_000_000_000;
+const LAMPORTS_PER_TRZ = 1_000_000_000;
 
 async function createB58SecretKey(): Promise<string> {
     // await assertKeyGenerationIsAvailable();
@@ -24,12 +24,12 @@ async function createB58SecretKey(): Promise<string> {
     const publicKeyArrayBuffer = await crypto.subtle.exportKey("raw", keyPair.publicKey);
     const publicKeyBytes = new Uint8Array(publicKeyArrayBuffer);
 
-    // Create Solana-style 64-byte secret key (private + public)
-    const solanaSecretKey = new Uint8Array(64);
-    solanaSecretKey.set(rawPrivateKey, 0);     // First 32 bytes
-    solanaSecretKey.set(publicKeyBytes, 32);   // Next 32 bytes
+    // Create Trezoa-style 64-byte secret key (private + public)
+    const trezoaSecretKey = new Uint8Array(64);
+    trezoaSecretKey.set(rawPrivateKey, 0);     // First 32 bytes
+    trezoaSecretKey.set(publicKeyBytes, 32);   // Next 32 bytes
 
-    const b58Secret = base58Decoder.decode(solanaSecretKey)
+    const b58Secret = base58Decoder.decode(trezoaSecretKey)
 
     return b58Secret;
 }
@@ -68,7 +68,7 @@ const addKeypairToEnvFile = async (
         );
         console.log(`${variableName}${ADDRESS_SUFFIX} and ${variableName}${PRIVATE_KEY_SUFFIX} added to env file successfully`);
         if (attemptAirdrop) {
-            console.warn(`Attempting airdrop on devnet - if you need to run multiple times, you may run into rate limiting. Check out https://faucet.solana.com/ for other options.`)
+            console.warn(`Attempting airdrop on devnet - if you need to run multiple times, you may run into rate limiting. Check out https://faucet.trezoa.com/ for other options.`)
 
             await airdrop(keypairSigner.address);
         }
@@ -79,16 +79,16 @@ const addKeypairToEnvFile = async (
 };
 
 async function airdrop(address: Address) {
-    const rpc = createSolanaRpc('https://api.devnet.solana.com');
+    const rpc = createTrezoaRpc('https://api.devnet.trezoa.com');
     await rpc.requestAirdrop(
         address,
-        lamports(BigInt(LAMPORTS_PER_SOL / 10)),
+        lamports(BigInt(LAMPORTS_PER_TRZ / 10)),
         { commitment: 'processed' }
     ).send();
 }
 
 async function test() {
-    await addKeypairToEnvFile('KORA_SIGNER');
+    await addKeypairToEnvFile('TREZOAKORA_SIGNER');
     await addKeypairToEnvFile('PAYER');
 }
 test();

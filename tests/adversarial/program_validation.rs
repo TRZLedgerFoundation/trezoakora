@@ -1,6 +1,6 @@
 use crate::common::{assertions::RpcErrorAssertions, *};
 use jsonrpsee::rpc_params;
-use solana_sdk::{instruction::Instruction, pubkey::Pubkey};
+use trezoa_sdk::{instruction::Instruction, pubkey::Pubkey};
 use std::str::FromStr;
 
 #[tokio::test]
@@ -8,7 +8,7 @@ async fn test_disallowed_memo_program() {
     let ctx = TestContext::new().await.expect("Failed to create test context");
 
     let disallowed_program_id = Pubkey::from_str("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr")
-        .expect("Failed to parse SPL Memo program ID");
+        .expect("Failed to parse TPL Memo program ID");
 
     let malicious_instruction = Instruction::new_with_bincode(disallowed_program_id, &(), vec![]);
 

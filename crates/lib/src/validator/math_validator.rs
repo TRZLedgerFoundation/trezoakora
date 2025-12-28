@@ -1,8 +1,8 @@
-use crate::KoraError;
+use crate::TrezoaKoraError;
 
-pub fn validate_division(divisor: f64) -> Result<(), KoraError> {
+pub fn validate_division(divisor: f64) -> Result<(), TrezoaKoraError> {
     if !divisor.is_finite() || divisor <= 0.0 {
-        return Err(KoraError::RpcError(format!("Invalid division: {}", divisor)));
+        return Err(TrezoaKoraError::RpcError(format!("Invalid division: {}", divisor)));
     }
 
     Ok(())

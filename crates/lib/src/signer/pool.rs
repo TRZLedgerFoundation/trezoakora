@@ -1,10 +1,10 @@
 use crate::{
-    error::KoraError,
+    error::TrezoaKoraError,
     signer::config::{SelectionStrategy, SignerConfig, SignerPoolConfig},
 };
 use rand::Rng;
-use solana_keychain::{Signer, SolanaSigner};
-use solana_sdk::pubkey::Pubkey;
+use trezoa_keychain::{Signer, TrezoaSigner};
+use trezoa_sdk::pubkey::Pubkey;
 use std::{
     str::FromStr,
     sync::{
@@ -89,9 +89,9 @@ impl SignerPool {
     }
 
     /// Create a new signer pool from configuration
-    pub async fn from_config(config: SignerPoolConfig) -> Result<Self, KoraError> {
+    pub async fn from_config(config: SignerPoolConfig) -> Result<Self, TrezoaKoraError> {
         if config.signers.is_empty() {
-            return Err(KoraError::ValidationError("Cannot create empty signer pool".to_string()));
+            return Err(TrezoaKoraError::ValidationError("Cannot create empty signer pool".to_string()));
         }
 
         let mut signers = Vec::new();
@@ -118,7 +118,7 @@ impl SignerPool {
         let total_weight: u32 = signers.iter().map(|s| s.weight).sum();
 
         if matches!(config.signer_pool.strategy, SelectionStrategy::Weighted) && total_weight == 0 {
-            return Err(KoraError::InternalServerError(
+            return Err(TrezoaKoraError::InternalServerError(
                 "All signers have zero weight while using weighted selection strategy".to_string(),
             ));
         }
@@ -138,9 +138,9 @@ impl SignerPool {
     }
 
     /// Get the next signer according to the configured strategy
-    pub fn get_next_signer(&self) -> Result<Arc<Signer>, KoraError> {
+    pub fn get_next_signer(&self) -> Result<Arc<Signer>, TrezoaKoraError> {
         if self.signers.is_empty() {
-            return Err(KoraError::InternalServerError("Signer pool is empty".to_string()));
+            return Err(TrezoaKoraError::InternalServerError("Signer pool is empty".to_string()));
         }
 
         let signer_meta = match self.strategy {
@@ -154,21 +154,21 @@ impl SignerPool {
     }
 
     /// Round-robin selection strategy
-    fn round_robin_select(&self) -> Result<&SignerWithMetadata, KoraError> {
+    fn round_robin_select(&self) -> Result<&SignerWithMetadata, TrezoaKoraError> {
         let index = self.current_index.fetch_add(1, Ordering::AcqRel);
         let signer_index = index % self.signers.len();
         Ok(&self.signers[signer_index])
     }
 
     /// Random selection strategy
-    fn random_select(&self) -> Result<&SignerWithMetadata, KoraError> {
+    fn random_select(&self) -> Result<&SignerWithMetadata, TrezoaKoraError> {
         let mut rng = rand::rng();
         let index = rng.random_range(0..self.signers.len());
         Ok(&self.signers[index])
     }
 
     /// Weighted selection strategy (weighted random)
-    fn weighted_select(&self) -> Result<&SignerWithMetadata, KoraError> {
+    fn weighted_select(&self) -> Result<&SignerWithMetadata, TrezoaKoraError> {
         let mut rng = rand::rng();
         let mut target = rng.random_range(0..self.total_weight);
 
@@ -212,16 +212,16 @@ impl SignerPool {
     }
 
     /// Get a signer by public key (for client consistency signer keys)
-    pub fn get_signer_by_pubkey(&self, pubkey: &str) -> Result<Arc<Signer>, KoraError> {
+    pub fn get_signer_by_pubkey(&self, pubkey: &str) -> Result<Arc<Signer>, TrezoaKoraError> {
         // Try to parse as Pubkey to validate format
         let target_pubkey = Pubkey::from_str(pubkey).map_err(|_| {
-            KoraError::ValidationError(format!("Invalid signer signer key pubkey: {pubkey}"))
+            TrezoaKoraError::ValidationError(format!("Invalid signer signer key pubkey: {pubkey}"))
         })?;
 
         // Find signer with matching public key
         let signer_meta =
             self.signers.iter().find(|s| s.signer.pubkey() == target_pubkey).ok_or_else(|| {
-                KoraError::ValidationError(format!("Signer with pubkey {pubkey} not found in pool"))
+                TrezoaKoraError::ValidationError(format!("Signer with pubkey {pubkey} not found in pool"))
             })?;
 
         signer_meta.update_last_used();
@@ -231,7 +231,7 @@ impl SignerPool {
 
 #[cfg(test)]
 mod tests {
-    use solana_sdk::signature::Keypair;
+    use trezoa_sdk::signature::Keypair;
 
     use super::*;
     use std::collections::HashMap;
@@ -242,9 +242,9 @@ mod tests {
         let keypair2 = Keypair::new();
 
         let external_signer1 =
-            solana_keychain::Signer::from_memory(&keypair1.to_base58_string()).unwrap();
+            trezoa_keychain::Signer::from_memory(&keypair1.to_base58_string()).unwrap();
         let external_signer2 =
-            solana_keychain::Signer::from_memory(&keypair2.to_base58_string()).unwrap();
+            trezoa_keychain::Signer::from_memory(&keypair2.to_base58_string()).unwrap();
 
         SignerPool {
             signers: vec![

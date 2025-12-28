@@ -1,6 +1,6 @@
 use crate::common::*;
 use jsonrpsee::rpc_params;
-use solana_sdk::signer::Signer;
+use trezoa_sdk::signer::Signer;
 
 #[tokio::test]
 async fn test_estimate_transaction_fee_with_compute_budget_legacy() {
@@ -28,7 +28,7 @@ async fn test_estimate_transaction_fee_with_compute_budget_legacy() {
     // Fee should include priority fee from compute budget instructions
     // Priority fee calculation: 300_000 * 50_000 / 1_000_000 = 15_000 lamports
     // Plus base transaction fee (5000 for this transaction) = 20_000 lamports total
-    // Plus Kora signature fee (5000 for this transaction) = 25_000 lamports total
+    // Plus TrezoaKora signature fee (5000 for this transaction) = 25_000 lamports total
     // Plus payment instruction fee (50 lamports) = 25_050 lamports total
     assert!(fee == 25_050, "Fee should include compute budget priority fee, got {fee}");
 }
@@ -60,7 +60,7 @@ async fn test_estimate_transaction_fee_with_compute_budget_v0() {
     // Priority fee calculation: 1_000_000 * 25_000 / 1_000_000 = 25_000 lamports
     // Plus base transaction fee (2 signatures) (10000 for this transaction) = 35_000 lamports total
     // Plus payment instruction fee (50 lamports) = 35_050 lamports total
-    // We don't include the Kora signature EXTRA fee because the fee payer is already Kora and added as a signer
+    // We don't include the TrezoaKora signature EXTRA fee because the fee payer is already TrezoaKora and added as a signer
     assert!(fee == 35_050, "Fee should include V0 compute budget priority fee, got {fee}");
 }
 
@@ -79,7 +79,7 @@ async fn test_estimate_transaction_fee_with_compute_budget_v0_with_lookup() {
     let test_tx = ctx
         .v0_transaction_builder_with_lookup(vec![transaction_lookup_table])
         .with_fee_payer(fee_payer.pubkey())
-        .with_spl_transfer_checked(
+        .with_tpl_transfer_checked(
             &usdc_mint,
             &sender.pubkey(),
             &recipient,
@@ -102,7 +102,7 @@ async fn test_estimate_transaction_fee_with_compute_budget_v0_with_lookup() {
     // Priority fee calculation: 1_000_000 * 25_000 / 1_000_000 = 25_000 lamports
     // Plus base transaction fee (2 signatures) (10000 for this transaction) = 35_000 lamports total
     // Plus payment instruction fee (50 lamports) = 35_050 lamports total
-    // We don't include the Kora signature EXTRA fee because the fee payer is already Kora and added as a signer
+    // We don't include the TrezoaKora signature EXTRA fee because the fee payer is already TrezoaKora and added as a signer
     assert!(
         fee == 35_050,
         "Fee should include V0 compute budget priority fee with mint in lookup table, got {fee}"

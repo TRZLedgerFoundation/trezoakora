@@ -4,7 +4,7 @@ use futures_util::TryStreamExt;
 use http::{Request, Response, StatusCode};
 use jsonrpsee::server::logger::Body;
 
-use crate::KoraError;
+use crate::TrezoaKoraError;
 
 pub fn default_sig_verify() -> bool {
     false
@@ -34,14 +34,14 @@ pub fn get_jsonrpc_method(body_bytes: &[u8]) -> Option<String> {
 pub fn verify_jsonrpc_method(
     body_bytes: &[u8],
     allowed_methods: &HashSet<String>,
-) -> Result<String, KoraError> {
+) -> Result<String, TrezoaKoraError> {
     let method = get_jsonrpc_method(body_bytes);
     if let Some(method) = method {
         if allowed_methods.contains(&method) {
             return Ok(method);
         }
     }
-    Err(KoraError::InvalidRequest("Method not allowed".to_string()))
+    Err(TrezoaKoraError::InvalidRequest("Method not allowed".to_string()))
 }
 
 pub fn build_response_with_graceful_error(

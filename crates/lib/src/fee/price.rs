@@ -1,11 +1,11 @@
-use crate::{config::Config, error::KoraError, token::token::TokenUtil};
+use crate::{config::Config, error::TrezoaKoraError, token::token::TokenUtil};
 use rust_decimal::{
     prelude::{FromPrimitive, ToPrimitive},
     Decimal,
 };
 use serde::{Deserialize, Serialize};
-use solana_client::nonblocking::rpc_client::RpcClient;
-use solana_sdk::pubkey::Pubkey;
+use trezoa_client::nonblocking::rpc_client::RpcClient;
+use trezoa_sdk::pubkey::Pubkey;
 use std::str::FromStr;
 use utoipa::ToSchema;
 
@@ -34,14 +34,14 @@ impl PriceConfig {
         &self,
         rpc_client: &RpcClient,
         config: &Config,
-    ) -> Result<u64, KoraError> {
+    ) -> Result<u64, TrezoaKoraError> {
         if let PriceModel::Fixed { amount, token, .. } = &self.model {
             return TokenUtil::calculate_token_value_in_lamports(
                 *amount,
                 &Pubkey::from_str(token).map_err(|e| {
                     log::error!("Invalid Pubkey for price {e}");
 
-                    KoraError::ConfigError
+                    TrezoaKoraError::ConfigError
                 })?,
                 rpc_client,
                 config,
@@ -49,16 +49,16 @@ impl PriceConfig {
             .await;
         }
 
-        Err(KoraError::ConfigError)
+        Err(TrezoaKoraError::ConfigError)
     }
 
     pub async fn get_required_lamports_with_margin(
         &self,
         min_transaction_fee: u64,
-    ) -> Result<u64, KoraError> {
+    ) -> Result<u64, TrezoaKoraError> {
         if let PriceModel::Margin { margin } = &self.model {
             let margin_decimal = Decimal::from_f64(*margin)
-                .ok_or_else(|| KoraError::ValidationError("Invalid margin".to_string()))?;
+                .ok_or_else(|| TrezoaKoraError::ValidationError("Invalid margin".to_string()))?;
 
             let multiplier = Decimal::from_u64(1u64)
                 .and_then(|result| result.checked_add(margin_decimal))
@@ -68,7 +68,7 @@ impl PriceConfig {
                         min_transaction_fee,
                         margin,
                     );
-                    KoraError::ValidationError("Multiplier calculation overflow".to_string())
+                    TrezoaKoraError::ValidationError("Multiplier calculation overflow".to_string())
                 })?;
 
             let result = Decimal::from_u64(min_transaction_fee)
@@ -79,7 +79,7 @@ impl PriceConfig {
                         min_transaction_fee,
                         margin,
                     );
-                    KoraError::ValidationError("Margin calculation overflow".to_string())
+                    TrezoaKoraError::ValidationError("Margin calculation overflow".to_string())
                 })?;
 
             return result.ceil().to_u64().ok_or_else(|| {
@@ -89,11 +89,11 @@ impl PriceConfig {
                     margin,
                     result
                 );
-                KoraError::ValidationError("Margin calculation overflow".to_string())
+                TrezoaKoraError::ValidationError("Margin calculation overflow".to_string())
             });
         }
 
-        Err(KoraError::ConfigError)
+        Err(TrezoaKoraError::ConfigError)
     }
 }
 
@@ -148,15 +148,15 @@ mod tests {
             },
         };
 
-        // Use Mock price source which returns 0.0075 SOL per USDC
+        // Use Mock price source which returns 0.0075 TRZ per USDC
 
         let result =
             price_config.get_required_lamports_with_fixed(&rpc_client, &config).await.unwrap();
 
         // Expected calculation:
         // 1,000,000 base units / 10^6 = 1.0 USDC
-        // 1.0 USDC * 0.0075 SOL/USDC = 0.0075 SOL
-        // 0.0075 SOL * 1,000,000,000 lamports/SOL = 7,500,000 lamports
+        // 1.0 USDC * 0.0075 TRZ/USDC = 0.0075 TRZ
+        // 0.0075 TRZ * 1,000,000,000 lamports/TRZ = 7,500,000 lamports
         assert_eq!(result, 7500000);
     }
 
@@ -166,7 +166,7 @@ mod tests {
         let config = get_config().unwrap();
         let rpc_client = create_mock_rpc_client_with_mint(9); // 9 decimals token
 
-        let custom_token = "So11111111111111111111111111111111111111112"; // SOL mint
+        let custom_token = "So11111111111111111111111111111111111111112"; // TRZ mint
         let price_config = PriceConfig {
             model: PriceModel::Fixed {
                 amount: 500000000, // 0.5 tokens (500,000,000 base units with 9 decimals)
@@ -175,15 +175,15 @@ mod tests {
             },
         };
 
-        // Mock oracle returns 1.0 SOL price for SOL mint
+        // Mock oracle returns 1.0 TRZ price for TRZ mint
 
         let result =
             price_config.get_required_lamports_with_fixed(&rpc_client, &config).await.unwrap();
 
         // Expected calculation:
         // 500,000,000 base units / 10^9 = 0.5 tokens
-        // 0.5 tokens * 1.0 SOL/token = 0.5 SOL
-        // 0.5 SOL * 1,000,000,000 lamports/SOL = 500,000,000 lamports
+        // 0.5 tokens * 1.0 TRZ/token = 0.5 TRZ
+        // 0.5 TRZ * 1,000,000,000 lamports/TRZ = 500,000,000 lamports
         assert_eq!(result, 500000000);
     }
 
@@ -207,8 +207,8 @@ mod tests {
 
         // Expected calculation:
         // 1,000 base units / 10^6 = 0.001 USDC
-        // 0.001 USDC * 0.0075 SOL/USDC = 0.0000075 SOL
-        // 0.0000075 SOL * 1,000,000,000 lamports/SOL = 7,500 lamports
+        // 0.001 USDC * 0.0075 TRZ/USDC = 0.0000075 TRZ
+        // 0.0000075 TRZ * 1,000,000,000 lamports/TRZ = 7,500 lamports
         assert_eq!(result, 7500);
     }
 

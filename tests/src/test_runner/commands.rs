@@ -88,7 +88,7 @@ impl TestCommandHelper {
         let server_url = format!("http://127.0.0.1:{port}");
 
         let mut cmd = tokio::process::Command::new("pnpm");
-        cmd.current_dir("sdks/ts").args(["run", pnpm_command]).env("KORA_RPC_URL", server_url);
+        cmd.current_dir("sdks/ts").args(["run", pnpm_command]).env("TREZOAKORA_RPC_URL", server_url);
 
         let cmd_output = cmd.output().await?;
 

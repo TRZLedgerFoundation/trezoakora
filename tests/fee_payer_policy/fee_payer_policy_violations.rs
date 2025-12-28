@@ -1,32 +1,32 @@
 use crate::common::{assertions::RpcErrorAssertions, *};
 use jsonrpsee::rpc_params;
-use solana_sdk::{
+use trezoa_sdk::{
     program_pack::Pack, pubkey::Pubkey, signature::Keypair, signer::Signer,
     transaction::Transaction,
 };
-use solana_system_interface::instruction::{create_account, transfer};
-use spl_associated_token_account_interface::address::{
+use trezoa_system_interface::instruction::{create_account, transfer};
+use tpl_associated_token_account_interface::address::{
     get_associated_token_address, get_associated_token_address_with_program_id,
 };
-use spl_token_2022_interface::instruction as token_2022_instruction;
-use spl_token_interface::instruction as token_instruction;
+use tpl_token_2022_interface::instruction as token_2022_instruction;
+use tpl_token_interface::instruction as token_instruction;
 
 #[tokio::test]
-async fn test_sol_transfer_policy_violation() {
+async fn test_trz_transfer_policy_violation() {
     let ctx = TestContext::new().await.expect("Failed to create test context");
 
     let fee_payer_pubkey = FeePayerTestHelper::get_fee_payer_pubkey();
     let recipient_pubkey = RecipientTestHelper::get_recipient_pubkey();
 
-    let sol_transfer_instruction = transfer(&fee_payer_pubkey, &recipient_pubkey, 1_000_000);
+    let trz_transfer_instruction = transfer(&fee_payer_pubkey, &recipient_pubkey, 1_000_000);
 
     let malicious_tx = ctx
         .transaction_builder()
         .with_fee_payer(fee_payer_pubkey)
-        .with_instruction(sol_transfer_instruction)
+        .with_instruction(trz_transfer_instruction)
         .build()
         .await
-        .expect("Failed to create transaction with SOL transfer");
+        .expect("Failed to create transaction with TRZ transfer");
 
     let result =
         ctx.rpc_call::<serde_json::Value, _>("signTransaction", rpc_params![malicious_tx]).await;
@@ -35,7 +35,7 @@ async fn test_sol_transfer_policy_violation() {
         Err(error) => {
             error.assert_contains_message("Fee payer cannot be used for 'System Transfer'");
         }
-        Ok(_) => panic!("Expected error for SOL transfer policy violation"),
+        Ok(_) => panic!("Expected error for TRZ transfer policy violation"),
     }
 }
 
@@ -118,7 +118,7 @@ async fn test_allocate_policy_violation() {
 }
 
 #[tokio::test]
-async fn test_spl_transfer_policy_violation() {
+async fn test_tpl_transfer_policy_violation() {
     let ctx = TestContext::new().await.expect("Failed to create test context");
     let setup = TestAccountSetup::new().await;
 
@@ -126,7 +126,7 @@ async fn test_spl_transfer_policy_violation() {
     let recipient_pubkey = RecipientTestHelper::get_recipient_pubkey();
 
     let fee_payer_token_account = setup
-        .create_fee_payer_token_account_spl(&setup.fee_payer_policy_mint.pubkey())
+        .create_fee_payer_token_account_tpl(&setup.fee_payer_policy_mint.pubkey())
         .await
         .expect("Failed to create token account");
     let recipient_token_account =
@@ -137,32 +137,32 @@ async fn test_spl_transfer_policy_violation() {
         .await
         .expect("Failed to mint tokens");
 
-    let spl_transfer_instruction = token_instruction::transfer(
-        &spl_token_interface::id(),
+    let tpl_transfer_instruction = token_instruction::transfer(
+        &tpl_token_interface::id(),
         &fee_payer_token_account.pubkey(),
         &recipient_token_account,
         &fee_payer_pubkey,
         &[&fee_payer_pubkey],
         1_000,
     )
-    .expect("Failed to create SPL transfer instruction");
+    .expect("Failed to create TPL transfer instruction");
 
     let malicious_tx = ctx
         .transaction_builder()
         .with_fee_payer(fee_payer_pubkey)
-        .with_instruction(spl_transfer_instruction)
+        .with_instruction(tpl_transfer_instruction)
         .build()
         .await
-        .expect("Failed to create transaction with SPL transfer");
+        .expect("Failed to create transaction with TPL transfer");
 
     let result =
         ctx.rpc_call::<serde_json::Value, _>("signTransaction", rpc_params![malicious_tx]).await;
 
     match result {
         Err(error) => {
-            error.assert_contains_message("Fee payer cannot be used for 'SPL Token Transfer'");
+            error.assert_contains_message("Fee payer cannot be used for 'TPL Token Transfer'");
         }
-        Ok(_) => panic!("Expected error for SPL transfer policy violation"),
+        Ok(_) => panic!("Expected error for TPL transfer policy violation"),
     }
 }
 
@@ -181,7 +181,7 @@ async fn test_token2022_transfer_policy_violation() {
     let recipient_token_2022_account = get_associated_token_address_with_program_id(
         &recipient_pubkey,
         &setup.fee_payer_policy_mint_2022.pubkey(),
-        &spl_token_2022_interface::id(),
+        &tpl_token_2022_interface::id(),
     );
 
     setup
@@ -193,7 +193,7 @@ async fn test_token2022_transfer_policy_violation() {
         .expect("Failed to mint tokens");
 
     let token_2022_transfer_instruction = token_2022_instruction::transfer_checked(
-        &spl_token_2022_interface::id(),
+        &tpl_token_2022_interface::id(),
         &fee_payer_token_2022_account.pubkey(),
         &setup.fee_payer_policy_mint_2022.pubkey(),
         &recipient_token_2022_account,
@@ -231,17 +231,17 @@ async fn test_burn_policy_violation() {
 
     let fee_payer_pubkey = FeePayerTestHelper::get_fee_payer_pubkey();
     let fee_payer_token_account = setup
-        .create_fee_payer_token_account_spl(&setup.fee_payer_policy_mint.pubkey())
+        .create_fee_payer_token_account_tpl(&setup.fee_payer_policy_mint.pubkey())
         .await
         .expect("Failed to create token account");
 
     setup
         .mint_fee_payer_policy_tokens_to_account(&fee_payer_token_account.pubkey(), 1_000_000)
         .await
-        .expect("Failed to mint SPL");
+        .expect("Failed to mint TPL");
 
     let burn_instruction = token_instruction::burn(
-        &spl_token_interface::id(),
+        &tpl_token_interface::id(),
         &fee_payer_token_account.pubkey(),
         &setup.fee_payer_policy_mint.pubkey(),
         &fee_payer_pubkey,
@@ -263,7 +263,7 @@ async fn test_burn_policy_violation() {
 
     match result {
         Err(error) => {
-            error.assert_contains_message("Fee payer cannot be used for 'SPL Token Burn'");
+            error.assert_contains_message("Fee payer cannot be used for 'TPL Token Burn'");
         }
         Ok(_) => panic!("Expected error for burn policy violation"),
     }
@@ -275,12 +275,12 @@ async fn test_close_account_policy_violation() {
     let setup = TestAccountSetup::new().await;
 
     let fee_payer_token_account = setup
-        .create_fee_payer_token_account_spl(&setup.fee_payer_policy_mint.pubkey())
+        .create_fee_payer_token_account_tpl(&setup.fee_payer_policy_mint.pubkey())
         .await
         .expect("Failed to create token account");
 
     let close_account_instruction = token_instruction::close_account(
-        &spl_token_interface::id(),
+        &tpl_token_interface::id(),
         &fee_payer_token_account.pubkey(),
         &setup.recipient_pubkey,
         &setup.fee_payer_keypair.pubkey(),
@@ -301,7 +301,7 @@ async fn test_close_account_policy_violation() {
 
     match result {
         Err(error) => {
-            error.assert_contains_message("Fee payer cannot be used for 'SPL Token Close Account'");
+            error.assert_contains_message("Fee payer cannot be used for 'TPL Token Close Account'");
         }
         Ok(_) => panic!("Expected error for close account policy violation"),
     }
@@ -315,7 +315,7 @@ async fn test_approve_policy_violation() {
     let fee_payer_pubkey = FeePayerTestHelper::get_fee_payer_pubkey();
     let recipient_pubkey = RecipientTestHelper::get_recipient_pubkey();
     let fee_payer_token_account = setup
-        .create_fee_payer_token_account_spl(&setup.fee_payer_policy_mint.pubkey())
+        .create_fee_payer_token_account_tpl(&setup.fee_payer_policy_mint.pubkey())
         .await
         .expect("Failed to create token account");
 
@@ -325,7 +325,7 @@ async fn test_approve_policy_violation() {
         .expect("Failed to mint tokens");
 
     let approve_instruction = token_instruction::approve(
-        &spl_token_interface::id(),
+        &tpl_token_interface::id(),
         &fee_payer_token_account.pubkey(),
         &recipient_pubkey,
         &fee_payer_pubkey,
@@ -347,7 +347,7 @@ async fn test_approve_policy_violation() {
 
     match result {
         Err(error) => {
-            error.assert_contains_message("Fee payer cannot be used for 'SPL Token Approve'");
+            error.assert_contains_message("Fee payer cannot be used for 'TPL Token Approve'");
         }
         Ok(_) => panic!("Expected error for approve policy violation"),
     }
@@ -360,7 +360,7 @@ async fn test_revoke_policy_violation() {
 
     let fee_payer_pubkey = FeePayerTestHelper::get_fee_payer_pubkey();
     let fee_payer_token_account = setup
-        .create_fee_payer_token_account_spl(&setup.fee_payer_policy_mint.pubkey())
+        .create_fee_payer_token_account_tpl(&setup.fee_payer_policy_mint.pubkey())
         .await
         .expect("Failed to create token account");
 
@@ -372,7 +372,7 @@ async fn test_revoke_policy_violation() {
     let malicious_tx = ctx
         .transaction_builder()
         .with_fee_payer(fee_payer_pubkey)
-        .with_spl_revoke(&fee_payer_token_account.pubkey(), &fee_payer_pubkey)
+        .with_tpl_revoke(&fee_payer_token_account.pubkey(), &fee_payer_pubkey)
         .build()
         .await
         .expect("Failed to create transaction with revoke");
@@ -382,7 +382,7 @@ async fn test_revoke_policy_violation() {
 
     match result {
         Err(error) => {
-            error.assert_contains_message("Fee payer cannot be used for 'SPL Token Revoke'");
+            error.assert_contains_message("Fee payer cannot be used for 'TPL Token Revoke'");
         }
         Ok(_) => panic!("Expected error for revoke policy violation"),
     }
@@ -435,7 +435,7 @@ async fn test_set_authority_policy_violation() {
     let recipient_pubkey = RecipientTestHelper::get_recipient_pubkey();
 
     let fee_payer_token_account = setup
-        .create_fee_payer_token_account_spl(&setup.fee_payer_policy_mint.pubkey())
+        .create_fee_payer_token_account_tpl(&setup.fee_payer_policy_mint.pubkey())
         .await
         .expect("Failed to create token account");
 
@@ -447,7 +447,7 @@ async fn test_set_authority_policy_violation() {
     let malicious_tx = ctx
         .transaction_builder()
         .with_fee_payer(fee_payer_pubkey)
-        .with_spl_set_authority(
+        .with_tpl_set_authority(
             &fee_payer_token_account.pubkey(),
             Some(&recipient_pubkey),
             token_instruction::AuthorityType::AccountOwner,
@@ -462,7 +462,7 @@ async fn test_set_authority_policy_violation() {
 
     match result {
         Err(error) => {
-            error.assert_contains_message("Fee payer cannot be used for 'SPL Token SetAuthority'");
+            error.assert_contains_message("Fee payer cannot be used for 'TPL Token SetAuthority'");
         }
         Ok(_) => panic!("Expected error for set_authority policy violation"),
     }
@@ -523,14 +523,14 @@ async fn test_mint_to_policy_violation() {
 
     let fee_payer_pubkey = FeePayerTestHelper::get_fee_payer_pubkey();
     let fee_payer_token_account = setup
-        .create_fee_payer_token_account_spl(&setup.fee_payer_policy_mint.pubkey())
+        .create_fee_payer_token_account_tpl(&setup.fee_payer_policy_mint.pubkey())
         .await
         .expect("Failed to create token account");
 
     let malicious_tx = ctx
         .transaction_builder()
         .with_fee_payer(fee_payer_pubkey)
-        .with_spl_mint_to(
+        .with_tpl_mint_to(
             &setup.fee_payer_policy_mint.pubkey(),
             &fee_payer_token_account.pubkey(),
             &fee_payer_pubkey,
@@ -545,7 +545,7 @@ async fn test_mint_to_policy_violation() {
 
     match result {
         Err(error) => {
-            error.assert_contains_message("Fee payer cannot be used for 'SPL Token MintTo'");
+            error.assert_contains_message("Fee payer cannot be used for 'TPL Token MintTo'");
         }
         Ok(_) => panic!("Expected error for mint_to policy violation"),
     }
@@ -593,14 +593,14 @@ async fn test_freeze_account_policy_violation() {
 
     let fee_payer_pubkey = FeePayerTestHelper::get_fee_payer_pubkey();
     let fee_payer_token_account = setup
-        .create_fee_payer_token_account_spl(&setup.fee_payer_policy_mint.pubkey())
+        .create_fee_payer_token_account_tpl(&setup.fee_payer_policy_mint.pubkey())
         .await
         .expect("Failed to create token account");
 
     let malicious_tx = ctx
         .transaction_builder()
         .with_fee_payer(fee_payer_pubkey)
-        .with_spl_freeze_account(
+        .with_tpl_freeze_account(
             &fee_payer_token_account.pubkey(),
             &setup.fee_payer_policy_mint.pubkey(),
             &fee_payer_pubkey,
@@ -614,7 +614,7 @@ async fn test_freeze_account_policy_violation() {
 
     match result {
         Err(error) => {
-            error.assert_contains_message("Fee payer cannot be used for 'SPL Token FreezeAccount'");
+            error.assert_contains_message("Fee payer cannot be used for 'TPL Token FreezeAccount'");
         }
         Ok(_) => panic!("Expected error for freeze_account policy violation"),
     }
@@ -663,13 +663,13 @@ async fn test_thaw_account_policy_violation() {
 
     let fee_payer_pubkey = FeePayerTestHelper::get_fee_payer_pubkey();
     let fee_payer_token_account = setup
-        .create_fee_payer_token_account_spl(&setup.fee_payer_policy_mint.pubkey())
+        .create_fee_payer_token_account_tpl(&setup.fee_payer_policy_mint.pubkey())
         .await
         .expect("Failed to create token account");
 
-    // Freeze the account first (directly on-chain, bypassing Kora validator)
-    let freeze_ix = spl_token_interface::instruction::freeze_account(
-        &spl_token_interface::id(),
+    // Freeze the account first (directly on-chain, bypassing TrezoaKora validator)
+    let freeze_ix = tpl_token_interface::instruction::freeze_account(
+        &tpl_token_interface::id(),
         &fee_payer_token_account.pubkey(),
         &setup.fee_payer_policy_mint.pubkey(),
         &fee_payer_pubkey,
@@ -694,7 +694,7 @@ async fn test_thaw_account_policy_violation() {
     let malicious_tx = ctx
         .transaction_builder()
         .with_fee_payer(fee_payer_pubkey)
-        .with_spl_thaw_account(
+        .with_tpl_thaw_account(
             &fee_payer_token_account.pubkey(),
             &setup.fee_payer_policy_mint.pubkey(),
             &fee_payer_pubkey,
@@ -708,7 +708,7 @@ async fn test_thaw_account_policy_violation() {
 
     match result {
         Err(error) => {
-            error.assert_contains_message("Fee payer cannot be used for 'SPL Token ThawAccount'");
+            error.assert_contains_message("Fee payer cannot be used for 'TPL Token ThawAccount'");
         }
         Ok(_) => panic!("Expected error for thaw_account policy violation"),
     }
@@ -725,9 +725,9 @@ async fn test_thaw_account_token2022_policy_violation() {
         .await
         .expect("Failed to create token account");
 
-    // Freeze the account first (directly on-chain, bypassing Kora validator)
-    let freeze_ix = spl_token_2022_interface::instruction::freeze_account(
-        &spl_token_2022_interface::id(),
+    // Freeze the account first (directly on-chain, bypassing TrezoaKora validator)
+    let freeze_ix = tpl_token_2022_interface::instruction::freeze_account(
+        &tpl_token_2022_interface::id(),
         &fee_payer_token_2022_account.pubkey(),
         &setup.fee_payer_policy_mint_2022.pubkey(),
         &fee_payer_pubkey,

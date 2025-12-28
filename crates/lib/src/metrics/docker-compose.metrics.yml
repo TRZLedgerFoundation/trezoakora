@@ -1,7 +1,7 @@
 services:
   prometheus:
     image: prom/prometheus:latest
-    container_name: kora-prometheus
+    container_name: trezoakora-prometheus
     ports:
       - "9090:9090"
     volumes:
@@ -16,11 +16,11 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway" # Allow access to host machine
     networks:
-      - kora-monitoring
+      - trezoakora-monitoring
 
   grafana:
     image: grafana/grafana:latest
-    container_name: kora-grafana
+    container_name: trezoakora-grafana
     ports:
       - "3000:3000"
     env_file:
@@ -32,10 +32,10 @@ services:
       - prometheus
     restart: unless-stopped
     networks:
-      - kora-monitoring
+      - trezoakora-monitoring
 
 networks:
-  kora-monitoring:
+  trezoakora-monitoring:
     driver: bridge
 
 volumes:

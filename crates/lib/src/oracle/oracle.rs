@@ -1,5 +1,5 @@
 use crate::{
-    error::KoraError,
+    error::TrezoaKoraError,
     oracle::{jupiter::JupiterPriceOracle, utils::OracleUtil},
 };
 use mockall::automock;
@@ -28,13 +28,13 @@ pub enum PriceSource {
 #[async_trait::async_trait]
 pub trait PriceOracle {
     async fn get_price(&self, client: &Client, mint_address: &str)
-        -> Result<TokenPrice, KoraError>;
+        -> Result<TokenPrice, TrezoaKoraError>;
 
     async fn get_prices(
         &self,
         client: &Client,
         mint_addresses: &[String],
-    ) -> Result<HashMap<String, TokenPrice>, KoraError>;
+    ) -> Result<HashMap<String, TokenPrice>, TrezoaKoraError>;
 }
 
 pub struct RetryingPriceOracle {
@@ -60,18 +60,18 @@ impl RetryingPriceOracle {
         Self { client: Client::new(), max_retries, base_delay, oracle }
     }
 
-    pub async fn get_token_price(&self, mint_address: &str) -> Result<TokenPrice, KoraError> {
+    pub async fn get_token_price(&self, mint_address: &str) -> Result<TokenPrice, TrezoaKoraError> {
         let prices = self.get_token_prices(&[mint_address.to_string()]).await?;
 
         prices.get(mint_address).cloned().ok_or_else(|| {
-            KoraError::InternalServerError("Failed to fetch token price".to_string())
+            TrezoaKoraError::InternalServerError("Failed to fetch token price".to_string())
         })
     }
 
     pub async fn get_token_prices(
         &self,
         mint_addresses: &[String],
-    ) -> Result<HashMap<String, TokenPrice>, KoraError> {
+    ) -> Result<HashMap<String, TokenPrice>, TrezoaKoraError> {
         if mint_addresses.is_empty() {
             return Ok(HashMap::new());
         }
@@ -95,7 +95,7 @@ impl RetryingPriceOracle {
         }
 
         Err(last_error.unwrap_or_else(|| {
-            KoraError::InternalServerError("Failed to fetch token prices".to_string())
+            TrezoaKoraError::InternalServerError("Failed to fetch token prices".to_string())
         }))
     }
 }

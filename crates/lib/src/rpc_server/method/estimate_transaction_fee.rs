@@ -1,9 +1,9 @@
-use solana_keychain::SolanaSigner;
+use trezoa_keychain::TrezoaSigner;
 use std::sync::Arc;
 use utoipa::ToSchema;
 
 use crate::{
-    error::KoraError,
+    error::TrezoaKoraError,
     fee::fee::FeeConfigUtil,
     rpc_server::middleware_utils::default_sig_verify,
     state::get_request_signer_with_signer_key,
@@ -11,7 +11,7 @@ use crate::{
 };
 
 use serde::{Deserialize, Serialize};
-use solana_client::nonblocking::rpc_client::RpcClient;
+use trezoa_client::nonblocking::rpc_client::RpcClient;
 
 #[cfg(not(test))]
 use crate::state::get_config;
@@ -45,12 +45,12 @@ pub struct EstimateTransactionFeeResponse {
 pub async fn estimate_transaction_fee(
     rpc_client: &Arc<RpcClient>,
     request: EstimateTransactionFeeRequest,
-) -> Result<EstimateTransactionFeeResponse, KoraError> {
+) -> Result<EstimateTransactionFeeResponse, TrezoaKoraError> {
     let transaction = TransactionUtil::decode_b64_transaction(&request.transaction)?;
 
     let signer = get_request_signer_with_signer_key(request.signer_key.as_deref())?;
     let config = get_config()?;
-    let payment_destination = config.kora.get_payment_address(&signer.pubkey())?;
+    let payment_destination = config.trezoakora.get_payment_address(&signer.pubkey())?;
 
     let validation_config = &config.validation;
     let fee_payer = signer.pubkey();
@@ -65,7 +65,7 @@ pub async fn estimate_transaction_fee(
     .await?;
 
     #[allow(clippy::needless_borrow)]
-    let fee_calculation = FeeConfigUtil::estimate_kora_fee(
+    let fee_calculation = FeeConfigUtil::estimate_trezoakora_fee(
         &mut resolved_transaction,
         &fee_payer,
         validation_config.is_payment_required(),
@@ -139,7 +139,7 @@ mod tests {
 
         assert!(result.is_err(), "Should fail with invalid signer key");
         let error = result.unwrap_err();
-        assert!(matches!(error, KoraError::ValidationError(_)), "Should return ValidationError");
+        assert!(matches!(error, TrezoaKoraError::ValidationError(_)), "Should return ValidationError");
     }
 
     #[tokio::test]
@@ -162,7 +162,7 @@ mod tests {
         let error = result.unwrap_err();
 
         assert!(
-            matches!(error, KoraError::InvalidTransaction(_)),
+            matches!(error, TrezoaKoraError::InvalidTransaction(_)),
             "Should return InvalidTransaction error due to invalid mint parsing"
         );
     }

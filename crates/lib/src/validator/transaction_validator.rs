@@ -1,16 +1,16 @@
 use crate::{
     config::{Config, FeePayerPolicy},
-    error::KoraError,
+    error::TrezoaKoraError,
     fee::fee::{FeeConfigUtil, TotalFeeCalculation},
     oracle::PriceSource,
     token::{interface::TokenMint, token::TokenUtil},
     transaction::{
-        ParsedSPLInstructionData, ParsedSPLInstructionType, ParsedSystemInstructionData,
+        ParsedTPLInstructionData, ParsedTPLInstructionType, ParsedSystemInstructionData,
         ParsedSystemInstructionType, VersionedTransactionResolved,
     },
 };
-use solana_client::nonblocking::rpc_client::RpcClient;
-use solana_sdk::{pubkey::Pubkey, transaction::VersionedTransaction};
+use trezoa_client::nonblocking::rpc_client::RpcClient;
+use trezoa_sdk::{pubkey::Pubkey, transaction::VersionedTransaction};
 use std::str::FromStr;
 
 use crate::fee::price::PriceModel;
@@ -27,7 +27,7 @@ pub struct TransactionValidator {
 }
 
 impl TransactionValidator {
-    pub fn new(config: &Config, fee_payer_pubkey: Pubkey) -> Result<Self, KoraError> {
+    pub fn new(config: &Config, fee_payer_pubkey: Pubkey) -> Result<Self, TrezoaKoraError> {
         let config = &config.validation;
 
         // Convert string program IDs to Pubkeys
@@ -36,12 +36,12 @@ impl TransactionValidator {
             .iter()
             .map(|addr| {
                 Pubkey::from_str(addr).map_err(|e| {
-                    KoraError::InternalServerError(format!(
+                    TrezoaKoraError::InternalServerError(format!(
                         "Invalid program address in config: {e}"
                     ))
                 })
             })
-            .collect::<Result<Vec<Pubkey>, KoraError>>()?;
+            .collect::<Result<Vec<Pubkey>, TrezoaKoraError>>()?;
 
         Ok(Self {
             fee_payer_pubkey,
@@ -55,7 +55,7 @@ impl TransactionValidator {
                 .map(|addr| Pubkey::from_str(addr))
                 .collect::<Result<Vec<Pubkey>, _>>()
                 .map_err(|e| {
-                    KoraError::InternalServerError(format!("Invalid allowed token address: {e}"))
+                    TrezoaKoraError::InternalServerError(format!("Invalid allowed token address: {e}"))
                 })?,
             disallowed_accounts: config
                 .disallowed_accounts
@@ -63,7 +63,7 @@ impl TransactionValidator {
                 .map(|addr| Pubkey::from_str(addr))
                 .collect::<Result<Vec<Pubkey>, _>>()
                 .map_err(|e| {
-                    KoraError::InternalServerError(format!(
+                    TrezoaKoraError::InternalServerError(format!(
                         "Invalid disallowed account address: {e}"
                     ))
                 })?,
@@ -76,10 +76,10 @@ impl TransactionValidator {
         mint: &Pubkey,
         config: &Config,
         rpc_client: &RpcClient,
-    ) -> Result<Box<dyn TokenMint + Send + Sync>, KoraError> {
+    ) -> Result<Box<dyn TokenMint + Send + Sync>, TrezoaKoraError> {
         // First check if the mint is in allowed tokens
         if !self.allowed_tokens.contains(mint) {
-            return Err(KoraError::InvalidTransaction(format!(
+            return Err(TrezoaKoraError::InvalidTransaction(format!(
                 "Mint {mint} is not a valid token mint"
             )));
         }
@@ -97,15 +97,15 @@ impl TransactionValidator {
         config: &Config,
         transaction_resolved: &mut VersionedTransactionResolved,
         rpc_client: &RpcClient,
-    ) -> Result<(), KoraError> {
+    ) -> Result<(), TrezoaKoraError> {
         if transaction_resolved.all_instructions.is_empty() {
-            return Err(KoraError::InvalidTransaction(
+            return Err(TrezoaKoraError::InvalidTransaction(
                 "Transaction contains no instructions".to_string(),
             ));
         }
 
         if transaction_resolved.all_account_keys.is_empty() {
-            return Err(KoraError::InvalidTransaction(
+            return Err(TrezoaKoraError::InvalidTransaction(
                 "Transaction contains no account keys".to_string(),
             ));
         }
@@ -120,9 +120,9 @@ impl TransactionValidator {
         Ok(())
     }
 
-    pub fn validate_lamport_fee(&self, fee: u64) -> Result<(), KoraError> {
+    pub fn validate_lamport_fee(&self, fee: u64) -> Result<(), TrezoaKoraError> {
         if fee > self.max_allowed_lamports {
-            return Err(KoraError::InvalidTransaction(format!(
+            return Err(TrezoaKoraError::InvalidTransaction(format!(
                 "Fee {} exceeds maximum allowed {}",
                 fee, self.max_allowed_lamports
             )));
@@ -130,9 +130,9 @@ impl TransactionValidator {
         Ok(())
     }
 
-    fn validate_signatures(&self, transaction: &VersionedTransaction) -> Result<(), KoraError> {
+    fn validate_signatures(&self, transaction: &VersionedTransaction) -> Result<(), TrezoaKoraError> {
         if transaction.signatures.len() > self.max_signatures as usize {
-            return Err(KoraError::InvalidTransaction(format!(
+            return Err(TrezoaKoraError::InvalidTransaction(format!(
                 "Too many signatures: {} > {}",
                 transaction.signatures.len(),
                 self.max_signatures
@@ -140,7 +140,7 @@ impl TransactionValidator {
         }
 
         if transaction.signatures.is_empty() {
-            return Err(KoraError::InvalidTransaction("No signatures found".to_string()));
+            return Err(TrezoaKoraError::InvalidTransaction("No signatures found".to_string()));
         }
 
         Ok(())
@@ -149,10 +149,10 @@ impl TransactionValidator {
     fn validate_programs(
         &self,
         transaction_resolved: &VersionedTransactionResolved,
-    ) -> Result<(), KoraError> {
+    ) -> Result<(), TrezoaKoraError> {
         for instruction in &transaction_resolved.all_instructions {
             if !self.allowed_programs.contains(&instruction.program_id) {
-                return Err(KoraError::InvalidTransaction(format!(
+                return Err(TrezoaKoraError::InvalidTransaction(format!(
                     "Program {} is not in the allowed list",
                     instruction.program_id
                 )));
@@ -164,7 +164,7 @@ impl TransactionValidator {
     fn validate_fee_payer_usage(
         &self,
         transaction_resolved: &mut VersionedTransactionResolved,
-    ) -> Result<(), KoraError> {
+    ) -> Result<(), TrezoaKoraError> {
         let system_instructions = transaction_resolved.get_or_parse_system_instructions()?;
 
         // Validate system program instructions
@@ -202,80 +202,80 @@ impl TransactionValidator {
             ParsedSystemInstructionData::SystemWithdrawNonceAccount { nonce_authority, .. } => nonce_authority,
             self.fee_payer_policy.system.nonce.allow_withdraw, "System Withdraw Nonce Account");
 
-        // Validate SPL instructions
-        let spl_instructions = transaction_resolved.get_or_parse_spl_instructions()?;
+        // Validate TPL instructions
+        let tpl_instructions = transaction_resolved.get_or_parse_tpl_instructions()?;
 
-        validate_spl!(self, spl_instructions, SplTokenTransfer,
-            ParsedSPLInstructionData::SplTokenTransfer { owner, is_2022, .. } => { owner, is_2022 },
-            self.fee_payer_policy.spl_token.allow_transfer,
+        validate_tpl!(self, tpl_instructions, TplTokenTransfer,
+            ParsedTPLInstructionData::TplTokenTransfer { owner, is_2022, .. } => { owner, is_2022 },
+            self.fee_payer_policy.tpl_token.allow_transfer,
             self.fee_payer_policy.token_2022.allow_transfer,
-            "SPL Token Transfer", "Token2022 Token Transfer");
+            "TPL Token Transfer", "Token2022 Token Transfer");
 
-        validate_spl!(self, spl_instructions, SplTokenApprove,
-            ParsedSPLInstructionData::SplTokenApprove { owner, is_2022, .. } => { owner, is_2022 },
-            self.fee_payer_policy.spl_token.allow_approve,
+        validate_tpl!(self, tpl_instructions, TplTokenApprove,
+            ParsedTPLInstructionData::TplTokenApprove { owner, is_2022, .. } => { owner, is_2022 },
+            self.fee_payer_policy.tpl_token.allow_approve,
             self.fee_payer_policy.token_2022.allow_approve,
-            "SPL Token Approve", "Token2022 Token Approve");
+            "TPL Token Approve", "Token2022 Token Approve");
 
-        validate_spl!(self, spl_instructions, SplTokenBurn,
-            ParsedSPLInstructionData::SplTokenBurn { owner, is_2022 } => { owner, is_2022 },
-            self.fee_payer_policy.spl_token.allow_burn,
+        validate_tpl!(self, tpl_instructions, TplTokenBurn,
+            ParsedTPLInstructionData::TplTokenBurn { owner, is_2022 } => { owner, is_2022 },
+            self.fee_payer_policy.tpl_token.allow_burn,
             self.fee_payer_policy.token_2022.allow_burn,
-            "SPL Token Burn", "Token2022 Token Burn");
+            "TPL Token Burn", "Token2022 Token Burn");
 
-        validate_spl!(self, spl_instructions, SplTokenCloseAccount,
-            ParsedSPLInstructionData::SplTokenCloseAccount { owner, is_2022 } => { owner, is_2022 },
-            self.fee_payer_policy.spl_token.allow_close_account,
+        validate_tpl!(self, tpl_instructions, TplTokenCloseAccount,
+            ParsedTPLInstructionData::TplTokenCloseAccount { owner, is_2022 } => { owner, is_2022 },
+            self.fee_payer_policy.tpl_token.allow_close_account,
             self.fee_payer_policy.token_2022.allow_close_account,
-            "SPL Token Close Account", "Token2022 Token Close Account");
+            "TPL Token Close Account", "Token2022 Token Close Account");
 
-        validate_spl!(self, spl_instructions, SplTokenRevoke,
-            ParsedSPLInstructionData::SplTokenRevoke { owner, is_2022 } => { owner, is_2022 },
-            self.fee_payer_policy.spl_token.allow_revoke,
+        validate_tpl!(self, tpl_instructions, TplTokenRevoke,
+            ParsedTPLInstructionData::TplTokenRevoke { owner, is_2022 } => { owner, is_2022 },
+            self.fee_payer_policy.tpl_token.allow_revoke,
             self.fee_payer_policy.token_2022.allow_revoke,
-            "SPL Token Revoke", "Token2022 Token Revoke");
+            "TPL Token Revoke", "Token2022 Token Revoke");
 
-        validate_spl!(self, spl_instructions, SplTokenSetAuthority,
-            ParsedSPLInstructionData::SplTokenSetAuthority { authority, is_2022 } => { authority, is_2022 },
-            self.fee_payer_policy.spl_token.allow_set_authority,
+        validate_tpl!(self, tpl_instructions, TplTokenSetAuthority,
+            ParsedTPLInstructionData::TplTokenSetAuthority { authority, is_2022 } => { authority, is_2022 },
+            self.fee_payer_policy.tpl_token.allow_set_authority,
             self.fee_payer_policy.token_2022.allow_set_authority,
-            "SPL Token SetAuthority", "Token2022 Token SetAuthority");
+            "TPL Token SetAuthority", "Token2022 Token SetAuthority");
 
-        validate_spl!(self, spl_instructions, SplTokenMintTo,
-            ParsedSPLInstructionData::SplTokenMintTo { mint_authority, is_2022 } => { mint_authority, is_2022 },
-            self.fee_payer_policy.spl_token.allow_mint_to,
+        validate_tpl!(self, tpl_instructions, TplTokenMintTo,
+            ParsedTPLInstructionData::TplTokenMintTo { mint_authority, is_2022 } => { mint_authority, is_2022 },
+            self.fee_payer_policy.tpl_token.allow_mint_to,
             self.fee_payer_policy.token_2022.allow_mint_to,
-            "SPL Token MintTo", "Token2022 Token MintTo");
+            "TPL Token MintTo", "Token2022 Token MintTo");
 
-        validate_spl!(self, spl_instructions, SplTokenInitializeMint,
-            ParsedSPLInstructionData::SplTokenInitializeMint { mint_authority, is_2022 } => { mint_authority, is_2022 },
-            self.fee_payer_policy.spl_token.allow_initialize_mint,
+        validate_tpl!(self, tpl_instructions, TplTokenInitializeMint,
+            ParsedTPLInstructionData::TplTokenInitializeMint { mint_authority, is_2022 } => { mint_authority, is_2022 },
+            self.fee_payer_policy.tpl_token.allow_initialize_mint,
             self.fee_payer_policy.token_2022.allow_initialize_mint,
-            "SPL Token InitializeMint", "Token2022 Token InitializeMint");
+            "TPL Token InitializeMint", "Token2022 Token InitializeMint");
 
-        validate_spl!(self, spl_instructions, SplTokenInitializeAccount,
-            ParsedSPLInstructionData::SplTokenInitializeAccount { owner, is_2022 } => { owner, is_2022 },
-            self.fee_payer_policy.spl_token.allow_initialize_account,
+        validate_tpl!(self, tpl_instructions, TplTokenInitializeAccount,
+            ParsedTPLInstructionData::TplTokenInitializeAccount { owner, is_2022 } => { owner, is_2022 },
+            self.fee_payer_policy.tpl_token.allow_initialize_account,
             self.fee_payer_policy.token_2022.allow_initialize_account,
-            "SPL Token InitializeAccount", "Token2022 Token InitializeAccount");
+            "TPL Token InitializeAccount", "Token2022 Token InitializeAccount");
 
-        validate_spl_multisig!(self, spl_instructions, SplTokenInitializeMultisig,
-            ParsedSPLInstructionData::SplTokenInitializeMultisig { signers, is_2022 } => { signers, is_2022 },
-            self.fee_payer_policy.spl_token.allow_initialize_multisig,
+        validate_tpl_multisig!(self, tpl_instructions, TplTokenInitializeMultisig,
+            ParsedTPLInstructionData::TplTokenInitializeMultisig { signers, is_2022 } => { signers, is_2022 },
+            self.fee_payer_policy.tpl_token.allow_initialize_multisig,
             self.fee_payer_policy.token_2022.allow_initialize_multisig,
-            "SPL Token InitializeMultisig", "Token2022 Token InitializeMultisig");
+            "TPL Token InitializeMultisig", "Token2022 Token InitializeMultisig");
 
-        validate_spl!(self, spl_instructions, SplTokenFreezeAccount,
-            ParsedSPLInstructionData::SplTokenFreezeAccount { freeze_authority, is_2022 } => { freeze_authority, is_2022 },
-            self.fee_payer_policy.spl_token.allow_freeze_account,
+        validate_tpl!(self, tpl_instructions, TplTokenFreezeAccount,
+            ParsedTPLInstructionData::TplTokenFreezeAccount { freeze_authority, is_2022 } => { freeze_authority, is_2022 },
+            self.fee_payer_policy.tpl_token.allow_freeze_account,
             self.fee_payer_policy.token_2022.allow_freeze_account,
-            "SPL Token FreezeAccount", "Token2022 Token FreezeAccount");
+            "TPL Token FreezeAccount", "Token2022 Token FreezeAccount");
 
-        validate_spl!(self, spl_instructions, SplTokenThawAccount,
-            ParsedSPLInstructionData::SplTokenThawAccount { freeze_authority, is_2022 } => { freeze_authority, is_2022 },
-            self.fee_payer_policy.spl_token.allow_thaw_account,
+        validate_tpl!(self, tpl_instructions, TplTokenThawAccount,
+            ParsedTPLInstructionData::TplTokenThawAccount { freeze_authority, is_2022 } => { freeze_authority, is_2022 },
+            self.fee_payer_policy.tpl_token.allow_thaw_account,
             self.fee_payer_policy.token_2022.allow_thaw_account,
-            "SPL Token ThawAccount", "Token2022 Token ThawAccount");
+            "TPL Token ThawAccount", "Token2022 Token ThawAccount");
 
         Ok(())
     }
@@ -285,12 +285,12 @@ impl TransactionValidator {
         config: &Config,
         transaction_resolved: &mut VersionedTransactionResolved,
         rpc_client: &RpcClient,
-    ) -> Result<(), KoraError> {
+    ) -> Result<(), TrezoaKoraError> {
         let total_outflow =
             self.calculate_total_outflow(config, transaction_resolved, rpc_client).await?;
 
         if total_outflow > self.max_allowed_lamports {
-            return Err(KoraError::InvalidTransaction(format!(
+            return Err(TrezoaKoraError::InvalidTransaction(format!(
                 "Total transfer amount {} exceeds maximum allowed {}",
                 total_outflow, self.max_allowed_lamports
             )));
@@ -302,10 +302,10 @@ impl TransactionValidator {
     fn validate_disallowed_accounts(
         &self,
         transaction_resolved: &VersionedTransactionResolved,
-    ) -> Result<(), KoraError> {
+    ) -> Result<(), TrezoaKoraError> {
         for instruction in &transaction_resolved.all_instructions {
             if self.disallowed_accounts.contains(&instruction.program_id) {
-                return Err(KoraError::InvalidTransaction(format!(
+                return Err(TrezoaKoraError::InvalidTransaction(format!(
                     "Program {} is disallowed",
                     instruction.program_id
                 )));
@@ -313,7 +313,7 @@ impl TransactionValidator {
 
             for account_index in instruction.accounts.iter() {
                 if self.disallowed_accounts.contains(&account_index.pubkey) {
-                    return Err(KoraError::InvalidTransaction(format!(
+                    return Err(TrezoaKoraError::InvalidTransaction(format!(
                         "Account {} is disallowed",
                         account_index.pubkey
                     )));
@@ -332,7 +332,7 @@ impl TransactionValidator {
         config: &Config,
         transaction_resolved: &mut VersionedTransactionResolved,
         rpc_client: &RpcClient,
-    ) -> Result<u64, KoraError> {
+    ) -> Result<u64, TrezoaKoraError> {
         FeeConfigUtil::calculate_fee_payer_outflow(
             &self.fee_payer_pubkey,
             transaction_resolved,
@@ -348,7 +348,7 @@ impl TransactionValidator {
         required_lamports: u64,
         rpc_client: &RpcClient,
         expected_payment_destination: &Pubkey,
-    ) -> Result<(), KoraError> {
+    ) -> Result<(), TrezoaKoraError> {
         if TokenUtil::verify_token_payment(
             config,
             transaction_resolved,
@@ -361,7 +361,7 @@ impl TransactionValidator {
             return Ok(());
         }
 
-        Err(KoraError::InvalidTransaction(format!(
+        Err(TrezoaKoraError::InvalidTransaction(format!(
             "Insufficient token payment. Required {required_lamports} lamports"
         )))
     }
@@ -369,7 +369,7 @@ impl TransactionValidator {
     pub fn validate_strict_pricing_with_fee(
         config: &Config,
         fee_calculation: &TotalFeeCalculation,
-    ) -> Result<(), KoraError> {
+    ) -> Result<(), TrezoaKoraError> {
         if !matches!(&config.validation.price.model, PriceModel::Fixed { strict: true, .. }) {
             return Ok(());
         }
@@ -383,7 +383,7 @@ impl TransactionValidator {
                 fixed_price_lamports,
                 total_fee_lamports
             );
-            return Err(KoraError::ValidationError(format!(
+            return Err(TrezoaKoraError::ValidationError(format!(
                     "Strict pricing violation: total fee ({} lamports) exceeds fixed price ({} lamports)",
                     total_fee_lamports,
                     fixed_price_lamports
@@ -405,9 +405,9 @@ mod tests {
     use serial_test::serial;
 
     use super::*;
-    use solana_message::{Message, VersionedMessage};
-    use solana_sdk::instruction::Instruction;
-    use solana_system_interface::{
+    use trezoa_message::{Message, VersionedMessage};
+    use trezoa_sdk::instruction::Instruction;
+    use trezoa_system_interface::{
         instruction::{
             assign, create_account, create_account_with_seed, transfer, transfer_with_seed,
         },
@@ -435,10 +435,10 @@ mod tests {
         update_config(config).unwrap();
     }
 
-    fn setup_spl_config_with_policy(policy: FeePayerPolicy) {
+    fn setup_tpl_config_with_policy(policy: FeePayerPolicy) {
         let config = ConfigMockBuilder::new()
             .with_price_source(PriceSource::Mock)
-            .with_allowed_programs(vec![spl_token_interface::id().to_string()])
+            .with_allowed_programs(vec![tpl_token_interface::id().to_string()])
             .with_max_allowed_lamports(1_000_000)
             .with_fee_payer_policy(policy)
             .build();
@@ -448,7 +448,7 @@ mod tests {
     fn setup_token2022_config_with_policy(policy: FeePayerPolicy) {
         let config = ConfigMockBuilder::new()
             .with_price_source(PriceSource::Mock)
-            .with_allowed_programs(vec![spl_token_2022_interface::id().to_string()])
+            .with_allowed_programs(vec![tpl_token_2022_interface::id().to_string()])
             .with_max_allowed_lamports(1_000_000)
             .with_fee_payer_policy(policy)
             .build();
@@ -674,11 +674,11 @@ mod tests {
 
     #[tokio::test]
     #[serial]
-    async fn test_fee_payer_policy_sol_transfers() {
+    async fn test_fee_payer_policy_trz_transfers() {
         let fee_payer = Pubkey::new_unique();
         let recipient = Pubkey::new_unique();
 
-        // Test with allow_sol_transfers = true
+        // Test with allow_trz_transfers = true
         let rpc_client = RpcMockBuilder::new().build();
         let mut policy = FeePayerPolicy::default();
         policy.system.allow_transfer = true;
@@ -697,7 +697,7 @@ mod tests {
             .await
             .is_ok());
 
-        // Test with allow_sol_transfers = false
+        // Test with allow_trz_transfers = false
         let rpc_client = RpcMockBuilder::new().build();
         let mut policy = FeePayerPolicy::default();
         policy.system.allow_transfer = false;
@@ -765,24 +765,24 @@ mod tests {
 
     #[tokio::test]
     #[serial]
-    async fn test_fee_payer_policy_spl_transfers() {
+    async fn test_fee_payer_policy_tpl_transfers() {
         let fee_payer = Pubkey::new_unique();
 
         let fee_payer_token_account = Pubkey::new_unique();
         let recipient_token_account = Pubkey::new_unique();
 
-        // Test with allow_spl_transfers = true
+        // Test with allow_tpl_transfers = true
         let rpc_client = RpcMockBuilder::new().build();
 
         let mut policy = FeePayerPolicy::default();
-        policy.spl_token.allow_transfer = true;
-        setup_spl_config_with_policy(policy);
+        policy.tpl_token.allow_transfer = true;
+        setup_tpl_config_with_policy(policy);
 
         let config = get_config().unwrap();
         let validator = TransactionValidator::new(&config, fee_payer).unwrap();
 
-        let transfer_ix = spl_token_interface::instruction::transfer(
-            &spl_token_interface::id(),
+        let transfer_ix = tpl_token_interface::instruction::transfer(
+            &tpl_token_interface::id(),
             &fee_payer_token_account,
             &recipient_token_account,
             &fee_payer, // fee payer is the signer
@@ -799,18 +799,18 @@ mod tests {
             .await
             .is_ok());
 
-        // Test with allow_spl_transfers = false
+        // Test with allow_tpl_transfers = false
         let rpc_client = RpcMockBuilder::new().build();
 
         let mut policy = FeePayerPolicy::default();
-        policy.spl_token.allow_transfer = false;
-        setup_spl_config_with_policy(policy);
+        policy.tpl_token.allow_transfer = false;
+        setup_tpl_config_with_policy(policy);
 
         let config = get_config().unwrap();
         let validator = TransactionValidator::new(&config, fee_payer).unwrap();
 
-        let transfer_ix = spl_token_interface::instruction::transfer(
-            &spl_token_interface::id(),
+        let transfer_ix = tpl_token_interface::instruction::transfer(
+            &tpl_token_interface::id(),
             &fee_payer_token_account,
             &recipient_token_account,
             &fee_payer, // fee payer is the signer
@@ -829,8 +829,8 @@ mod tests {
 
         // Test with other account as source - should always pass
         let other_signer = Pubkey::new_unique();
-        let transfer_ix = spl_token_interface::instruction::transfer(
-            &spl_token_interface::id(),
+        let transfer_ix = tpl_token_interface::instruction::transfer(
+            &tpl_token_interface::id(),
             &fee_payer_token_account,
             &recipient_token_account,
             &other_signer, // other account is the signer
@@ -859,7 +859,7 @@ mod tests {
 
         // Test with allow_token2022_transfers = true
         let rpc_client = RpcMockBuilder::new()
-            .with_mint_account(2) // Mock mint with 2 decimals for SPL outflow calculation
+            .with_mint_account(2) // Mock mint with 2 decimals for TPL outflow calculation
             .build();
         // Test with token_2022.allow_transfer = true
         let mut policy = FeePayerPolicy::default();
@@ -869,8 +869,8 @@ mod tests {
         let config = get_config().unwrap();
         let validator = TransactionValidator::new(&config, fee_payer).unwrap();
 
-        let transfer_ix = spl_token_2022_interface::instruction::transfer_checked(
-            &spl_token_2022_interface::id(),
+        let transfer_ix = tpl_token_2022_interface::instruction::transfer_checked(
+            &tpl_token_2022_interface::id(),
             &fee_payer_token_account,
             &mint,
             &recipient_token_account,
@@ -891,7 +891,7 @@ mod tests {
 
         // Test with allow_token2022_transfers = false
         let rpc_client = RpcMockBuilder::new()
-            .with_mint_account(2) // Mock mint with 2 decimals for SPL outflow calculation
+            .with_mint_account(2) // Mock mint with 2 decimals for TPL outflow calculation
             .build();
         let mut policy = FeePayerPolicy::default();
         policy.token_2022.allow_transfer = false;
@@ -900,8 +900,8 @@ mod tests {
         let config = get_config().unwrap();
         let validator = TransactionValidator::new(&config, fee_payer).unwrap();
 
-        let transfer_ix = spl_token_2022_interface::instruction::transfer_checked(
-            &spl_token_2022_interface::id(),
+        let transfer_ix = tpl_token_2022_interface::instruction::transfer_checked(
+            &tpl_token_2022_interface::id(),
             &fee_payer_token_account,
             &mint,
             &recipient_token_account,
@@ -924,8 +924,8 @@ mod tests {
 
         // Test with other account as source - should always pass
         let other_signer = Pubkey::new_unique();
-        let transfer_ix = spl_token_2022_interface::instruction::transfer_checked(
-            &spl_token_2022_interface::id(),
+        let transfer_ix = tpl_token_2022_interface::instruction::transfer_checked(
+            &tpl_token_2022_interface::id(),
             &fee_payer_token_account,
             &mint,
             &recipient_token_account,
@@ -1112,14 +1112,14 @@ mod tests {
 
         let rpc_client = RpcMockBuilder::new().build();
         let mut policy = FeePayerPolicy::default();
-        policy.spl_token.allow_burn = true;
-        setup_spl_config_with_policy(policy);
+        policy.tpl_token.allow_burn = true;
+        setup_tpl_config_with_policy(policy);
 
         let config = get_config().unwrap();
         let validator = TransactionValidator::new(&config, fee_payer).unwrap();
 
-        let burn_ix = spl_token_interface::instruction::burn(
-            &spl_token_interface::id(),
+        let burn_ix = tpl_token_interface::instruction::burn(
+            &tpl_token_interface::id(),
             &fee_payer_token_account,
             &mint,
             &fee_payer,
@@ -1141,14 +1141,14 @@ mod tests {
 
         let rpc_client = RpcMockBuilder::new().build();
         let mut policy = FeePayerPolicy::default();
-        policy.spl_token.allow_burn = false;
-        setup_spl_config_with_policy(policy);
+        policy.tpl_token.allow_burn = false;
+        setup_tpl_config_with_policy(policy);
 
         let config = get_config().unwrap();
         let validator = TransactionValidator::new(&config, fee_payer).unwrap();
 
-        let burn_ix = spl_token_interface::instruction::burn(
-            &spl_token_interface::id(),
+        let burn_ix = tpl_token_interface::instruction::burn(
+            &tpl_token_interface::id(),
             &fee_payer_token_account,
             &mint,
             &fee_payer,
@@ -1168,8 +1168,8 @@ mod tests {
             .is_err());
 
         // Test burn_checked instruction
-        let burn_checked_ix = spl_token_interface::instruction::burn_checked(
-            &spl_token_interface::id(),
+        let burn_checked_ix = tpl_token_interface::instruction::burn_checked(
+            &tpl_token_interface::id(),
             &fee_payer_token_account,
             &mint,
             &fee_payer,
@@ -1201,14 +1201,14 @@ mod tests {
 
         let rpc_client = RpcMockBuilder::new().build();
         let mut policy = FeePayerPolicy::default();
-        policy.spl_token.allow_close_account = true;
-        setup_spl_config_with_policy(policy);
+        policy.tpl_token.allow_close_account = true;
+        setup_tpl_config_with_policy(policy);
 
         let config = get_config().unwrap();
         let validator = TransactionValidator::new(&config, fee_payer).unwrap();
 
-        let close_ix = spl_token_interface::instruction::close_account(
-            &spl_token_interface::id(),
+        let close_ix = tpl_token_interface::instruction::close_account(
+            &tpl_token_interface::id(),
             &fee_payer_token_account,
             &destination,
             &fee_payer,
@@ -1228,14 +1228,14 @@ mod tests {
         // Test with allow_close_account = false
         let rpc_client = RpcMockBuilder::new().build();
         let mut policy = FeePayerPolicy::default();
-        policy.spl_token.allow_close_account = false;
-        setup_spl_config_with_policy(policy);
+        policy.tpl_token.allow_close_account = false;
+        setup_tpl_config_with_policy(policy);
 
         let config = get_config().unwrap();
         let validator = TransactionValidator::new(&config, fee_payer).unwrap();
 
-        let close_ix = spl_token_interface::instruction::close_account(
-            &spl_token_interface::id(),
+        let close_ix = tpl_token_interface::instruction::close_account(
+            &tpl_token_interface::id(),
             &fee_payer_token_account,
             &destination,
             &fee_payer,
@@ -1265,14 +1265,14 @@ mod tests {
 
         let rpc_client = RpcMockBuilder::new().build();
         let mut policy = FeePayerPolicy::default();
-        policy.spl_token.allow_approve = true;
-        setup_spl_config_with_policy(policy);
+        policy.tpl_token.allow_approve = true;
+        setup_tpl_config_with_policy(policy);
 
         let config = get_config().unwrap();
         let validator = TransactionValidator::new(&config, fee_payer).unwrap();
 
-        let approve_ix = spl_token_interface::instruction::approve(
-            &spl_token_interface::id(),
+        let approve_ix = tpl_token_interface::instruction::approve(
+            &tpl_token_interface::id(),
             &fee_payer_token_account,
             &delegate,
             &fee_payer,
@@ -1293,14 +1293,14 @@ mod tests {
         // Test with allow_approve = false
         let rpc_client = RpcMockBuilder::new().build();
         let mut policy = FeePayerPolicy::default();
-        policy.spl_token.allow_approve = false;
-        setup_spl_config_with_policy(policy);
+        policy.tpl_token.allow_approve = false;
+        setup_tpl_config_with_policy(policy);
 
         let config = get_config().unwrap();
         let validator = TransactionValidator::new(&config, fee_payer).unwrap();
 
-        let approve_ix = spl_token_interface::instruction::approve(
-            &spl_token_interface::id(),
+        let approve_ix = tpl_token_interface::instruction::approve(
+            &tpl_token_interface::id(),
             &fee_payer_token_account,
             &delegate,
             &fee_payer,
@@ -1321,8 +1321,8 @@ mod tests {
 
         // Test approve_checked instruction
         let mint = Pubkey::new_unique();
-        let approve_checked_ix = spl_token_interface::instruction::approve_checked(
-            &spl_token_interface::id(),
+        let approve_checked_ix = tpl_token_interface::instruction::approve_checked(
+            &tpl_token_interface::id(),
             &fee_payer_token_account,
             &mint,
             &delegate,
@@ -1362,8 +1362,8 @@ mod tests {
         let config = get_config().unwrap();
         let validator = TransactionValidator::new(&config, fee_payer).unwrap();
 
-        let burn_ix = spl_token_2022_interface::instruction::burn(
-            &spl_token_2022_interface::id(),
+        let burn_ix = tpl_token_2022_interface::instruction::burn(
+            &tpl_token_2022_interface::id(),
             &fee_payer_token_account,
             &mint,
             &fee_payer,
@@ -1399,8 +1399,8 @@ mod tests {
         let config = get_config().unwrap();
         let validator = TransactionValidator::new(&config, fee_payer).unwrap();
 
-        let close_ix = spl_token_2022_interface::instruction::close_account(
-            &spl_token_2022_interface::id(),
+        let close_ix = tpl_token_2022_interface::instruction::close_account(
+            &tpl_token_2022_interface::id(),
             &fee_payer_token_account,
             &destination,
             &fee_payer,
@@ -1435,8 +1435,8 @@ mod tests {
         let config = get_config().unwrap();
         let validator = TransactionValidator::new(&config, fee_payer).unwrap();
 
-        let approve_ix = spl_token_2022_interface::instruction::approve(
-            &spl_token_2022_interface::id(),
+        let approve_ix = tpl_token_2022_interface::instruction::approve(
+            &tpl_token_2022_interface::id(),
             &fee_payer_token_account,
             &delegate,
             &fee_payer,
@@ -1464,8 +1464,8 @@ mod tests {
         let config = get_config().unwrap();
         let validator = TransactionValidator::new(&config, fee_payer).unwrap();
 
-        let approve_ix = spl_token_2022_interface::instruction::approve(
-            &spl_token_2022_interface::id(),
+        let approve_ix = tpl_token_2022_interface::instruction::approve(
+            &tpl_token_2022_interface::id(),
             &fee_payer_token_account,
             &delegate,
             &fee_payer,
@@ -1486,8 +1486,8 @@ mod tests {
 
         // Test approve_checked instruction
         let mint = Pubkey::new_unique();
-        let approve_checked_ix = spl_token_2022_interface::instruction::approve_checked(
-            &spl_token_2022_interface::id(),
+        let approve_checked_ix = tpl_token_2022_interface::instruction::approve_checked(
+            &tpl_token_2022_interface::id(),
             &fee_payer_token_account,
             &mint,
             &delegate,
@@ -1513,7 +1513,7 @@ mod tests {
     #[tokio::test]
     #[serial]
     async fn test_fee_payer_policy_create_account() {
-        use solana_system_interface::instruction::create_account;
+        use trezoa_system_interface::instruction::create_account;
 
         let fee_payer = Pubkey::new_unique();
         let new_account = Pubkey::new_unique();
@@ -1557,7 +1557,7 @@ mod tests {
     #[tokio::test]
     #[serial]
     async fn test_fee_payer_policy_allocate() {
-        use solana_system_interface::instruction::allocate;
+        use trezoa_system_interface::instruction::allocate;
 
         let fee_payer = Pubkey::new_unique();
 
@@ -1599,7 +1599,7 @@ mod tests {
     #[tokio::test]
     #[serial]
     async fn test_fee_payer_policy_nonce_initialize() {
-        use solana_system_interface::instruction::create_nonce_account;
+        use trezoa_system_interface::instruction::create_nonce_account;
 
         let fee_payer = Pubkey::new_unique();
         let nonce_account = Pubkey::new_unique();
@@ -1645,7 +1645,7 @@ mod tests {
     #[tokio::test]
     #[serial]
     async fn test_fee_payer_policy_nonce_advance() {
-        use solana_system_interface::instruction::advance_nonce_account;
+        use trezoa_system_interface::instruction::advance_nonce_account;
 
         let fee_payer = Pubkey::new_unique();
         let nonce_account = Pubkey::new_unique();
@@ -1688,7 +1688,7 @@ mod tests {
     #[tokio::test]
     #[serial]
     async fn test_fee_payer_policy_nonce_withdraw() {
-        use solana_system_interface::instruction::withdraw_nonce_account;
+        use trezoa_system_interface::instruction::withdraw_nonce_account;
 
         let fee_payer = Pubkey::new_unique();
         let nonce_account = Pubkey::new_unique();
@@ -1732,7 +1732,7 @@ mod tests {
     #[tokio::test]
     #[serial]
     async fn test_fee_payer_policy_nonce_authorize() {
-        use solana_system_interface::instruction::authorize_nonce_account;
+        use trezoa_system_interface::instruction::authorize_nonce_account;
 
         let fee_payer = Pubkey::new_unique();
         let nonce_account = Pubkey::new_unique();
@@ -1791,7 +1791,7 @@ mod tests {
         let result = TransactionValidator::validate_strict_pricing_with_fee(&config, &fee_calc);
 
         assert!(result.is_err());
-        if let Err(KoraError::ValidationError(msg)) = result {
+        if let Err(TrezoaKoraError::ValidationError(msg)) = result {
             assert!(msg.contains("Strict pricing violation"));
             assert!(msg.contains("exceeds fixed price"));
         } else {

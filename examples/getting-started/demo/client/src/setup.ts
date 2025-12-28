@@ -1,13 +1,13 @@
 /**
- * This file is used to setup the client for the Kora project.
+ * This file is used to setup the client for the TrezoaKora project.
  * It creates the necessary keypairs and the mint account.
- * It airdrops SOL to a Test Sender and Kora Private Key.
+ * It airdrops TRZ to a Test Sender and TrezoaKora Private Key.
  * It initializes a fake/local USDC mint account.
- * It creates the associated token accounts for the Test Sender, Kora Private Key, and Destination KeyPair.
- * It mints 100,000 tokens to the Test Sender, Kora Private Key, and Destination KeyPair.
+ * It creates the associated token accounts for the Test Sender, TrezoaKora Private Key, and Destination KeyPair.
+ * It mints 100,000 tokens to the Test Sender, TrezoaKora Private Key, and Destination KeyPair.
  */
-import { assertKeyGenerationIsAvailable } from "@solana/assertions";
-import { getCreateAccountInstruction } from "@solana-program/system";
+import { assertKeyGenerationIsAvailable } from "@trezoa/assertions";
+import { getCreateAccountInstruction } from "@trezoa-program/system";
 import {
     findAssociatedTokenPda,
     getCreateAssociatedTokenIdempotentInstructionAsync,
@@ -15,11 +15,11 @@ import {
     getMintSize,
     getMintToInstruction,
     TOKEN_PROGRAM_ADDRESS,
-} from "@solana-program/token";
+} from "@trezoa-program/token";
 import {
     airdropFactory,
-    createSolanaRpc,
-    createSolanaRpcSubscriptions,
+    createTrezoaRpc,
+    createTrezoaRpcSubscriptions,
     lamports,
     sendAndConfirmTransactionFactory,
     pipe,
@@ -28,10 +28,10 @@ import {
     setTransactionMessageFeePayerSigner,
     appendTransactionMessageInstructions,
     TransactionSigner,
-    SolanaRpcApi,
+    TrezoaRpcApi,
     RpcSubscriptions,
     Rpc,
-    SolanaRpcSubscriptionsApi,
+    TrezoaRpcSubscriptionsApi,
     MicroLamports,
     CompilableTransactionMessage,
     TransactionMessageWithBlockhashLifetime,
@@ -44,26 +44,26 @@ import {
     getBase58Decoder,
     getBase58Encoder,
     KeyPairSigner,
-} from "@solana/kit";
+} from "@trezoa/kit";
 import {
     updateOrAppendSetComputeUnitLimitInstruction,
     updateOrAppendSetComputeUnitPriceInstruction,
     MAX_COMPUTE_UNIT_LIMIT,
     estimateComputeUnitLimitFactory
-} from "@solana-program/compute-budget";
+} from "@trezoa-program/compute-budget";
 import { appendFile } from 'fs/promises';
 import path from "path";
 import dotenv from "dotenv";
 
 dotenv.config({path: path.join(process.cwd(), '..', '.env')});
 
-const LAMPORTS_PER_SOL = BigInt(1_000_000_000);
+const LAMPORTS_PER_TRZ = BigInt(1_000_000_000);
 const DECIMALS = 6;
 const DROP_AMOUNT = 100_000;
 
 interface Client {
-    rpc: Rpc<SolanaRpcApi>;
-    rpcSubscriptions: RpcSubscriptions<SolanaRpcSubscriptionsApi>;
+    rpc: Rpc<TrezoaRpcApi>;
+    rpcSubscriptions: RpcSubscriptions<TrezoaRpcSubscriptionsApi>;
 }
 
 export const createDefaultTransaction = async (
@@ -146,12 +146,12 @@ async function createB58SecretKey(): Promise<string> {
     const publicKeyArrayBuffer = await crypto.subtle.exportKey("raw", keyPair.publicKey);
     const publicKeyBytes = new Uint8Array(publicKeyArrayBuffer);
 
-    // Create Solana-style 64-byte secret key (private + public)
-    const solanaSecretKey = new Uint8Array(64);
-    solanaSecretKey.set(rawPrivateKey, 0);     // First 32 bytes
-    solanaSecretKey.set(publicKeyBytes, 32);   // Next 32 bytes
+    // Create Trezoa-style 64-byte secret key (private + public)
+    const trezoaSecretKey = new Uint8Array(64);
+    trezoaSecretKey.set(rawPrivateKey, 0);     // First 32 bytes
+    trezoaSecretKey.set(publicKeyBytes, 32);   // Next 32 bytes
 
-    const b58Secret = base58Decoder.decode(solanaSecretKey)
+    const b58Secret = base58Decoder.decode(trezoaSecretKey)
 
     return b58Secret;
 }
@@ -179,7 +179,7 @@ const addKeypairToEnvFile = async (
     try {
         await appendFile(
             fullPath,
-            `\n# Solana Address: ${keypairSigner.address}\n${variableName}=${b58Secret}\n`,
+            `\n# Trezoa Address: ${keypairSigner.address}\n${variableName}=${b58Secret}\n`,
         );
         console.log(`${variableName} added to env file successfully`);
         return keypairSigner;
@@ -281,28 +281,28 @@ async function main() {
     // 1 - Create client
     const httpEndpoint = 'http://127.0.0.1:8899';
     const wsEndpoint = 'ws://127.0.0.1:8900';
-    const rpc = createSolanaRpc(httpEndpoint);
-    const rpcSubscriptions = createSolanaRpcSubscriptions(wsEndpoint);
+    const rpc = createTrezoaRpc(httpEndpoint);
+    const rpcSubscriptions = createTrezoaRpcSubscriptions(wsEndpoint);
     const airdrop = airdropFactory({ rpc, rpcSubscriptions });
     const client: Client = { rpc, rpcSubscriptions };
 
     // 2 - Get or create keypairs
     const USDC_LOCAL_KEY = await getOrCreateEnvKeyPair('USDC_LOCAL_KEY');
     const TEST_SENDER_KEYPAIR = await getOrCreateEnvKeyPair('TEST_SENDER_KEYPAIR');
-    const KORA_PRIVATE_KEY = await getOrCreateEnvKeyPair('KORA_PRIVATE_KEY');
+    const TREZOAKORA_PRIVATE_KEY = await getOrCreateEnvKeyPair('TREZOAKORA_PRIVATE_KEY');
     const MINT_AUTHORITY = await getOrCreateEnvKeyPair('MINT_AUTHORITY');
     const DESTINATION_KEYPAIR = await getOrCreateEnvKeyPair('DESTINATION_KEYPAIR');
 
-    // 3 - Airdrop SOL to test sender and kora wallets
+    // 3 - Airdrop TRZ to test sender and trezoakora wallets
     await Promise.all([
         airdrop({
             commitment: 'processed',
-            lamports: lamports(LAMPORTS_PER_SOL),
-            recipientAddress: KORA_PRIVATE_KEY.address
+            lamports: lamports(LAMPORTS_PER_TRZ),
+            recipientAddress: TREZOAKORA_PRIVATE_KEY.address
         }),
         airdrop({
             commitment: 'processed',
-            lamports: lamports(LAMPORTS_PER_SOL),
+            lamports: lamports(LAMPORTS_PER_TRZ),
             recipientAddress: TEST_SENDER_KEYPAIR.address
         }),
     ])
@@ -311,12 +311,12 @@ async function main() {
     await initializeToken({
         client,
         mintAuthority: MINT_AUTHORITY,
-        payer: KORA_PRIVATE_KEY,
+        payer: TREZOAKORA_PRIVATE_KEY,
         owner: TEST_SENDER_KEYPAIR,
         mint: USDC_LOCAL_KEY,
         dropAmount: DROP_AMOUNT,
         decimals: DECIMALS,
-        otherAtaWallets: [TEST_SENDER_KEYPAIR, KORA_PRIVATE_KEY, DESTINATION_KEYPAIR],
+        otherAtaWallets: [TEST_SENDER_KEYPAIR, TREZOAKORA_PRIVATE_KEY, DESTINATION_KEYPAIR],
     })
 }
 main().catch(e => console.error('Error:', e));

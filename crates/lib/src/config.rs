@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
-use solana_sdk::pubkey::Pubkey;
-use spl_token_2022_interface::extension::ExtensionType;
+use trezoa_sdk::pubkey::Pubkey;
+use tpl_token_2022_interface::extension::ExtensionType;
 use std::{fs, path::Path, str::FromStr};
 use toml;
 use utoipa::ToSchema;
@@ -13,7 +13,7 @@ use crate::{
         DEFAULT_METRICS_SCRAPE_INTERVAL, DEFAULT_USAGE_LIMIT_FALLBACK_IF_UNAVAILABLE,
         DEFAULT_USAGE_LIMIT_MAX_TRANSACTIONS,
     },
-    error::KoraError,
+    error::TrezoaKoraError,
     fee::price::{PriceConfig, PriceModel},
     oracle::PriceSource,
     sanitize_error,
@@ -22,7 +22,7 @@ use crate::{
 #[derive(Clone, Deserialize)]
 pub struct Config {
     pub validation: ValidationConfig,
-    pub kora: KoraConfig,
+    pub trezoakora: KoraConfig,
     #[serde(default)]
     pub metrics: MetricsConfig,
 }
@@ -62,49 +62,49 @@ impl Default for FeePayerBalanceMetricsConfig {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub enum SplTokenConfig {
+pub enum TplTokenConfig {
     All,
     #[serde(untagged)]
     Allowlist(Vec<String>),
 }
 
-impl Default for SplTokenConfig {
+impl Default for TplTokenConfig {
     fn default() -> Self {
-        SplTokenConfig::Allowlist(vec![])
+        TplTokenConfig::Allowlist(vec![])
     }
 }
 
-impl<'a> IntoIterator for &'a SplTokenConfig {
+impl<'a> IntoIterator for &'a TplTokenConfig {
     type Item = &'a String;
     type IntoIter = std::slice::Iter<'a, String>;
 
     fn into_iter(self) -> Self::IntoIter {
         match self {
-            SplTokenConfig::All => [].iter(),
-            SplTokenConfig::Allowlist(tokens) => tokens.iter(),
+            TplTokenConfig::All => [].iter(),
+            TplTokenConfig::Allowlist(tokens) => tokens.iter(),
         }
     }
 }
 
-impl SplTokenConfig {
+impl TplTokenConfig {
     pub fn has_token(&self, token: &str) -> bool {
         match self {
-            SplTokenConfig::All => true,
-            SplTokenConfig::Allowlist(tokens) => tokens.iter().any(|s| s == token),
+            TplTokenConfig::All => true,
+            TplTokenConfig::Allowlist(tokens) => tokens.iter().any(|s| s == token),
         }
     }
 
     pub fn has_tokens(&self) -> bool {
         match self {
-            SplTokenConfig::All => true,
-            SplTokenConfig::Allowlist(tokens) => !tokens.is_empty(),
+            TplTokenConfig::All => true,
+            TplTokenConfig::Allowlist(tokens) => !tokens.is_empty(),
         }
     }
 
     pub fn as_slice(&self) -> &[String] {
         match self {
-            SplTokenConfig::All => &[],
-            SplTokenConfig::Allowlist(v) => v.as_slice(),
+            TplTokenConfig::All => &[],
+            TplTokenConfig::Allowlist(v) => v.as_slice(),
         }
     }
 }
@@ -115,7 +115,7 @@ pub struct ValidationConfig {
     pub max_signatures: u64,
     pub allowed_programs: Vec<String>,
     pub allowed_tokens: Vec<String>,
-    pub allowed_spl_paid_tokens: SplTokenConfig,
+    pub allowed_tpl_paid_tokens: TplTokenConfig,
     pub disallowed_accounts: Vec<String>,
     pub price_source: PriceSource,
     #[serde(default)] // Default for backward compatibility
@@ -132,7 +132,7 @@ impl ValidationConfig {
     }
 
     pub fn supports_token(&self, token: &str) -> bool {
-        self.allowed_spl_paid_tokens.has_token(token)
+        self.allowed_tpl_paid_tokens.has_token(token)
     }
 }
 
@@ -141,7 +141,7 @@ pub struct FeePayerPolicy {
     #[serde(default)]
     pub system: SystemInstructionPolicy,
     #[serde(default)]
-    pub spl_token: SplTokenInstructionPolicy,
+    pub tpl_token: TplTokenInstructionPolicy,
     #[serde(default)]
     pub token_2022: Token2022InstructionPolicy,
 }
@@ -175,30 +175,30 @@ pub struct NonceInstructionPolicy {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema, Default)]
-pub struct SplTokenInstructionPolicy {
-    /// Allow fee payer to be the owner in SPL Token Transfer/TransferChecked instructions
+pub struct TplTokenInstructionPolicy {
+    /// Allow fee payer to be the owner in TPL Token Transfer/TransferChecked instructions
     pub allow_transfer: bool,
-    /// Allow fee payer to be the owner in SPL Token Burn/BurnChecked instructions
+    /// Allow fee payer to be the owner in TPL Token Burn/BurnChecked instructions
     pub allow_burn: bool,
-    /// Allow fee payer to be the owner in SPL Token CloseAccount instructions
+    /// Allow fee payer to be the owner in TPL Token CloseAccount instructions
     pub allow_close_account: bool,
-    /// Allow fee payer to be the owner in SPL Token Approve/ApproveChecked instructions
+    /// Allow fee payer to be the owner in TPL Token Approve/ApproveChecked instructions
     pub allow_approve: bool,
-    /// Allow fee payer to be the owner in SPL Token Revoke instructions
+    /// Allow fee payer to be the owner in TPL Token Revoke instructions
     pub allow_revoke: bool,
-    /// Allow fee payer to be the current authority in SPL Token SetAuthority instructions
+    /// Allow fee payer to be the current authority in TPL Token SetAuthority instructions
     pub allow_set_authority: bool,
-    /// Allow fee payer to be the mint authority in SPL Token MintTo/MintToChecked instructions
+    /// Allow fee payer to be the mint authority in TPL Token MintTo/MintToChecked instructions
     pub allow_mint_to: bool,
-    /// Allow fee payer to be the mint authority in SPL Token InitializeMint/InitializeMint2 instructions
+    /// Allow fee payer to be the mint authority in TPL Token InitializeMint/InitializeMint2 instructions
     pub allow_initialize_mint: bool,
-    /// Allow fee payer to be set as the owner in SPL Token InitializeAccount instructions
+    /// Allow fee payer to be set as the owner in TPL Token InitializeAccount instructions
     pub allow_initialize_account: bool,
-    /// Allow fee payer to be a signer in SPL Token InitializeMultisig instructions
+    /// Allow fee payer to be a signer in TPL Token InitializeMultisig instructions
     pub allow_initialize_multisig: bool,
-    /// Allow fee payer to be the freeze authority in SPL Token FreezeAccount instructions
+    /// Allow fee payer to be the freeze authority in TPL Token FreezeAccount instructions
     pub allow_freeze_account: bool,
-    /// Allow fee payer to be the freeze authority in SPL Token ThawAccount instructions
+    /// Allow fee payer to be the freeze authority in TPL Token ThawAccount instructions
     pub allow_thaw_account: bool,
 }
 
@@ -257,7 +257,7 @@ impl Token2022Config {
     pub fn initialize(&mut self) -> Result<(), String> {
         let mut mint_extensions = Vec::new();
         for name in &self.blocked_mint_extensions {
-            match crate::token::spl_token_2022_util::parse_mint_extension_string(name) {
+            match crate::token::tpl_token_2022_util::parse_mint_extension_string(name) {
                 Some(ext) => {
                     mint_extensions.push(ext);
                 }
@@ -265,7 +265,7 @@ impl Token2022Config {
                     return Err(format!(
                         "Invalid mint extension name: '{}'. Valid names are: {:?}",
                         name,
-                        crate::token::spl_token_2022_util::get_all_mint_extension_names()
+                        crate::token::tpl_token_2022_util::get_all_mint_extension_names()
                     ));
                 }
             }
@@ -274,7 +274,7 @@ impl Token2022Config {
 
         let mut account_extensions = Vec::new();
         for name in &self.blocked_account_extensions {
-            match crate::token::spl_token_2022_util::parse_account_extension_string(name) {
+            match crate::token::tpl_token_2022_util::parse_account_extension_string(name) {
                 Some(ext) => {
                     account_extensions.push(ext);
                 }
@@ -282,7 +282,7 @@ impl Token2022Config {
                     return Err(format!(
                         "Invalid account extension name: '{}'. Valid names are: {:?}",
                         name,
-                        crate::token::spl_token_2022_util::get_all_account_extension_names()
+                        crate::token::tpl_token_2022_util::get_all_account_extension_names()
                     ));
                 }
             }
@@ -478,7 +478,7 @@ impl Default for KoraConfig {
 pub struct UsageLimitConfig {
     /// Enable per-wallet usage limiting
     pub enabled: bool,
-    /// Cache URL for shared usage limiting across multiple Kora instances
+    /// Cache URL for shared usage limiting across multiple TrezoaKora instances
     pub cache_url: Option<String>,
     /// Default maximum transactions per wallet (0 = unlimited)
     pub max_transactions: u64,
@@ -512,16 +512,16 @@ impl Default for AuthConfig {
 }
 
 impl Config {
-    pub fn load_config<P: AsRef<Path>>(path: P) -> Result<Config, KoraError> {
+    pub fn load_config<P: AsRef<Path>>(path: P) -> Result<Config, TrezoaKoraError> {
         let contents = fs::read_to_string(path).map_err(|e| {
-            KoraError::InternalServerError(format!(
+            TrezoaKoraError::InternalServerError(format!(
                 "Failed to read config file: {}",
                 sanitize_error!(e)
             ))
         })?;
 
         let mut config: Config = toml::from_str(&contents).map_err(|e| {
-            KoraError::InternalServerError(format!(
+            TrezoaKoraError::InternalServerError(format!(
                 "Failed to parse config file: {}",
                 sanitize_error!(e)
             ))
@@ -529,7 +529,7 @@ impl Config {
 
         // Initialize Token2022Config to parse and cache extensions
         config.validation.token_2022.initialize().map_err(|e| {
-            KoraError::InternalServerError(format!(
+            TrezoaKoraError::InternalServerError(format!(
                 "Failed to initialize Token2022 config: {}",
                 sanitize_error!(e)
             ))
@@ -541,10 +541,10 @@ impl Config {
 
 impl KoraConfig {
     /// Get the payment address from config or fallback to signer address
-    pub fn get_payment_address(&self, signer_pubkey: &Pubkey) -> Result<Pubkey, KoraError> {
+    pub fn get_payment_address(&self, signer_pubkey: &Pubkey) -> Result<Pubkey, TrezoaKoraError> {
         if let Some(payment_address_str) = &self.payment_address {
             let payment_address = Pubkey::from_str(payment_address_str).map_err(|_| {
-                KoraError::InternalServerError("Invalid payment_address format".to_string())
+                TrezoaKoraError::InternalServerError("Invalid payment_address format".to_string())
             })?;
             Ok(payment_address)
         } else {
@@ -567,7 +567,7 @@ mod tests {
         let config = ConfigBuilder::new()
             .with_programs(vec!["program1", "program2"])
             .with_tokens(vec!["token1", "token2"])
-            .with_spl_paid_tokens(SplTokenConfig::Allowlist(vec!["token3".to_string()]))
+            .with_tpl_paid_tokens(TplTokenConfig::Allowlist(vec!["token3".to_string()]))
             .with_disallowed_accounts(vec!["account1"])
             .build_config()
             .unwrap();
@@ -577,14 +577,14 @@ mod tests {
         assert_eq!(config.validation.allowed_programs, vec!["program1", "program2"]);
         assert_eq!(config.validation.allowed_tokens, vec!["token1", "token2"]);
         assert_eq!(
-            config.validation.allowed_spl_paid_tokens,
-            SplTokenConfig::Allowlist(vec!["token3".to_string()])
+            config.validation.allowed_tpl_paid_tokens,
+            TplTokenConfig::Allowlist(vec!["token3".to_string()])
         );
         assert_eq!(config.validation.disallowed_accounts, vec!["account1"]);
         assert_eq!(config.validation.price_source, PriceSource::Jupiter);
-        assert_eq!(config.kora.rate_limit, 100);
-        assert!(config.kora.enabled_methods.estimate_transaction_fee);
-        assert!(config.kora.enabled_methods.sign_and_send_transaction);
+        assert_eq!(config.trezoakora.rate_limit, 100);
+        assert!(config.trezoakora.enabled_methods.estimate_transaction_fee);
+        assert!(config.trezoakora.enabled_methods.sign_and_send_transaction);
     }
 
     #[test]
@@ -592,7 +592,7 @@ mod tests {
         let config = ConfigBuilder::new()
             .with_programs(vec!["program1", "program2"])
             .with_tokens(vec!["token1", "token2"])
-            .with_spl_paid_tokens(SplTokenConfig::Allowlist(vec!["token3".to_string()]))
+            .with_tpl_paid_tokens(TplTokenConfig::Allowlist(vec!["token3".to_string()]))
             .with_disallowed_accounts(vec!["account1"])
             .with_enabled_methods(&[
                 ("liveness", true),
@@ -608,15 +608,15 @@ mod tests {
             .build_config()
             .unwrap();
 
-        assert_eq!(config.kora.rate_limit, 100);
-        assert!(config.kora.enabled_methods.liveness);
-        assert!(!config.kora.enabled_methods.estimate_transaction_fee);
-        assert!(config.kora.enabled_methods.get_supported_tokens);
-        assert!(config.kora.enabled_methods.sign_transaction);
-        assert!(!config.kora.enabled_methods.sign_and_send_transaction);
-        assert!(config.kora.enabled_methods.transfer_transaction);
-        assert!(config.kora.enabled_methods.get_blockhash);
-        assert!(config.kora.enabled_methods.get_config);
+        assert_eq!(config.trezoakora.rate_limit, 100);
+        assert!(config.trezoakora.enabled_methods.liveness);
+        assert!(!config.trezoakora.enabled_methods.estimate_transaction_fee);
+        assert!(config.trezoakora.enabled_methods.get_supported_tokens);
+        assert!(config.trezoakora.enabled_methods.sign_transaction);
+        assert!(!config.trezoakora.enabled_methods.sign_and_send_transaction);
+        assert!(config.trezoakora.enabled_methods.transfer_transaction);
+        assert!(config.trezoakora.enabled_methods.get_blockhash);
+        assert!(config.trezoakora.enabled_methods.get_config);
     }
 
     #[test]
@@ -632,11 +632,11 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_spl_payment_config() {
+    fn test_parse_tpl_payment_config() {
         let config =
-            ConfigBuilder::new().with_spl_paid_tokens(SplTokenConfig::All).build_config().unwrap();
+            ConfigBuilder::new().with_tpl_paid_tokens(TplTokenConfig::All).build_config().unwrap();
 
-        assert_eq!(config.validation.allowed_spl_paid_tokens, SplTokenConfig::All);
+        assert_eq!(config.validation.allowed_tpl_paid_tokens, TplTokenConfig::All);
     }
 
     #[test]
@@ -698,7 +698,7 @@ mod tests {
         let result = ConfigBuilder::new().with_invalid_price("invalid_type").build_config();
 
         assert!(result.is_err());
-        if let Err(KoraError::InternalServerError(msg)) = result {
+        if let Err(TrezoaKoraError::InternalServerError(msg)) = result {
             assert!(msg.contains("Failed to parse config file"));
         } else {
             panic!("Expected InternalServerError with parsing failure message");
@@ -738,7 +738,7 @@ mod tests {
             .build_config();
 
         assert!(result.is_err());
-        if let Err(KoraError::InternalServerError(msg)) = result {
+        if let Err(TrezoaKoraError::InternalServerError(msg)) = result {
             assert!(msg.contains("Failed to initialize Token2022 config"));
             assert!(msg.contains("Invalid mint extension name: 'invalid_extension'"));
         } else {
@@ -796,20 +796,20 @@ mod tests {
             .build_config()
             .unwrap();
 
-        assert_eq!(config.kora.cache.url, Some("redis://localhost:6379".to_string()));
-        assert!(config.kora.cache.enabled);
-        assert_eq!(config.kora.cache.default_ttl, 600);
-        assert_eq!(config.kora.cache.account_ttl, 120);
+        assert_eq!(config.trezoakora.cache.url, Some("redis://localhost:6379".to_string()));
+        assert!(config.trezoakora.cache.enabled);
+        assert_eq!(config.trezoakora.cache.default_ttl, 600);
+        assert_eq!(config.trezoakora.cache.account_ttl, 120);
     }
 
     #[test]
     fn test_cache_config_default() {
         let config = ConfigBuilder::new().build_config().unwrap();
 
-        assert_eq!(config.kora.cache.url, None);
-        assert!(!config.kora.cache.enabled);
-        assert_eq!(config.kora.cache.default_ttl, 300);
-        assert_eq!(config.kora.cache.account_ttl, 60);
+        assert_eq!(config.trezoakora.cache.url, None);
+        assert!(!config.trezoakora.cache.enabled);
+        assert_eq!(config.trezoakora.cache.default_ttl, 300);
+        assert_eq!(config.trezoakora.cache.account_ttl, 60);
     }
 
     #[test]
@@ -819,21 +819,21 @@ mod tests {
             .build_config()
             .unwrap();
 
-        assert!(config.kora.usage_limit.enabled);
-        assert_eq!(config.kora.usage_limit.cache_url, Some("redis://localhost:6379".to_string()));
-        assert_eq!(config.kora.usage_limit.max_transactions, 10);
-        assert!(!config.kora.usage_limit.fallback_if_unavailable);
+        assert!(config.trezoakora.usage_limit.enabled);
+        assert_eq!(config.trezoakora.usage_limit.cache_url, Some("redis://localhost:6379".to_string()));
+        assert_eq!(config.trezoakora.usage_limit.max_transactions, 10);
+        assert!(!config.trezoakora.usage_limit.fallback_if_unavailable);
     }
 
     #[test]
     fn test_usage_limit_config_default() {
         let config = ConfigBuilder::new().build_config().unwrap();
 
-        assert!(!config.kora.usage_limit.enabled);
-        assert_eq!(config.kora.usage_limit.cache_url, None);
-        assert_eq!(config.kora.usage_limit.max_transactions, DEFAULT_USAGE_LIMIT_MAX_TRANSACTIONS);
+        assert!(!config.trezoakora.usage_limit.enabled);
+        assert_eq!(config.trezoakora.usage_limit.cache_url, None);
+        assert_eq!(config.trezoakora.usage_limit.max_transactions, DEFAULT_USAGE_LIMIT_MAX_TRANSACTIONS);
         assert_eq!(
-            config.kora.usage_limit.fallback_if_unavailable,
+            config.trezoakora.usage_limit.fallback_if_unavailable,
             DEFAULT_USAGE_LIMIT_FALLBACK_IF_UNAVAILABLE
         );
     }
@@ -845,16 +845,16 @@ mod tests {
             .build_config()
             .unwrap();
 
-        assert!(config.kora.usage_limit.enabled);
-        assert_eq!(config.kora.usage_limit.max_transactions, 0); // 0 = unlimited
+        assert!(config.trezoakora.usage_limit.enabled);
+        assert_eq!(config.trezoakora.usage_limit.max_transactions, 0); // 0 = unlimited
     }
 
     #[test]
     fn test_max_request_body_size_default() {
         let config = ConfigBuilder::new().build_config().unwrap();
 
-        assert_eq!(config.kora.max_request_body_size, DEFAULT_MAX_REQUEST_BODY_SIZE);
-        assert_eq!(config.kora.max_request_body_size, 2 * 1024 * 1024); // 2 MB
+        assert_eq!(config.trezoakora.max_request_body_size, DEFAULT_MAX_REQUEST_BODY_SIZE);
+        assert_eq!(config.trezoakora.max_request_body_size, 2 * 1024 * 1024); // 2 MB
     }
 
     #[test]
@@ -863,6 +863,6 @@ mod tests {
         let config =
             ConfigBuilder::new().with_max_request_body_size(custom_size).build_config().unwrap();
 
-        assert_eq!(config.kora.max_request_body_size, custom_size);
+        assert_eq!(config.trezoakora.max_request_body_size, custom_size);
     }
 }

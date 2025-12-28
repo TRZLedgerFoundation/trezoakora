@@ -2,10 +2,10 @@
 // Network URLs
 // ============================================================================
 
-/// Default local Solana RPC URL
+/// Default local Trezoa RPC URL
 pub const DEFAULT_RPC_URL: &str = "http://127.0.0.1:8899";
 
-/// Default Kora test server URL
+/// Default TrezoaKora test server URL
 pub const TEST_SERVER_URL: &str = "http://127.0.0.1:8080";
 
 // ============================================================================
@@ -54,8 +54,8 @@ pub const TEST_SERVER_URL_ENV: &str = "TEST_SERVER_URL";
 /// RPC URL environment variable
 pub const RPC_URL_ENV: &str = "RPC_URL";
 
-/// KORA private key environment variable
-pub const KORA_PRIVATE_KEY_ENV: &str = "KORA_PRIVATE_KEY";
+/// TREZOAKORA private key environment variable
+pub const TREZOAKORA_PRIVATE_KEY_ENV: &str = "TREZOAKORA_PRIVATE_KEY";
 
 /// Signer 2 private key environment variable
 pub const SIGNER_2_KEYPAIR_ENV: &str = "SIGNER_2_KEYPAIR";

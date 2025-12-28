@@ -14,7 +14,7 @@ no-entrypoint = []
 default = []
 
 [dependencies]
-solana-program = "1.18"
-spl-transfer-hook-interface = "0.6"
-spl-tlv-account-resolution = "0.6"
-spl-type-length-value = "0.4"
+trezoa-program = "1.18"
+tpl-transfer-hook-interface = "0.6"
+tpl-tlv-account-resolution = "0.6"
+tpl-type-length-value = "0.4"

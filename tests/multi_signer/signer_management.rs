@@ -1,7 +1,7 @@
 use crate::common::*;
 use jsonrpsee::rpc_params;
 use serde_json::json;
-use solana_sdk::signature::Signer;
+use trezoa_sdk::signature::Signer;
 use std::str::FromStr;
 
 #[tokio::test]
@@ -94,7 +94,7 @@ async fn test_signer_key_consistency() {
             "transferTransaction",
             rpc_params![
                 100u64,
-                "11111111111111111111111111111111", // Native SOL
+                "11111111111111111111111111111111", // Native TRZ
                 SenderTestHelper::get_test_sender_keypair().pubkey().to_string(),
                 RecipientTestHelper::get_recipient_pubkey().to_string(),
                 &first_signer_pubkey
@@ -117,13 +117,13 @@ async fn test_signer_key_consistency() {
     let sender = SenderTestHelper::get_test_sender_keypair();
     let token_mint = USDCMintTestHelper::get_test_usdc_mint_pubkey();
     let fee_payer =
-        solana_sdk::pubkey::Pubkey::from_str(&first_signer_pubkey).expect("Invalid pubkey");
+        trezoa_sdk::pubkey::Pubkey::from_str(&first_signer_pubkey).expect("Invalid pubkey");
 
     let signed_tx = ctx
         .transaction_builder()
         .with_fee_payer(fee_payer)
         .with_signer(&sender)
-        .with_spl_transfer(
+        .with_tpl_transfer(
             &token_mint,
             &sender.pubkey(),
             &fee_payer,

@@ -1,5 +1,5 @@
 {
-  "name": "kora-demo-client",
+  "name": "trezoakora-demo-client",
   "version": "1.0.0",
   "description": "",
   "scripts": {
@@ -8,22 +8,22 @@
     "init-env": "tsx src/setup.ts"
   },
   "keywords": [
-    "solana",
-    "kora",
+    "trezoa",
+    "trezoakora",
     "client"
   ],
-  "author": "Solana Foundation",
+  "author": "TRZ Ledger Foundation",
   "license": "MIT",
   "packageManager": "pnpm@10.12.3",
   "dependencies": {
-    "@solana/kora": "^0.1.0",
-    "@solana-program/compute-budget": "^0.8.0",
-    "@solana-program/memo": "^0.7.0",
-    "@solana-program/system": "^0.7.0",
-    "@solana-program/token": "^0.5.1",
-    "@solana/assertions": "^2.3.0",
-    "@solana/kit": "^2.3.0",
-    "@solana/transaction-confirmation": "^2.3.0",
+    "@trezoa/trezoakora": "^0.1.0",
+    "@trezoa-program/compute-budget": "^0.8.0",
+    "@trezoa-program/memo": "^0.7.0",
+    "@trezoa-program/system": "^0.7.0",
+    "@trezoa-program/token": "^0.5.1",
+    "@trezoa/assertions": "^2.3.0",
+    "@trezoa/kit": "^2.3.0",
+    "@trezoa/transaction-confirmation": "^2.3.0",
     "dotenv": "^17.2.0"
   },
   "devDependencies": {

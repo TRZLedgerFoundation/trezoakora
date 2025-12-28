@@ -9,16 +9,16 @@ import {
     type VerifyRequest,
     type VerifyResponse
 } from "@x402/core/types";
-import { SOLANA_DEVNET_CAIP2 } from "@x402/svm";
-import { KoraClient } from "@solana/kora";
+import { TREZOA_DEVNET_CAIP2 } from "@x402/svm";
+import { TrezoaKoraClient } from "@trezoa/trezoakora";
 import path from "path";
 
 config({ path: path.join(process.cwd(), '..', '.env') });
 
-const KORA_RPC_URL = process.env.KORA_RPC_URL || "http://localhost:8080/";
+const TREZOAKORA_RPC_URL = process.env.TREZOAKORA_RPC_URL || "http://localhost:8080/";
 const FACILITATOR_PORT = process.env.FACILITATOR_PORT || 3000;
-const NETWORK = (process.env.NETWORK || SOLANA_DEVNET_CAIP2) as Network;
-const KORA_API_KEY = process.env.KORA_API_KEY || "kora_facilitator_api_key_example";
+const NETWORK = (process.env.NETWORK || TREZOA_DEVNET_CAIP2) as Network;
+const TREZOAKORA_API_KEY = process.env.TREZOAKORA_API_KEY || "trezoakora_facilitator_api_key_example";
 
 const app = express();
 
@@ -38,7 +38,7 @@ app.get("/verify", (req: Request, res: Response) => {
 app.post("/verify", async (req: Request, res: Response) => {
     console.log("=== /verify endpoint called ===");
 
-    const kora = new KoraClient({ rpcUrl: KORA_RPC_URL, apiKey: KORA_API_KEY });
+    const trezoakora = new TrezoaKoraClient({ rpcUrl: TREZOAKORA_RPC_URL, apiKey: TREZOAKORA_API_KEY });
 
     try {
         const body: VerifyRequest = req.body;
@@ -47,13 +47,13 @@ app.post("/verify", async (req: Request, res: Response) => {
             paymentRequirements: PaymentRequirements;
         };
 
-        if(!paymentRequirements.network.startsWith("solana:")) {
+        if(!paymentRequirements.network.startsWith("trezoa:")) {
             throw new Error("Invalid network");
         }
 
         const { transaction } = paymentPayload.payload as { transaction: string };
         
-        const { signed_transaction } = await kora.signTransaction({
+        const { signed_transaction } = await trezoakora.signTransaction({
             transaction
         });
 
@@ -65,7 +65,7 @@ app.post("/verify", async (req: Request, res: Response) => {
     } catch (error) {
         const verifyResponse: VerifyResponse = {
             isValid: false,
-            invalidReason: error instanceof Error ? error.message : "Kora validation failed",
+            invalidReason: error instanceof Error ? error.message : "TrezoaKora validation failed",
         };
         res.status(400).json(verifyResponse);
     }
@@ -85,9 +85,9 @@ app.get("/settle", (req: Request, res: Response) => {
 app.get("/supported", async (req: Request, res: Response) => {
     console.log("=== /supported endpoint called ===");
     try {
-        const kora = new KoraClient({ rpcUrl: KORA_RPC_URL, apiKey: KORA_API_KEY });
+        const trezoakora = new TrezoaKoraClient({ rpcUrl: TREZOAKORA_RPC_URL, apiKey: TREZOAKORA_API_KEY });
 
-        const { signer_address } = await kora.getPayerSigner();
+        const { signer_address } = await trezoakora.getPayerSigner();
 
         const kinds = [{
             x402Version: 2,
@@ -117,14 +117,14 @@ app.post("/settle", async (req: Request, res: Response) => {
             paymentRequirements: PaymentRequirements;
         };
 
-        if(!paymentRequirements.network.startsWith("solana:")) {
+        if(!paymentRequirements.network.startsWith("trezoa:")) {
             throw new Error("Invalid network");
         }
 
         const { transaction } = paymentPayload.payload as { transaction: string };
 
-        const kora = new KoraClient({ rpcUrl: KORA_RPC_URL, apiKey: KORA_API_KEY });
-        const { signature } = await kora.signAndSendTransaction({
+        const trezoakora = new TrezoaKoraClient({ rpcUrl: TREZOAKORA_RPC_URL, apiKey: TREZOAKORA_API_KEY });
+        const { signature } = await trezoakora.signAndSendTransaction({
             transaction
         });
 
@@ -140,7 +140,7 @@ app.post("/settle", async (req: Request, res: Response) => {
             transaction: "",
             success: false,
             network: NETWORK,
-            errorReason: error instanceof Error ? error.message : "Kora validation failed",
+            errorReason: error instanceof Error ? error.message : "TrezoaKora validation failed",
         };
         res.status(400).json(response);
     }

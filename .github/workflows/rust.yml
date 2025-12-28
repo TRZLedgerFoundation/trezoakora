@@ -60,10 +60,10 @@ jobs:
           path: target/debug/
 
       - name: Make binaries executable
-        run: chmod +x target/debug/kora target/debug/test_runner
+        run: chmod +x target/debug/trezoakora target/debug/test_runner
 
-      - name: Setup Solana CLI
-        uses: ./.github/actions/setup-solana
+      - name: Setup Trezoa CLI
+        uses: ./.github/actions/setup-trezoa
 
       - name: Run integration tests
         uses: ./.github/actions/run-test-runner

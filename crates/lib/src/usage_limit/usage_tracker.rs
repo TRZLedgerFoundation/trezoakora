@@ -2,11 +2,11 @@ use std::{collections::HashSet, sync::Arc};
 
 use deadpool_redis::Runtime;
 use redis::AsyncCommands;
-use solana_sdk::{pubkey::Pubkey, transaction::VersionedTransaction};
+use trezoa_sdk::{pubkey::Pubkey, transaction::VersionedTransaction};
 use tokio::sync::OnceCell;
 
 use super::usage_store::{RedisUsageStore, UsageStore};
-use crate::{config::Config, error::KoraError, sanitize_error, state::get_signer_pool};
+use crate::{config::Config, error::TrezoaKoraError, sanitize_error, state::get_signer_pool};
 
 #[cfg(not(test))]
 use crate::state::get_config;
@@ -14,7 +14,7 @@ use crate::state::get_config;
 #[cfg(test)]
 use crate::tests::config_mock::mock_state::get_config;
 
-const USAGE_CACHE_KEY: &str = "kora:usage_limit";
+const USAGE_CACHE_KEY: &str = "trezoakora:usage_limit";
 
 /// Global usage limiter instance
 static USAGE_LIMITER: OnceCell<Option<UsageTracker>> = OnceCell::const_new();
@@ -22,7 +22,7 @@ static USAGE_LIMITER: OnceCell<Option<UsageTracker>> = OnceCell::const_new();
 pub struct UsageTracker {
     store: Arc<dyn UsageStore>,
     max_transactions: u64,
-    kora_signers: HashSet<Pubkey>,
+    trezoakora_signers: HashSet<Pubkey>,
     fallback_if_unavailable: bool,
 }
 
@@ -30,10 +30,10 @@ impl UsageTracker {
     pub fn new(
         store: Arc<dyn UsageStore>,
         max_transactions: u64,
-        kora_signers: HashSet<Pubkey>,
+        trezoakora_signers: HashSet<Pubkey>,
         fallback_if_unavailable: bool,
     ) -> Self {
-        Self { store, max_transactions, kora_signers, fallback_if_unavailable }
+        Self { store, max_transactions, trezoakora_signers, fallback_if_unavailable }
     }
 
     fn get_usage_key(&self, wallet: &Pubkey) -> String {
@@ -43,22 +43,22 @@ impl UsageTracker {
     /// Handle store errors according to fallback configuration
     fn handle_store_error(
         &self,
-        error: KoraError,
+        error: TrezoaKoraError,
         operation: &str,
         wallet: &Pubkey,
-    ) -> Result<(), KoraError> {
+    ) -> Result<(), TrezoaKoraError> {
         log::error!("Failed to {operation} for {wallet}: {error}");
         if self.fallback_if_unavailable {
             log::error!("Fallback enabled - allowing transaction due to store error");
             Ok(()) // Allow transaction when fallback is enabled
         } else {
-            Err(KoraError::InternalServerError(format!(
+            Err(TrezoaKoraError::InternalServerError(format!(
                 "Usage limit store unavailable and fallback disabled: {error}"
             )))
         }
     }
 
-    async fn check_usage_limit(&self, wallet: &Pubkey) -> Result<(), KoraError> {
+    async fn check_usage_limit(&self, wallet: &Pubkey) -> Result<(), TrezoaKoraError> {
         // Skip check if unlimited (0)
         if self.max_transactions == 0 {
             return Ok(());
@@ -76,7 +76,7 @@ impl UsageTracker {
         };
 
         if current_count >= self.max_transactions as u32 {
-            return Err(KoraError::UsageLimitExceeded(format!(
+            return Err(TrezoaKoraError::UsageLimitExceeded(format!(
                 "Wallet {wallet} exceeded limit: {}/{}",
                 current_count + 1,
                 self.max_transactions
@@ -96,11 +96,11 @@ impl UsageTracker {
         Ok(())
     }
 
-    fn get_usage_limiter() -> Result<Option<&'static UsageTracker>, KoraError> {
+    fn get_usage_limiter() -> Result<Option<&'static UsageTracker>, TrezoaKoraError> {
         match USAGE_LIMITER.get() {
             Some(limiter) => Ok(limiter.as_ref()),
             None => {
-                Err(KoraError::InternalServerError("Usage limiter not initialized".to_string()))
+                Err(TrezoaKoraError::InternalServerError("Usage limiter not initialized".to_string()))
             }
         }
     }
@@ -109,11 +109,11 @@ impl UsageTracker {
     fn extract_transaction_sender(
         &self,
         transaction: &VersionedTransaction,
-    ) -> Result<Option<Pubkey>, KoraError> {
+    ) -> Result<Option<Pubkey>, TrezoaKoraError> {
         let account_keys = transaction.message.static_account_keys();
 
         if account_keys.is_empty() {
-            return Err(KoraError::InvalidTransaction(
+            return Err(TrezoaKoraError::InvalidTransaction(
                 "Transaction has no account keys".to_string(),
             ));
         }
@@ -124,7 +124,7 @@ impl UsageTracker {
             .collect::<Vec<_>>();
 
         for signer in &signers {
-            if !self.kora_signers.contains(signer) {
+            if !self.trezoakora_signers.contains(signer) {
                 return Ok(Some(**signer));
             }
         }
@@ -137,21 +137,21 @@ impl UsageTracker {
     }
 
     /// Initialize the global usage limiter
-    pub async fn init_usage_limiter() -> Result<(), KoraError> {
+    pub async fn init_usage_limiter() -> Result<(), TrezoaKoraError> {
         let config = get_config()?;
 
-        if !config.kora.usage_limit.enabled {
+        if !config.trezoakora.usage_limit.enabled {
             log::info!("Usage limiting disabled");
             USAGE_LIMITER.set(None).map_err(|_| {
-                KoraError::InternalServerError("Usage limiter already initialized".to_string())
+                TrezoaKoraError::InternalServerError("Usage limiter already initialized".to_string())
             })?;
             return Ok(());
         }
 
-        let usage_limiter = if let Some(cache_url) = &config.kora.usage_limit.cache_url {
+        let usage_limiter = if let Some(cache_url) = &config.trezoakora.usage_limit.cache_url {
             let cfg = deadpool_redis::Config::from_url(cache_url);
             let pool = cfg.create_pool(Some(Runtime::Tokio1)).map_err(|e| {
-                KoraError::InternalServerError(format!(
+                TrezoaKoraError::InternalServerError(format!(
                     "Failed to create Redis pool: {}",
                     sanitize_error!(e)
                 ))
@@ -159,7 +159,7 @@ impl UsageTracker {
 
             // Test Redis connection
             let mut conn = pool.get().await.map_err(|e| {
-                KoraError::InternalServerError(format!(
+                TrezoaKoraError::InternalServerError(format!(
                     "Failed to connect to Redis: {}",
                     sanitize_error!(e)
                 ))
@@ -167,7 +167,7 @@ impl UsageTracker {
 
             // Simple connection test
             let _: Option<String> = conn.get("__usage_limiter_test__").await.map_err(|e| {
-                KoraError::InternalServerError(format!(
+                TrezoaKoraError::InternalServerError(format!(
                     "Redis connection test failed: {}",
                     sanitize_error!(e)
                 ))
@@ -175,10 +175,10 @@ impl UsageTracker {
 
             log::info!(
                 "Usage limiter initialized with max {} transactions",
-                config.kora.usage_limit.max_transactions
+                config.trezoakora.usage_limit.max_transactions
             );
 
-            let kora_signers = get_signer_pool()?
+            let trezoakora_signers = get_signer_pool()?
                 .get_signers_info()
                 .iter()
                 .filter_map(|info| info.public_key.parse().ok())
@@ -187,9 +187,9 @@ impl UsageTracker {
             let store = Arc::new(RedisUsageStore::new(pool));
             Some(UsageTracker::new(
                 store,
-                config.kora.usage_limit.max_transactions,
-                kora_signers,
-                config.kora.usage_limit.fallback_if_unavailable,
+                config.trezoakora.usage_limit.max_transactions,
+                trezoakora_signers,
+                config.trezoakora.usage_limit.fallback_if_unavailable,
             ))
         } else {
             log::info!("Usage limiting enabled but no cache_url configured - disabled");
@@ -197,7 +197,7 @@ impl UsageTracker {
         };
 
         USAGE_LIMITER.set(usage_limiter).map_err(|_| {
-            KoraError::InternalServerError("Usage limiter already initialized".to_string())
+            TrezoaKoraError::InternalServerError("Usage limiter already initialized".to_string())
         })?;
 
         Ok(())
@@ -207,18 +207,18 @@ impl UsageTracker {
     pub async fn check_transaction_usage_limit(
         config: &Config,
         transaction: &VersionedTransaction,
-    ) -> Result<(), KoraError> {
+    ) -> Result<(), TrezoaKoraError> {
         if let Some(limiter) = Self::get_usage_limiter()? {
             let sender = limiter.extract_transaction_sender(transaction)?;
             if let Some(sender) = sender {
                 limiter.check_usage_limit(&sender).await?;
             }
             Ok(())
-        } else if config.kora.usage_limit.enabled
-            && !config.kora.usage_limit.fallback_if_unavailable
+        } else if config.trezoakora.usage_limit.enabled
+            && !config.trezoakora.usage_limit.fallback_if_unavailable
         {
             // Usage limiting enabled but limiter unavailable and fallback disabled
-            Err(KoraError::InternalServerError(
+            Err(TrezoaKoraError::InternalServerError(
                 "Usage limiter unavailable and fallback disabled".to_string(),
             ))
         } else {
@@ -239,16 +239,16 @@ mod tests {
     #[tokio::test]
     async fn test_get_usage_key_format() {
         let wallet = Pubkey::new_unique();
-        let expected_key = format!("kora:usage_limit:{wallet}");
+        let expected_key = format!("trezoakora:usage_limit:{wallet}");
 
-        assert_eq!(expected_key, format!("kora:usage_limit:{wallet}"));
+        assert_eq!(expected_key, format!("trezoakora:usage_limit:{wallet}"));
     }
 
     #[tokio::test]
     async fn test_usage_limit_enforcement() {
         let store = Arc::new(InMemoryUsageStore::new());
-        let kora_signers = HashSet::new();
-        let tracker = UsageTracker::new(store, 2, kora_signers, true);
+        let trezoakora_signers = HashSet::new();
+        let tracker = UsageTracker::new(store, 2, trezoakora_signers, true);
 
         let wallet = Pubkey::new_unique();
 
@@ -267,8 +267,8 @@ mod tests {
     #[tokio::test]
     async fn test_independent_wallet_limits() {
         let store = Arc::new(InMemoryUsageStore::new());
-        let kora_signers = HashSet::new();
-        let tracker = UsageTracker::new(store, 2, kora_signers, true);
+        let trezoakora_signers = HashSet::new();
+        let tracker = UsageTracker::new(store, 2, trezoakora_signers, true);
 
         let wallet1 = Pubkey::new_unique();
         let wallet2 = Pubkey::new_unique();
@@ -287,8 +287,8 @@ mod tests {
     #[tokio::test]
     async fn test_unlimited_usage() {
         let store = Arc::new(InMemoryUsageStore::new());
-        let kora_signers = HashSet::new();
-        let tracker = UsageTracker::new(store, 0, kora_signers, true); // 0 = unlimited
+        let trezoakora_signers = HashSet::new();
+        let tracker = UsageTracker::new(store, 0, trezoakora_signers, true); // 0 = unlimited
 
         let wallet = Pubkey::new_unique();
 
@@ -357,8 +357,8 @@ mod tests {
     #[tokio::test]
     async fn test_usage_limit_store_get_error_fallback_enabled() {
         let store = Arc::new(ErrorUsageStore::new(true, false)); // get() will error
-        let kora_signers = HashSet::new();
-        let tracker = UsageTracker::new(store, 2, kora_signers, true); // fallback enabled
+        let trezoakora_signers = HashSet::new();
+        let tracker = UsageTracker::new(store, 2, trezoakora_signers, true); // fallback enabled
 
         let wallet = Pubkey::new_unique();
 
@@ -370,8 +370,8 @@ mod tests {
     #[tokio::test]
     async fn test_usage_limit_store_get_error_fallback_disabled() {
         let store = Arc::new(ErrorUsageStore::new(true, false)); // get() will error
-        let kora_signers = HashSet::new();
-        let tracker = UsageTracker::new(store, 2, kora_signers, false); // fallback disabled
+        let trezoakora_signers = HashSet::new();
+        let tracker = UsageTracker::new(store, 2, trezoakora_signers, false); // fallback disabled
 
         let wallet = Pubkey::new_unique();
 
@@ -387,8 +387,8 @@ mod tests {
     #[tokio::test]
     async fn test_usage_limit_store_increment_error_fallback_enabled() {
         let store = Arc::new(ErrorUsageStore::new(false, true)); // increment() will error
-        let kora_signers = HashSet::new();
-        let tracker = UsageTracker::new(store, 2, kora_signers, true); // fallback enabled
+        let trezoakora_signers = HashSet::new();
+        let tracker = UsageTracker::new(store, 2, trezoakora_signers, true); // fallback enabled
 
         let wallet = Pubkey::new_unique();
 
@@ -400,8 +400,8 @@ mod tests {
     #[tokio::test]
     async fn test_usage_limit_store_increment_error_fallback_disabled() {
         let store = Arc::new(ErrorUsageStore::new(false, true)); // increment() will error
-        let kora_signers = HashSet::new();
-        let tracker = UsageTracker::new(store, 2, kora_signers, false); // fallback disabled
+        let trezoakora_signers = HashSet::new();
+        let tracker = UsageTracker::new(store, 2, trezoakora_signers, false); // fallback disabled
 
         let wallet = Pubkey::new_unique();
 

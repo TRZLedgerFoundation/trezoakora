@@ -1,5 +1,5 @@
 use crate::common::{auth_helpers::create_valid_hmac_signature_headers, *};
-use kora_lib::constant::X_API_KEY;
+use trezoakora_lib::constant::X_API_KEY;
 
 /// Test API key authentication with valid key
 #[tokio::test]

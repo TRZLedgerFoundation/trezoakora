@@ -2,8 +2,8 @@ import express from "express";
 import { Network, paymentMiddleware } from "@x402/express";
 import { HTTPFacilitatorClient, x402ResourceServer } from "@x402/core/server";
 import { ExactSvmScheme } from "@x402/svm/exact/server";
-import { SOLANA_DEVNET_CAIP2 } from "@x402/svm";
-import { Address } from "@solana/addresses";
+import { TREZOA_DEVNET_CAIP2 } from "@x402/svm";
+import { Address } from "@trezoa/addresses";
 import { config } from "dotenv";
 import path from "path";
 
@@ -13,11 +13,11 @@ type Resource = `${string}://${string}`;
 
 const API_PORT = process.env.API_PORT || 4021;
 const FACILITATOR_URL = process.env.FACILITATOR_URL as Resource || "http://localhost:3000";
-const NETWORK = (process.env.NETWORK || SOLANA_DEVNET_CAIP2) as Network;
-const KORA_SIGNER_ADDRESS = process.env.KORA_SIGNER_ADDRESS as Address;
+const NETWORK = (process.env.NETWORK || TREZOA_DEVNET_CAIP2) as Network;
+const TREZOAKORA_SIGNER_ADDRESS = process.env.TREZOAKORA_SIGNER_ADDRESS as Address;
 
-if (!KORA_SIGNER_ADDRESS) {
-    throw new Error("KORA_SIGNER_ADDRESS is not set");
+if (!TREZOAKORA_SIGNER_ADDRESS) {
+    throw new Error("TREZOAKORA_SIGNER_ADDRESS is not set");
 }
 if (!FACILITATOR_URL) {
     console.error("❌ FACILITATOR_URL environment variable is required");
@@ -37,7 +37,7 @@ app.use(
                       scheme: "exact",
                       price: "$0.001",
                       network: NETWORK,
-                      payTo: KORA_SIGNER_ADDRESS,
+                      payTo: TREZOAKORA_SIGNER_ADDRESS,
                     },
                   ],
                 description: "Protected endpoint",

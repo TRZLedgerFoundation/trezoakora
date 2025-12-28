@@ -11,14 +11,14 @@ use crate::{
     state::{get_config, update_config, update_signer_pool},
     tests::{account_mock, config_mock::ConfigMockBuilder, rpc_mock},
     usage_limit::UsageTracker,
-    Config, KoraError,
+    Config, TrezoaKoraError,
 };
-use solana_sdk::{pubkey::Pubkey, signature::Keypair};
+use trezoa_sdk::{pubkey::Pubkey, signature::Keypair};
 
 // Re-export mock utilities for centralized access
 pub use account_mock::*;
 pub use rpc_mock::*;
-use solana_keychain::{Signer, SolanaSigner};
+use trezoa_keychain::{Signer, TrezoaSigner};
 
 /// Setup or retrieve test signer for global state initialization
 ///
@@ -46,7 +46,7 @@ pub fn setup_or_get_test_signer() -> Pubkey {
         }
     }
 
-    solana_sdk::signer::Signer::pubkey(&test_keypair)
+    trezoa_sdk::signer::Signer::pubkey(&test_keypair)
 }
 
 /// Setup or retrieve test config for global state initialization
@@ -71,10 +71,10 @@ pub fn setup_or_get_test_config() -> Config {
 ///
 /// This function ignores "already initialized" errors for test flexibility.
 /// Usage limiter initialization is optional and will not fail tests if unavailable.
-pub async fn setup_or_get_test_usage_limiter() -> Result<(), KoraError> {
+pub async fn setup_or_get_test_usage_limiter() -> Result<(), TrezoaKoraError> {
     match UsageTracker::init_usage_limiter().await {
         Ok(()) => Ok(()),
-        Err(KoraError::InternalServerError(ref msg)) if msg.contains("already initialized") => {
+        Err(TrezoaKoraError::InternalServerError(ref msg)) if msg.contains("already initialized") => {
             // In tests, ignore the already initialized error
             // The limiter is already set up from a previous test
             Ok(())

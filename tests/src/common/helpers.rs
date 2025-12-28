@@ -1,6 +1,6 @@
 use anyhow::Result;
-use kora_lib::signer::KeypairUtil;
-use solana_sdk::{
+use trezoakora_lib::signer::KeypairUtil;
+use trezoa_sdk::{
     pubkey::Pubkey,
     signature::{Keypair, Signer},
 };
@@ -11,11 +11,11 @@ use crate::common::constants::*;
 /// Default fee for a transaction with 2 signers (5000 lamports each)
 /// This is used for a lot of tests that only has sender and fee payer as signers
 pub fn get_fee_for_default_transaction_in_usdc() -> u64 {
-    // 10 000 USDC priced at default 0.001 SOL / USDC (Mock pricing) (6 decimals), so 0.01 USDC
-    // 10 000 lamports required (2 x 5000 for signatures) (9 decimals), so 0.00001 SOL
+    // 10 000 USDC priced at default 0.001 TRZ / USDC (Mock pricing) (6 decimals), so 0.01 USDC
+    // 10 000 lamports required (2 x 5000 for signatures) (9 decimals), so 0.00001 TRZ
     //
-    // Required SOL amount is 0.01 (usdc amount) * 0.001 (usdc price) = 0.00001 SOL
-    // Required lamports is 0.00001 SOL * 10^9 (lamports per SOL) = 10 000 lamports
+    // Required TRZ amount is 0.01 (usdc amount) * 0.001 (usdc price) = 0.00001 TRZ
+    // Required lamports is 0.00001 TRZ * 10^9 (lamports per TRZ) = 10 000 lamports
     10_000
 }
 
@@ -30,8 +30,8 @@ impl FeePayerTestHelper {
     pub fn get_fee_payer_keypair() -> Keypair {
         dotenv::dotenv().ok();
         parse_private_key_string(
-            &std::env::var(KORA_PRIVATE_KEY_ENV)
-                .expect("KORA_PRIVATE_KEY environment variable is not set"),
+            &std::env::var(TREZOAKORA_PRIVATE_KEY_ENV)
+                .expect("TREZOAKORA_PRIVATE_KEY environment variable is not set"),
         )
         .expect("Failed to parse fee payer private key")
     }

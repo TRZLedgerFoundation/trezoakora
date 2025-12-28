@@ -1,6 +1,6 @@
 // RPC Integration Tests
 //
-// CONFIG: Uses tests/src/common/fixtures/kora-test.toml (no auth enabled)
+// CONFIG: Uses tests/src/common/fixtures/trezoakora-test.toml (no auth enabled)
 // TESTS: Core JSON-RPC functionality with all transaction variants
 //        - Basic endpoints (getConfig, getBlockhash, etc.)
 //        - Fee estimation with legacy, V0, V0+lookup, compute budget scenarios

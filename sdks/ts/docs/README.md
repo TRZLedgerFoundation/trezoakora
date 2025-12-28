@@ -1,18 +1,18 @@
-# Kora TypeScript SDK v0.1.0
+# TrezoaKora TypeScript SDK v0.1.0
 
 ## Classes
 
-### KoraClient
+### TrezoaKoraClient
 
-Kora RPC client for interacting with the Kora paymaster service.
+TrezoaKora RPC client for interacting with the TrezoaKora paymaster service.
 
 Provides methods to estimate fees, sign transactions, and perform gasless transfers
-on Solana as specified by the Kora paymaster operator.
+on Trezoa as specified by the TrezoaKora paymaster operator.
 
 #### Example
 
 ```typescript
-const client = new KoraClient({
+const client = new TrezoaKoraClient({
   rpcUrl: 'http://localhost:8080',
   // apiKey may be required by some operators
   // apiKey: 'your-api-key',
@@ -41,20 +41,20 @@ const config = await client.getConfig();
 ##### Constructor
 
 ```ts
-new KoraClient(options: KoraClientOptions): KoraClient;
+new TrezoaKoraClient(options: TrezoaKoraClientOptions): TrezoaKoraClient;
 ```
 
-Creates a new Kora client instance.
+Creates a new TrezoaKora client instance.
 
 ###### Parameters
 
 | Parameter | Type | Description |
 | ------ | ------ | ------ |
-| `options` | [`KoraClientOptions`](#koraclientoptions) | Client configuration options |
+| `options` | [`TrezoaKoraClientOptions`](#trezoakoraclientoptions) | Client configuration options |
 
 ###### Returns
 
-[`KoraClient`](#koraclient)
+[`TrezoaKoraClient`](#trezoakoraclient)
 
 #### Methods
 
@@ -99,7 +99,7 @@ console.log('Fee in USDC:', fees.fee_in_token);
 getBlockhash(): Promise<GetBlockhashResponse>;
 ```
 
-Gets the latest blockhash from the Solana RPC that the Kora server is connected to.
+Gets the latest blockhash from the Trezoa RPC that the TrezoaKora server is connected to.
 
 ###### Returns
 
@@ -124,7 +124,7 @@ console.log('Current blockhash:', blockhash);
 getConfig(): Promise<Config>;
 ```
 
-Retrieves the current Kora server configuration.
+Retrieves the current TrezoaKora server configuration.
 
 ###### Returns
 
@@ -150,7 +150,7 @@ console.log('Validation config:', JSON.stringify(config.validation_config, null,
 getPayerSigner(): Promise<GetPayerSignerResponse>;
 ```
 
-Retrieves the payer signer and payment destination from the Kora server.
+Retrieves the payer signer and payment destination from the TrezoaKora server.
 
 ###### Returns
 
@@ -174,10 +174,10 @@ When the RPC call fails
 getPaymentInstruction(request: GetPaymentInstructionRequest): Promise<GetPaymentInstructionResponse>;
 ```
 
-Creates a payment instruction to append to a transaction for fee payment to the Kora paymaster.
+Creates a payment instruction to append to a transaction for fee payment to the TrezoaKora paymaster.
 
 This method estimates the required fee and generates a token transfer instruction
-from the source wallet to the Kora payment address. The server handles decimal
+from the source wallet to the TrezoaKora payment address. The server handles decimal
 conversion internally, so the raw token amount is used directly.
 
 ###### Parameters
@@ -239,7 +239,7 @@ console.log('Supported tokens:', tokens);
 signAndSendTransaction(request: SignAndSendTransactionRequest): Promise<SignAndSendTransactionResponse>;
 ```
 
-Signs a transaction and immediately broadcasts it to the Solana network.
+Signs a transaction and immediately broadcasts it to the Trezoa network.
 
 ###### Parameters
 
@@ -272,7 +272,7 @@ console.log('Transaction signature:', result.signature);
 signTransaction(request: SignTransactionRequest): Promise<SignTransactionResponse>;
 ```
 
-Signs a transaction with the Kora fee payer without broadcasting it.
+Signs a transaction with the TrezoaKora fee payer without broadcasting it.
 
 ###### Parameters
 
@@ -306,7 +306,7 @@ console.log('Signed tx:', result.signed_transaction);
 transferTransaction(request: TransferTransactionRequest): Promise<TransferTransactionResponse>;
 ```
 
-Creates a token transfer transaction with Kora as the fee payer.
+Creates a token transfer transaction with TrezoaKora as the fee payer.
 
 ###### Parameters
 
@@ -356,7 +356,7 @@ Authentication headers for API requests.
 
 ### Config
 
-Kora server configuration.
+TrezoaKora server configuration.
 
 #### Properties
 
@@ -370,7 +370,7 @@ Kora server configuration.
 
 ### EnabledMethods
 
-Enabled status for methods for the Kora server.
+Enabled status for methods for the TrezoaKora server.
 
 #### Properties
 
@@ -429,8 +429,8 @@ Policy controlling what actions the fee payer can perform.
 | <a id="allow_assign"></a> `allow_assign` | `boolean` | Allow fee payer to use Assign instruction |
 | <a id="allow_burn"></a> `allow_burn` | `boolean` | Allow fee payer to use Burn instruction |
 | <a id="allow_close_account"></a> `allow_close_account` | `boolean` | Allow fee payer to use CloseAccount instruction |
-| <a id="allow_sol_transfers"></a> `allow_sol_transfers` | `boolean` | Allow fee payer to be source in SOL transfers |
-| <a id="allow_spl_transfers"></a> `allow_spl_transfers` | `boolean` | Allow fee payer to be source in SPL token transfers |
+| <a id="allow_trz_transfers"></a> `allow_trz_transfers` | `boolean` | Allow fee payer to be source in TRZ transfers |
+| <a id="allow_tpl_transfers"></a> `allow_tpl_transfers` | `boolean` | Allow fee payer to be source in TPL token transfers |
 | <a id="allow_token2022_transfers"></a> `allow_token2022_transfers` | `boolean` | Allow fee payer to be source in Token2022 transfers |
 
 ***
@@ -506,9 +506,9 @@ Response containing supported token mint addresses.
 
 ***
 
-### KoraClientOptions
+### TrezoaKoraClientOptions
 
-Options for initializing a Kora client.
+Options for initializing a TrezoaKora client.
 
 #### Properties
 
@@ -516,7 +516,7 @@ Options for initializing a Kora client.
 | ------ | ------ | ------ |
 | <a id="apikey"></a> `apiKey?` | `string` | Optional API key for authentication |
 | <a id="hmacsecret"></a> `hmacSecret?` | `string` | Optional HMAC secret for signature-based authentication |
-| <a id="rpcurl"></a> `rpcUrl` | `string` | URL of the Kora RPC server |
+| <a id="rpcurl"></a> `rpcUrl` | `string` | URL of the TrezoaKora RPC server |
 
 ***
 
@@ -631,7 +631,7 @@ Parameters for creating a token transfer transaction.
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="amount"></a> `amount` | `number` | Amount to transfer in the token's smallest unit (e.g., lamports for SOL) |
+| <a id="amount"></a> `amount` | `number` | Amount to transfer in the token's smallest unit (e.g., lamports for TRZ) |
 | <a id="destination"></a> `destination` | `string` | Public key of the destination wallet (not token account) |
 | <a id="signer_key-5"></a> `signer_key?` | `string` | Optional signer address for the transaction |
 | <a id="source"></a> `source` | `string` | Public key of the source wallet (not token account) |
@@ -657,14 +657,14 @@ Response from creating a transfer transaction.
 
 ### ValidationConfig
 
-Validation configuration for the Kora server.
+Validation configuration for the TrezoaKora server.
 
 #### Properties
 
 | Property | Type | Description |
 | ------ | ------ | ------ |
-| <a id="allowed_programs"></a> `allowed_programs` | `string`[] | List of allowed Solana program IDs |
-| <a id="allowed_spl_paid_tokens"></a> `allowed_spl_paid_tokens` | `string`[] | List of SPL tokens accepted for paid transactions |
+| <a id="allowed_programs"></a> `allowed_programs` | `string`[] | List of allowed Trezoa program IDs |
+| <a id="allowed_tpl_paid_tokens"></a> `allowed_tpl_paid_tokens` | `string`[] | List of TPL tokens accepted for paid transactions |
 | <a id="allowed_tokens"></a> `allowed_tokens` | `string`[] | List of allowed token mint addresses for fee payment |
 | <a id="disallowed_accounts"></a> `disallowed_accounts` | `string`[] | List of blocked account addresses |
 | <a id="fee_payer_policy"></a> `fee_payer_policy` | [`FeePayerPolicy`](#feepayerpolicy) | Policy controlling fee payer permissions |

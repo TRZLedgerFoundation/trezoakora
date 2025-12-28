@@ -1,12 +1,12 @@
 use crate::{
-    error::KoraError,
+    error::TrezoaKoraError,
     rpc_server::RpcArgs,
     signer::{SignerPool, SignerPoolConfig},
     state::init_signer_pool,
 };
 
 /// Initialize signer(s) based on RPC args - supports multi-signer mode or skip signers
-pub async fn init_signers(args: &RpcArgs) -> Result<(), KoraError> {
+pub async fn init_signers(args: &RpcArgs) -> Result<(), TrezoaKoraError> {
     if args.skip_signer {
         log::info!("Skipping signer initialization as requested");
         return Ok(());
@@ -22,7 +22,7 @@ pub async fn init_signers(args: &RpcArgs) -> Result<(), KoraError> {
         init_signer_pool(pool)?;
         log::info!("Multi-signer pool initialized successfully");
     } else {
-        return Err(KoraError::ValidationError(
+        return Err(TrezoaKoraError::ValidationError(
             "Signers configuration is required unless using --no-load-signer".to_string(),
         ));
     }
@@ -70,7 +70,7 @@ mod tests {
 
         let result = init_signers(&args).await;
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), KoraError::ValidationError(_)));
+        assert!(matches!(result.unwrap_err(), TrezoaKoraError::ValidationError(_)));
     }
 
     #[tokio::test]

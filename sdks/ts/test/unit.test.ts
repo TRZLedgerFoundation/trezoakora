@@ -1,4 +1,4 @@
-import { KoraClient } from '../src/client.js';
+import { TrezoaKoraClient } from '../src/client.js';
 import {
     Config,
     EstimateTransactionFeeRequest,
@@ -13,15 +13,15 @@ import {
     TransferTransactionResponse,
     EstimateTransactionFeeResponse,
 } from '../src/types/index.js';
-import { TOKEN_PROGRAM_ADDRESS } from '@solana-program/token';
+import { TOKEN_PROGRAM_ADDRESS } from '@trezoa-program/token';
 import { getInstructionsFromBase64Message } from '../src/utils/transaction.js';
 
 // Mock fetch globally
 const mockFetch = jest.fn();
 global.fetch = mockFetch;
 
-describe('KoraClient Unit Tests', () => {
-    let client: KoraClient;
+describe('TrezoaKoraClient Unit Tests', () => {
+    let client: TrezoaKoraClient;
     const mockRpcUrl = 'http://localhost:8080';
 
     // Helper Functions
@@ -73,7 +73,7 @@ describe('KoraClient Unit Tests', () => {
     };
 
     beforeEach(() => {
-        client = new KoraClient({ rpcUrl: mockRpcUrl });
+        client = new TrezoaKoraClient({ rpcUrl: mockRpcUrl });
         mockFetch.mockClear();
     });
 
@@ -82,10 +82,10 @@ describe('KoraClient Unit Tests', () => {
     });
 
     describe('Constructor', () => {
-        it('should create KoraClient instance with provided RPC URL', () => {
+        it('should create TrezoaKoraClient instance with provided RPC URL', () => {
             const testUrl = 'https://api.example.com';
-            const testClient = new KoraClient({ rpcUrl: testUrl });
-            expect(testClient).toBeInstanceOf(KoraClient);
+            const testClient = new TrezoaKoraClient({ rpcUrl: testUrl });
+            expect(testClient).toBeInstanceOf(TrezoaKoraClient);
         });
     });
 
@@ -117,7 +117,7 @@ describe('KoraClient Unit Tests', () => {
                     price_source: 'Jupiter',
                     allowed_programs: ['program1', 'program2'],
                     allowed_tokens: ['token1', 'token2'],
-                    allowed_spl_paid_tokens: ['spl_token1'],
+                    allowed_tpl_paid_tokens: ['tpl_token1'],
                     disallowed_accounts: ['account1'],
                     fee_payer_policy: {
                         system: {
@@ -132,7 +132,7 @@ describe('KoraClient Unit Tests', () => {
                                 allow_withdraw: true,
                             },
                         },
-                        spl_token: {
+                        tpl_token: {
                             allow_transfer: true,
                             allow_burn: true,
                             allow_close_account: true,
@@ -193,7 +193,7 @@ describe('KoraClient Unit Tests', () => {
     describe('getSupportedTokens', () => {
         it('should return supported tokens list', async () => {
             const mockResponse: GetSupportedTokensResponse = {
-                tokens: ['SOL', 'USDC', 'USDT'],
+                tokens: ['TRZ', 'USDC', 'USDT'],
             };
 
             await testSuccessfulRpcMethod('getSupportedTokens', () => client.getSupportedTokens(), mockResponse);
@@ -225,7 +225,7 @@ describe('KoraClient Unit Tests', () => {
         it('should estimate transaction fee', async () => {
             const request: EstimateTransactionFeeRequest = {
                 transaction: 'base64_encoded_transaction',
-                fee_token: 'SOL',
+                fee_token: 'TRZ',
             };
             const mockResponse: EstimateTransactionFeeResponse = {
                 fee_in_lamports: 5000,
@@ -286,7 +286,7 @@ describe('KoraClient Unit Tests', () => {
         it('should create transfer transaction', async () => {
             const request: TransferTransactionRequest = {
                 amount: 1000000,
-                token: 'SOL',
+                token: 'TRZ',
                 source: 'source_address',
                 destination: 'destination_address',
             };
@@ -309,7 +309,7 @@ describe('KoraClient Unit Tests', () => {
         it('should parse instructions from transfer transaction message', async () => {
             const request: TransferTransactionRequest = {
                 amount: 1000000,
-                token: 'SOL',
+                token: 'TRZ',
                 source: 'source_address',
                 destination: 'destination_address',
             };
@@ -340,7 +340,7 @@ describe('KoraClient Unit Tests', () => {
         it('should handle transfer transaction with empty message gracefully', async () => {
             const request: TransferTransactionRequest = {
                 amount: 1000000,
-                token: 'SOL',
+                token: 'TRZ',
                 source: 'source_address',
                 destination: 'destination_address',
             };
@@ -370,7 +370,7 @@ describe('KoraClient Unit Tests', () => {
                 price_source: 'Jupiter',
                 allowed_programs: ['program1'],
                 allowed_tokens: ['token1'],
-                allowed_spl_paid_tokens: ['4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU'],
+                allowed_tpl_paid_tokens: ['4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU'],
                 disallowed_accounts: [],
                 fee_payer_policy: {
                     system: {
@@ -385,7 +385,7 @@ describe('KoraClient Unit Tests', () => {
                             allow_withdraw: true,
                         },
                     },
-                    spl_token: {
+                    tpl_token: {
                         allow_transfer: true,
                         allow_burn: true,
                         allow_close_account: true,

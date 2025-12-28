@@ -2,9 +2,9 @@ mod args;
 
 use args::GlobalArgs;
 use clap::{Parser, Subcommand};
-use kora_lib::{
+use trezoakora_lib::{
     admin::token_util::initialize_atas,
-    error::KoraError,
+    error::TrezoaKoraError,
     log::LoggingFormat,
     rpc::get_rpc_client,
     rpc_server::{run_rpc_server, server::ServerHandles, KoraRpc, RpcArgs},
@@ -15,7 +15,7 @@ use kora_lib::{
 };
 
 #[cfg(feature = "docs")]
-use kora_lib::rpc_server::openapi::docs;
+use trezoakora_lib::rpc_server::openapi::docs;
 #[cfg(feature = "docs")]
 use utoipa::OpenApi;
 
@@ -61,7 +61,7 @@ enum RpcCommands {
     /// Start the RPC server
     #[command(
         about = "Start the RPC server",
-        long_about = "Start the Kora RPC server to handle gasless transactions.\n\nThe server will validate the configuration and initialize the specified signer before starting."
+        long_about = "Start the TrezoaKora RPC server to handle gasless transactions.\n\nThe server will validate the configuration and initialize the specified signer before starting."
     )]
     Start {
         #[command(flatten)]
@@ -95,7 +95,7 @@ enum RpcCommands {
 }
 
 #[derive(Parser)]
-#[command(author, version, about = "Kora - Solana gasless transaction relayer", long_about = None)]
+#[command(author, version, about = "TrezoaKora - Trezoa gasless transaction relayer", long_about = None)]
 struct Cli {
     #[command(subcommand)]
     command: Option<Commands>,
@@ -105,7 +105,7 @@ struct Cli {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), KoraError> {
+async fn main() -> Result<(), TrezoaKoraError> {
     dotenv::dotenv().ok();
     let cli = Cli::parse();
 
@@ -185,10 +185,10 @@ async fn main() -> Result<(), KoraError> {
 
                     let rpc_client = get_rpc_client(&cli.global_args.rpc_url);
 
-                    let kora_rpc = KoraRpc::new(rpc_client);
+                    let trezoakora_rpc = KoraRpc::new(rpc_client);
 
                     let ServerHandles { rpc_handle, metrics_handle, balance_tracker_handle } =
-                        run_rpc_server(kora_rpc, rpc_args.port).await?;
+                        run_rpc_server(trezoakora_rpc, rpc_args.port).await?;
 
                     if let Err(e) = tokio::signal::ctrl_c().await {
                         panic!("Error waiting for Ctrl+C signal: {e:?}");

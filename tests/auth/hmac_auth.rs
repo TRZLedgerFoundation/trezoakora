@@ -2,7 +2,7 @@ use crate::common::{
     auth_helpers::{create_hmac_signature, create_valid_hmac_signature_headers, get_timestamp},
     *,
 };
-use kora_lib::constant::{X_API_KEY, X_HMAC_SIGNATURE, X_TIMESTAMP};
+use trezoakora_lib::constant::{X_API_KEY, X_HMAC_SIGNATURE, X_TIMESTAMP};
 
 /// Test HMAC authentication with valid signature
 #[tokio::test]

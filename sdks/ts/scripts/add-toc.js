@@ -29,7 +29,7 @@ for (const method of methodNames) {
   toc.push(`- [${method.name}](#${method.anchor})`);
 }
 
-// Insert TOC in KoraClient section, before Constructors
+// Insert TOC in TrezoaKoraClient section, before Constructors
 const constructorsLineIndex = lines.findIndex(line => line === '#### Constructors');
 const newLines = [
   ...lines.slice(0, constructorsLineIndex),

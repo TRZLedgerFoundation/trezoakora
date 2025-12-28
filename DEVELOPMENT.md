@@ -1,6 +1,6 @@
 # Development Guide
 
-This guide contains tips, tricks, and best practices for developing Kora.
+This guide contains tips, tricks, and best practices for developing TrezoaKora.
 
 ## Development Workflow
 
@@ -28,7 +28,7 @@ git commit -m "feat: remove deprecated methods
 BREAKING CHANGE: removed getBalance method, use getAccountBalance instead"
 
 # Other types (patch version bump)
-git commit -m "chore(deps): update solana-sdk to 2.1.10"
+git commit -m "chore(deps): update trezoa-sdk to 2.1.10"
 git commit -m "docs(readme): add installation instructions"
 git commit -m "refactor(lib): simplify token validation logic"
 ```

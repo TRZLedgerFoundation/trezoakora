@@ -1,6 +1,6 @@
-//! SPL Token 2022 extension utilities and parsing
+//! TPL Token 2022 extension utilities and parsing
 //!
-//! This module provides utilities for working with SPL Token 2022 extensions,
+//! This module provides utilities for working with TPL Token 2022 extensions,
 //! including parsing extension data and converting between string names and extension types.
 //!
 //! ## Macro-Generated Methods
@@ -35,7 +35,7 @@
 //! get_all_account_extension_names() -> &["memo_transfer", "cpi_guard", ...]
 //! ```
 
-use spl_token_2022_interface::{
+use tpl_token_2022_interface::{
     extension::{
         confidential_mint_burn::ConfidentialMintBurn,
         confidential_transfer::{ConfidentialTransferAccount, ConfidentialTransferMint},
@@ -229,7 +229,7 @@ pub fn get_all_account_extension_names() -> &'static [&'static str] {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use spl_token_2022_interface::extension::ExtensionType;
+    use tpl_token_2022_interface::extension::ExtensionType;
 
     #[test]
     fn test_mint_extension_from_string() {

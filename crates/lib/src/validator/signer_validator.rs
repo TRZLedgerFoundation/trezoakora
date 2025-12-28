@@ -1,5 +1,5 @@
 use crate::{
-    error::KoraError,
+    error::TrezoaKoraError,
     signer::{SelectionStrategy, SignerPoolConfig},
 };
 
@@ -32,8 +32,8 @@ impl SignerValidator {
     }
 
     /// Helper method to convert Result to error string and add to errors vec
-    fn try_result(result: Result<(), KoraError>, errors: &mut Vec<String>) {
-        if let Err(KoraError::ValidationError(msg)) = result {
+    fn try_result(result: Result<(), TrezoaKoraError>, errors: &mut Vec<String>) {
+        if let Err(TrezoaKoraError::ValidationError(msg)) = result {
             errors.push(msg);
         }
     }

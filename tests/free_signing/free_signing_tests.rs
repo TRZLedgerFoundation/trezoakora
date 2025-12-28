@@ -1,7 +1,7 @@
 use crate::common::*;
 use jsonrpsee::rpc_params;
-use kora_lib::transaction::TransactionUtil;
-use solana_sdk::signature::Signer;
+use trezoakora_lib::transaction::TransactionUtil;
+use trezoa_sdk::signature::Signer;
 
 #[tokio::test]
 async fn test_sign_transaction_legacy() {
@@ -52,7 +52,7 @@ async fn test_sign_transaction_v0() {
         .v0_transaction_builder()
         .with_fee_payer(FeePayerTestHelper::get_fee_payer_pubkey())
         .with_signer(&sender)
-        .with_spl_transfer_checked(
+        .with_tpl_transfer_checked(
             &token_mint,
             &sender.pubkey(),
             &recipient,
@@ -100,7 +100,7 @@ async fn test_sign_transaction_v0_with_lookup() {
         .v0_transaction_builder_with_lookup(vec![transaction_lookup_table])
         .with_fee_payer(FeePayerTestHelper::get_fee_payer_pubkey())
         .with_signer(&sender)
-        .with_spl_transfer_checked(
+        .with_tpl_transfer_checked(
             &token_mint,
             &sender.pubkey(),
             &recipient,
@@ -135,7 +135,7 @@ async fn test_sign_transaction_v0_with_lookup() {
 }
 
 #[tokio::test]
-async fn test_sign_spl_transaction_legacy() {
+async fn test_sign_tpl_transaction_legacy() {
     let ctx = TestContext::new().await.expect("Failed to create test context");
     let sender = SenderTestHelper::get_test_sender_keypair();
     let test_tx = ctx
@@ -145,7 +145,7 @@ async fn test_sign_spl_transaction_legacy() {
         .with_transfer(&sender.pubkey(), &RecipientTestHelper::get_recipient_pubkey(), 10)
         .build()
         .await
-        .expect("Failed to create signed test SPL transaction");
+        .expect("Failed to create signed test TPL transaction");
 
     let response: serde_json::Value = ctx
         .rpc_call("signTransaction", rpc_params![test_tx])
@@ -171,7 +171,7 @@ async fn test_sign_spl_transaction_legacy() {
 }
 
 #[tokio::test]
-async fn test_sign_spl_transaction_v0() {
+async fn test_sign_tpl_transaction_v0() {
     let ctx = TestContext::new().await.expect("Failed to create test context");
     let sender = SenderTestHelper::get_test_sender_keypair();
     let recipient = RecipientTestHelper::get_recipient_pubkey();
@@ -181,7 +181,7 @@ async fn test_sign_spl_transaction_v0() {
         .v0_transaction_builder()
         .with_fee_payer(FeePayerTestHelper::get_fee_payer_pubkey())
         .with_signer(&sender)
-        .with_spl_transfer_checked(
+        .with_tpl_transfer_checked(
             &token_mint,
             &sender.pubkey(),
             &recipient,
@@ -190,12 +190,12 @@ async fn test_sign_spl_transaction_v0() {
         )
         .build()
         .await
-        .expect("Failed to create V0 signed test SPL transaction");
+        .expect("Failed to create V0 signed test TPL transaction");
 
     let response: serde_json::Value = ctx
         .rpc_call("signTransaction", rpc_params![test_tx])
         .await
-        .expect("Failed to sign V0 SPL transaction");
+        .expect("Failed to sign V0 TPL transaction");
 
     assert!(
         response["signed_transaction"].as_str().is_some(),
@@ -210,13 +210,13 @@ async fn test_sign_spl_transaction_v0() {
         .rpc_client()
         .simulate_transaction(&transaction)
         .await
-        .expect("Failed to simulate V0 SPL transaction");
+        .expect("Failed to simulate V0 TPL transaction");
 
-    assert!(simulated_tx.value.err.is_none(), "V0 SPL transaction simulation failed");
+    assert!(simulated_tx.value.err.is_none(), "V0 TPL transaction simulation failed");
 }
 
 #[tokio::test]
-async fn test_sign_spl_transaction_v0_with_lookup() {
+async fn test_sign_tpl_transaction_v0_with_lookup() {
     let ctx = TestContext::new().await.expect("Failed to create test context");
     let sender = SenderTestHelper::get_test_sender_keypair();
     let recipient = RecipientTestHelper::get_recipient_pubkey();
@@ -229,7 +229,7 @@ async fn test_sign_spl_transaction_v0_with_lookup() {
         .v0_transaction_builder_with_lookup(vec![transaction_lookup_table])
         .with_fee_payer(FeePayerTestHelper::get_fee_payer_pubkey())
         .with_signer(&sender)
-        .with_spl_transfer_checked(
+        .with_tpl_transfer_checked(
             &token_mint,
             &sender.pubkey(),
             &recipient,
@@ -238,12 +238,12 @@ async fn test_sign_spl_transaction_v0_with_lookup() {
         )
         .build()
         .await
-        .expect("Failed to create V0 signed test SPL transaction with lookup table");
+        .expect("Failed to create V0 signed test TPL transaction with lookup table");
 
     let response: serde_json::Value = ctx
         .rpc_call("signTransaction", rpc_params![test_tx])
         .await
-        .expect("Failed to sign V0 SPL transaction with lookup table");
+        .expect("Failed to sign V0 TPL transaction with lookup table");
 
     assert!(
         response["signed_transaction"].as_str().is_some(),
@@ -258,10 +258,10 @@ async fn test_sign_spl_transaction_v0_with_lookup() {
         .rpc_client()
         .simulate_transaction(&transaction)
         .await
-        .expect("Failed to simulate V0 SPL transaction with lookup table");
+        .expect("Failed to simulate V0 TPL transaction with lookup table");
 
     assert!(
         simulated_tx.value.err.is_none(),
-        "V0 SPL transaction with lookup table simulation failed"
+        "V0 TPL transaction with lookup table simulation failed"
     );
 }

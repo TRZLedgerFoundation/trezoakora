@@ -9,7 +9,7 @@
 
 ### Documentation
 
-- redirect docs content to launch.solana.com (#255)
+- redirect docs content to launch.trezoa.com (#255)
 
 - (PRO-278) add documentation for usage limits (#218)
 
@@ -19,7 +19,7 @@
 
 - (PRO-237) release punchlist (#193)
 
-- (PRO-220) update config docs (redis & spl22) (#181)
+- (PRO-220) update config docs (redis & tpl22) (#181)
 
 - (PRO-75) add TypeDoc auto-documentation (and PRO-148) (#149)
 
@@ -29,7 +29,7 @@
 
 - add operator signers doc (PRO-39) (#127)
 
-- add kora overview & operator docs (#112)
+- add trezoakora overview & operator docs (#112)
 
 - Add Quick Start Guide for Local Development Setup (#96)
 
@@ -44,7 +44,7 @@
 
 - (PRO-261) add signature verification flag to transaction methods (#208)
 
-- allow any spl paid token flag (#175)
+- allow any tpl paid token flag (#175)
 
 - Integration testing rehaul (#198)
 
@@ -68,7 +68,7 @@
 
 - add initialize-atas command for payment token ATAs & custo… (#173)
 
-- add metrics collection and monitoring for Kora RPC (PRO-61) (#161)
+- add metrics collection and monitoring for TrezoaKora RPC (PRO-61) (#161)
 
 - (PRO-149) (PRO-153) Improve process transfer transaction, so that if the ATA doesn't exists, we can process with the Mint for TransferChecked (#157)
 
@@ -80,7 +80,7 @@
 
 - add configuration validation enhancements and CLI options (#130)
 
-- (PRO-69) Implement API Key and HMAC Authentication for Kora RPC (#119)
+- (PRO-69) Implement API Key and HMAC Authentication for TrezoaKora RPC (#119)
 
 - (PRO-50) enhance token price calculations and fee estimation (#126)
 
@@ -88,7 +88,7 @@
 
 - add pricing model configuration for transaction validation (PRO-56) (#114)
 
-- enhance Kora configuration and RPC method handling (PRO-53) (#116)
+- enhance TrezoaKora configuration and RPC method handling (PRO-53) (#116)
 
 - Update dependencies and refactor transaction handling to support Vers… (#108)
 
@@ -107,7 +107,7 @@
 
 - Enhance margin and token value calculations with overflow p… (#252)
 
-- (PRO-213) Inner instruction support + refactor to have support of lookup tables and inner instructions across all of Kora (#177)
+- (PRO-213) Inner instruction support + refactor to have support of lookup tables and inner instructions across all of TrezoaKora (#177)
 
 - Main PR representing refactoring & code clean up & organiza… (#146)
 

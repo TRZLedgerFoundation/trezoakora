@@ -1,14 +1,14 @@
-use solana_message::VersionedMessage;
+use trezoa_message::VersionedMessage;
 
-use crate::error::KoraError;
+use crate::error::TrezoaKoraError;
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 
 pub trait VersionedMessageExt {
-    fn encode_b64_message(&self) -> Result<String, KoraError>;
+    fn encode_b64_message(&self) -> Result<String, TrezoaKoraError>;
 }
 
 impl VersionedMessageExt for VersionedMessage {
-    fn encode_b64_message(&self) -> Result<String, KoraError> {
+    fn encode_b64_message(&self) -> Result<String, TrezoaKoraError> {
         let serialized = self.serialize();
         Ok(STANDARD.encode(serialized))
     }
@@ -17,8 +17,8 @@ impl VersionedMessageExt for VersionedMessage {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use solana_message::{compiled_instruction::CompiledInstruction, v0, Message};
-    use solana_sdk::{
+    use trezoa_message::{compiled_instruction::CompiledInstruction, v0, Message};
+    use trezoa_sdk::{
         hash::Hash,
         instruction::{AccountMeta, Instruction},
         pubkey::Pubkey,
@@ -57,7 +57,7 @@ mod tests {
         let recipient = Pubkey::new_unique();
 
         let v0_message = v0::Message {
-            header: solana_message::MessageHeader {
+            header: trezoa_message::MessageHeader {
                 num_required_signatures: 1,
                 num_readonly_signed_accounts: 0,
                 num_readonly_unsigned_accounts: 2,
@@ -92,7 +92,7 @@ mod tests {
         let lookup_table_account = Pubkey::new_unique();
 
         let v0_message = v0::Message {
-            header: solana_message::MessageHeader {
+            header: trezoa_message::MessageHeader {
                 num_required_signatures: 1,
                 num_readonly_signed_accounts: 0,
                 num_readonly_unsigned_accounts: 1,
@@ -104,7 +104,7 @@ mod tests {
                 accounts: vec![0, 2], // Account at index 2 will come from lookup table
                 data: vec![42, 0, 1, 2],
             }],
-            address_table_lookups: vec![solana_message::v0::MessageAddressTableLookup {
+            address_table_lookups: vec![trezoa_message::v0::MessageAddressTableLookup {
                 account_key: lookup_table_account,
                 writable_indexes: vec![0],
                 readonly_indexes: vec![],

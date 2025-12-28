@@ -1,13 +1,13 @@
-import { KoraClient } from '../src/index.js';
+import { TrezoaKoraClient } from '../src/index.js';
 import { loadEnvironmentVariables } from './setup.js';
 
 export function runAuthenticationTests() {
-    const { koraRpcUrl } = loadEnvironmentVariables();
+    const { trezoakoraRpcUrl } = loadEnvironmentVariables();
 
     describe('Authentication', () => {
         it('should fail with incorrect API key', async () => {
-            const client = new KoraClient({
-                rpcUrl: koraRpcUrl,
+            const client = new TrezoaKoraClient({
+                rpcUrl: trezoakoraRpcUrl,
                 apiKey: 'WRONG-API-KEY',
             });
 
@@ -16,8 +16,8 @@ export function runAuthenticationTests() {
         });
 
         it('should fail with incorrect HMAC secret', async () => {
-            const client = new KoraClient({
-                rpcUrl: koraRpcUrl,
+            const client = new TrezoaKoraClient({
+                rpcUrl: trezoakoraRpcUrl,
                 hmacSecret: 'WRONG-HMAC-SECRET',
             });
 
@@ -26,8 +26,8 @@ export function runAuthenticationTests() {
         });
 
         it('should fail with both incorrect credentials', async () => {
-            const client = new KoraClient({
-                rpcUrl: koraRpcUrl,
+            const client = new TrezoaKoraClient({
+                rpcUrl: trezoakoraRpcUrl,
                 apiKey: 'WRONG-API-KEY',
                 hmacSecret: 'WRONG-HMAC-SECRET',
             });
@@ -37,8 +37,8 @@ export function runAuthenticationTests() {
         });
 
         it('should succeed with correct credentials', async () => {
-            const client = new KoraClient({
-                rpcUrl: koraRpcUrl,
+            const client = new TrezoaKoraClient({
+                rpcUrl: trezoakoraRpcUrl,
                 apiKey: 'test-api-key-123',
                 hmacSecret: 'test-hmac-secret-456',
             });
@@ -51,8 +51,8 @@ export function runAuthenticationTests() {
         });
 
         it('should fail when no credentials provided but auth is required', async () => {
-            const client = new KoraClient({
-                rpcUrl: koraRpcUrl,
+            const client = new TrezoaKoraClient({
+                rpcUrl: trezoakoraRpcUrl,
             });
 
             // No credentials should fail when auth is enabled

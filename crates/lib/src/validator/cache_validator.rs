@@ -103,7 +103,7 @@ mod tests {
     async fn test_validate_usage_limit_disabled() {
         let config = ConfigMockBuilder::new().with_usage_limit_enabled(false).build();
 
-        let (errors, warnings) = CacheValidator::validate(&config.kora.usage_limit).await;
+        let (errors, warnings) = CacheValidator::validate(&config.trezoakora.usage_limit).await;
 
         assert!(errors.is_empty());
         assert!(warnings.is_empty());
@@ -118,7 +118,7 @@ mod tests {
             .with_usage_limit_fallback(true)
             .build();
 
-        let (errors, warnings) = CacheValidator::validate(&config.kora.usage_limit).await;
+        let (errors, warnings) = CacheValidator::validate(&config.trezoakora.usage_limit).await;
 
         assert!(errors.is_empty());
         assert!(warnings.iter().any(|w| w.contains(
@@ -135,7 +135,7 @@ mod tests {
             .with_usage_limit_fallback(false)
             .build();
 
-        let (errors, warnings) = CacheValidator::validate(&config.kora.usage_limit).await;
+        let (errors, warnings) = CacheValidator::validate(&config.trezoakora.usage_limit).await;
 
         // Should error when no cache_url and fallback disabled
         assert!(errors.iter().any(|e| e.contains(
@@ -155,7 +155,7 @@ mod tests {
             .with_usage_limit_fallback(true)
             .build();
 
-        let (errors, warnings) = CacheValidator::validate(&config.kora.usage_limit).await;
+        let (errors, warnings) = CacheValidator::validate(&config.trezoakora.usage_limit).await;
 
         // Should error for invalid cache_url format
         assert!(errors.iter().any(|e| e.contains("Invalid cache_url format")
@@ -175,7 +175,7 @@ mod tests {
             .with_usage_limit_fallback(false)
             .build();
 
-        let (errors, warnings) = CacheValidator::validate(&config.kora.usage_limit).await;
+        let (errors, warnings) = CacheValidator::validate(&config.trezoakora.usage_limit).await;
 
         // Should error about Redis connection failure with fallback disabled
         assert!(errors
@@ -195,7 +195,7 @@ mod tests {
             .with_usage_limit_fallback(true)
             .build();
 
-        let (errors, warnings) = CacheValidator::validate(&config.kora.usage_limit).await;
+        let (errors, warnings) = CacheValidator::validate(&config.trezoakora.usage_limit).await;
 
         // Should get warnings because Redis connection fails (unit tests don't run Redis) but fallback is enabled
         assert!(errors.is_empty());

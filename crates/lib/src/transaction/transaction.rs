@@ -1,18 +1,18 @@
-use solana_message::VersionedMessage;
-use solana_sdk::{
+use trezoa_message::VersionedMessage;
+use trezoa_sdk::{
     signature::Signature,
     transaction::{Transaction, VersionedTransaction},
 };
 
-use crate::{error::KoraError, transaction::VersionedTransactionResolved};
+use crate::{error::TrezoaKoraError, transaction::VersionedTransactionResolved};
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 
 pub struct TransactionUtil {}
 
 impl TransactionUtil {
-    pub fn decode_b64_transaction(encoded: &str) -> Result<VersionedTransaction, KoraError> {
+    pub fn decode_b64_transaction(encoded: &str) -> Result<VersionedTransaction, TrezoaKoraError> {
         let decoded = STANDARD.decode(encoded).map_err(|e| {
-            KoraError::InvalidTransaction(format!("Failed to decode base64 transaction: {e}"))
+            TrezoaKoraError::InvalidTransaction(format!("Failed to decode base64 transaction: {e}"))
         })?;
 
         // First try to deserialize as VersionedTransaction
@@ -22,7 +22,7 @@ impl TransactionUtil {
 
         // Fall back to legacy Transaction and convert to VersionedTransaction
         let legacy_tx: Transaction = bincode::deserialize(&decoded).map_err(|e| {
-            KoraError::InvalidTransaction(format!("Failed to deserialize transaction: {e}"))
+            TrezoaKoraError::InvalidTransaction(format!("Failed to deserialize transaction: {e}"))
         })?;
 
         // Convert legacy Transaction to VersionedTransaction
@@ -42,16 +42,16 @@ impl TransactionUtil {
 
     pub fn new_unsigned_versioned_transaction_resolved(
         message: VersionedMessage,
-    ) -> Result<VersionedTransactionResolved, KoraError> {
+    ) -> Result<VersionedTransactionResolved, TrezoaKoraError> {
         let transaction = TransactionUtil::new_unsigned_versioned_transaction(message);
-        VersionedTransactionResolved::from_kora_built_transaction(&transaction)
+        VersionedTransactionResolved::from_trezoakora_built_transaction(&transaction)
     }
 
     pub fn encode_versioned_transaction(
         transaction: &VersionedTransaction,
-    ) -> Result<String, KoraError> {
+    ) -> Result<String, TrezoaKoraError> {
         let serialized = bincode::serialize(transaction).map_err(|_| {
-            KoraError::SerializationError("Failed to serialize transaction.".to_string())
+            TrezoaKoraError::SerializationError("Failed to serialize transaction.".to_string())
         })?;
         Ok(STANDARD.encode(serialized))
     }
@@ -60,9 +60,9 @@ impl TransactionUtil {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::error::KoraError;
-    use solana_message::{compiled_instruction::CompiledInstruction, v0, Message};
-    use solana_sdk::{
+    use crate::error::TrezoaKoraError;
+    use trezoa_message::{compiled_instruction::CompiledInstruction, v0, Message};
+    use trezoa_sdk::{
         hash::Hash,
         instruction::{AccountMeta, Instruction},
         pubkey::Pubkey,
@@ -73,10 +73,10 @@ mod tests {
     #[test]
     fn test_decode_b64_transaction_invalid_input() {
         let result = TransactionUtil::decode_b64_transaction("not-base64!");
-        assert!(matches!(result, Err(KoraError::InvalidTransaction(_))));
+        assert!(matches!(result, Err(TrezoaKoraError::InvalidTransaction(_))));
 
         let result = TransactionUtil::decode_b64_transaction("AQID"); // base64 of [1,2,3]
-        assert!(matches!(result, Err(KoraError::InvalidTransaction(_))));
+        assert!(matches!(result, Err(TrezoaKoraError::InvalidTransaction(_))));
     }
 
     #[test]
@@ -112,7 +112,7 @@ mod tests {
 
         // Create V0 message
         let v0_message = v0::Message {
-            header: solana_message::MessageHeader {
+            header: trezoa_message::MessageHeader {
                 num_required_signatures: 1,
                 num_readonly_signed_accounts: 0,
                 num_readonly_unsigned_accounts: 0,

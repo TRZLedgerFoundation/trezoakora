@@ -336,7 +336,7 @@ function generateAPIDocs() {
   // Generate overview
   const overviewContent = `---
 title: JSON-RPC API Overview
-description: Kora implements a JSON-RPC 2.0 interface for gasless transaction processing on Solana.
+description: TrezoaKora implements a JSON-RPC 2.0 interface for gasless transaction processing on Trezoa.
 ---
 
 
@@ -345,7 +345,7 @@ description: Kora implements a JSON-RPC 2.0 interface for gasless transaction pr
 - **Standard**: JSON-RPC 2.0
 - **Transport**: HTTP POST
 - **Content-Type**: application/json
-- **Endpoint**: \`http://your-kora-instance/\`
+- **Endpoint**: \`http://your-trezoakora-instance/\`
 
 ## Available Methods
 

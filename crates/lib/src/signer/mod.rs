@@ -11,4 +11,4 @@ pub use config::{
 };
 pub use keypair_util::KeypairUtil;
 pub use pool::{SignerInfo, SignerPool};
-pub use signer::SolanaSigner;
+pub use signer::TrezoaSigner;

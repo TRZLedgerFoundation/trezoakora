@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use mockall::automock;
-use solana_sdk::{instruction::Instruction, pubkey::Pubkey};
+use trezoa_sdk::{instruction::Instruction, pubkey::Pubkey};
 use std::any::Any;
 
 pub trait TokenState: Any + Send + Sync {

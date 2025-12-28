@@ -1,11 +1,11 @@
 use crate::common::*;
 use jsonrpsee::rpc_params;
-use kora_lib::transaction::TransactionUtil;
-use solana_sdk::signature::{Keypair, Signer};
+use trezoakora_lib::transaction::TransactionUtil;
+use trezoa_sdk::signature::{Keypair, Signer};
 
-/// Test transferTransaction with SPL token transfer
+/// Test transferTransaction with TPL token transfer
 #[tokio::test]
-async fn test_transfer_transaction_spl_token_legacy() {
+async fn test_transfer_transaction_tpl_token_legacy() {
     let ctx = TestContext::new().await.expect("Failed to create test context");
 
     let sender = SenderTestHelper::get_test_sender_keypair();
@@ -23,7 +23,7 @@ async fn test_transfer_transaction_spl_token_legacy() {
     let response: serde_json::Value = ctx
         .rpc_call("transferTransaction", request_params)
         .await
-        .expect("Failed to transfer SPL token");
+        .expect("Failed to transfer TPL token");
 
     response.assert_success();
 

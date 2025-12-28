@@ -1,21 +1,21 @@
 use serde::{Deserialize, Serialize};
-use solana_client::nonblocking::rpc_client::RpcClient;
-use solana_commitment_config::CommitmentConfig;
-use solana_keychain::SolanaSigner;
-use solana_message::Message;
-use solana_sdk::{message::VersionedMessage, pubkey::Pubkey};
-use solana_system_interface::instruction::transfer;
+use trezoa_client::nonblocking::rpc_client::RpcClient;
+use trezoa_commitment_config::CommitmentConfig;
+use trezoa_keychain::TrezoaSigner;
+use trezoa_message::Message;
+use trezoa_sdk::{message::VersionedMessage, pubkey::Pubkey};
+use trezoa_system_interface::instruction::transfer;
 use std::{str::FromStr, sync::Arc};
 use utoipa::ToSchema;
 
 use crate::{
-    constant::NATIVE_SOL,
+    constant::NATIVE_TRZ,
     state::{get_config, get_request_signer_with_signer_key},
     transaction::{
         TransactionUtil, VersionedMessageExt, VersionedTransactionOps, VersionedTransactionResolved,
     },
     validator::transaction_validator::TransactionValidator,
-    CacheUtil, KoraError,
+    CacheUtil, TrezoaKoraError,
 };
 
 #[derive(Debug, Deserialize, ToSchema)]
@@ -41,7 +41,7 @@ pub struct TransferTransactionResponse {
 pub async fn transfer_transaction(
     rpc_client: &Arc<RpcClient>,
     request: TransferTransactionRequest,
-) -> Result<TransferTransactionResponse, KoraError> {
+) -> Result<TransferTransactionResponse, TrezoaKoraError> {
     let signer = get_request_signer_with_signer_key(request.signer_key.as_deref())?;
     let config = get_config()?;
     let fee_payer = signer.pubkey();
@@ -49,32 +49,32 @@ pub async fn transfer_transaction(
     let validator = TransactionValidator::new(config, fee_payer)?;
 
     let source = Pubkey::from_str(&request.source)
-        .map_err(|e| KoraError::ValidationError(format!("Invalid source address: {e}")))?;
+        .map_err(|e| TrezoaKoraError::ValidationError(format!("Invalid source address: {e}")))?;
     let destination = Pubkey::from_str(&request.destination)
-        .map_err(|e| KoraError::ValidationError(format!("Invalid destination address: {e}")))?;
+        .map_err(|e| TrezoaKoraError::ValidationError(format!("Invalid destination address: {e}")))?;
     let token_mint = Pubkey::from_str(&request.token)
-        .map_err(|e| KoraError::ValidationError(format!("Invalid token address: {e}")))?;
+        .map_err(|e| TrezoaKoraError::ValidationError(format!("Invalid token address: {e}")))?;
 
     // manually check disallowed account because we're creating the message
     if validator.is_disallowed_account(&source) {
-        return Err(KoraError::InvalidTransaction(format!(
+        return Err(TrezoaKoraError::InvalidTransaction(format!(
             "Source account {source} is disallowed"
         )));
     }
 
     if validator.is_disallowed_account(&destination) {
-        return Err(KoraError::InvalidTransaction(format!(
+        return Err(TrezoaKoraError::InvalidTransaction(format!(
             "Destination account {destination} is disallowed"
         )));
     }
 
     let mut instructions = vec![];
 
-    // Handle native SOL transfers
-    if request.token == NATIVE_SOL {
+    // Handle native TRZ transfers
+    if request.token == NATIVE_TRZ {
         instructions.push(transfer(&source, &destination, request.amount));
     } else {
-        // Handle wrapped SOL and other SPL tokens
+        // Handle wrapped TRZ and other TPL tokens
         let token_mint =
             validator.fetch_and_validate_token_mint(&token_mint, config, rpc_client).await?;
         let token_program = token_mint.get_token_program();
@@ -86,7 +86,7 @@ pub async fn transfer_transaction(
 
         CacheUtil::get_account(config, rpc_client, &source_ata, false)
             .await
-            .map_err(|_| KoraError::AccountNotFound(source_ata.to_string()))?;
+            .map_err(|_| TrezoaKoraError::AccountNotFound(source_ata.to_string()))?;
 
         if CacheUtil::get_account(config, rpc_client, &dest_ata, false).await.is_err() {
             instructions.push(token_program.create_associated_token_account_instruction(
@@ -107,7 +107,7 @@ pub async fn transfer_transaction(
                     decimals,
                 )
                 .map_err(|e| {
-                    KoraError::InvalidTransaction(format!(
+                    TrezoaKoraError::InvalidTransaction(format!(
                         "Failed to create transfer instruction: {e}"
                     ))
                 })?,
@@ -125,7 +125,7 @@ pub async fn transfer_transaction(
     let transaction = TransactionUtil::new_unsigned_versioned_transaction(message);
 
     let mut resolved_transaction =
-        VersionedTransactionResolved::from_kora_built_transaction(&transaction)?;
+        VersionedTransactionResolved::from_trezoakora_built_transaction(&transaction)?;
 
     // validate transaction before signing
     validator.validate_transaction(config, &mut resolved_transaction, rpc_client).await?;
@@ -137,7 +137,7 @@ pub async fn transfer_transaction(
     let signature = signer
         .sign_message(&message_bytes)
         .await
-        .map_err(|e| KoraError::SigningError(e.to_string()))?;
+        .map_err(|e| TrezoaKoraError::SigningError(e.to_string()))?;
 
     resolved_transaction.transaction.signatures[fee_payer_position] = signature;
 
@@ -183,9 +183,9 @@ mod tests {
 
         assert!(result.is_err(), "Should fail with invalid source address");
         let error = result.unwrap_err();
-        assert!(matches!(error, KoraError::ValidationError(_)), "Should return ValidationError");
+        assert!(matches!(error, TrezoaKoraError::ValidationError(_)), "Should return ValidationError");
         match error {
-            KoraError::ValidationError(error_message) => {
+            TrezoaKoraError::ValidationError(error_message) => {
                 assert!(error_message.contains("Invalid source address"));
             }
             _ => panic!("Should return ValidationError"),
@@ -213,7 +213,7 @@ mod tests {
         assert!(result.is_err(), "Should fail with invalid destination address");
         let error = result.unwrap_err();
         match error {
-            KoraError::ValidationError(error_message) => {
+            TrezoaKoraError::ValidationError(error_message) => {
                 assert!(error_message.contains("Invalid destination address"));
             }
             _ => panic!("Should return ValidationError"),
@@ -241,7 +241,7 @@ mod tests {
         assert!(result.is_err(), "Should fail with invalid token address");
         let error = result.unwrap_err();
         match error {
-            KoraError::ValidationError(error_message) => {
+            TrezoaKoraError::ValidationError(error_message) => {
                 assert!(error_message.contains("Invalid token address"));
             }
             _ => panic!("Should return ValidationError"),

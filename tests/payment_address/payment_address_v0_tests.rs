@@ -1,11 +1,11 @@
 use crate::common::*;
 use jsonrpsee::rpc_params;
-use kora_lib::token::{spl_token::TokenProgram, TokenInterface};
-use solana_sdk::{
+use trezoakora_lib::token::{tpl_token::TokenProgram, TokenInterface};
+use trezoa_sdk::{
     pubkey::Pubkey,
     signature::{Keypair, Signer},
 };
-use spl_associated_token_account_interface::{
+use tpl_associated_token_account_interface::{
     address::get_associated_token_address, instruction::create_associated_token_account_idempotent,
 };
 use std::str::FromStr;
@@ -69,7 +69,7 @@ async fn test_sign_transaction_if_paid_with_wrong_destination_v0() {
         &fee_payer.pubkey(),
         &wrong_destination.pubkey(),
         &test_mint,
-        &spl_token_interface::id(),
+        &tpl_token_interface::id(),
     );
 
     let token_interface = TokenProgram::new();

@@ -102,7 +102,7 @@
                         "uid": "prometheus"
                     },
                     "editorMode": "code",
-                    "expr": "rate(kora_http_requests_total[5m])",
+                    "expr": "rate(trezoakora_http_requests_total[5m])",
                     "instant": false,
                     "legendFormat": "{{method}} - {{status}}",
                     "range": true,
@@ -193,7 +193,7 @@
                         "uid": "prometheus"
                     },
                     "editorMode": "code",
-                    "expr": "histogram_quantile(0.95, rate(kora_http_request_duration_seconds_bucket[5m]))",
+                    "expr": "histogram_quantile(0.95, rate(trezoakora_http_request_duration_seconds_bucket[5m]))",
                     "instant": false,
                     "legendFormat": "95th percentile",
                     "range": true,
@@ -205,7 +205,7 @@
                         "uid": "prometheus"
                     },
                     "editorMode": "code",
-                    "expr": "histogram_quantile(0.50, rate(kora_http_request_duration_seconds_bucket[5m]))",
+                    "expr": "histogram_quantile(0.50, rate(trezoakora_http_request_duration_seconds_bucket[5m]))",
                     "hide": false,
                     "instant": false,
                     "legendFormat": "50th percentile",
@@ -266,7 +266,7 @@
                         "uid": "prometheus"
                     },
                     "editorMode": "code",
-                    "expr": "sum(kora_http_requests_total)",
+                    "expr": "sum(trezoakora_http_requests_total)",
                     "instant": false,
                     "legendFormat": "Total Requests",
                     "range": true,
@@ -326,7 +326,7 @@
                         "uid": "prometheus"
                     },
                     "editorMode": "code",
-                    "expr": "sum by (method) (kora_http_requests_total)",
+                    "expr": "sum by (method) (trezoakora_http_requests_total)",
                     "instant": false,
                     "legendFormat": "{{method}}",
                     "range": true,
@@ -361,7 +361,7 @@
                             }
                         ]
                     },
-                    "unit": "SOL"
+                    "unit": "TRZ"
                 },
                 "overrides": []
             },
@@ -455,7 +455,7 @@
                             }
                         ]
                     },
-                    "unit": "SOL"
+                    "unit": "TRZ"
                 },
                 "overrides": []
             },
@@ -491,7 +491,7 @@
                     "editorMode": "code",
                     "expr": "fee_payer_balance_lamports / 1000000000",
                     "instant": false,
-                    "legendFormat": "Fee Payer Balance (SOL)",
+                    "legendFormat": "Fee Payer Balance (TRZ)",
                     "range": true,
                     "refId": "A"
                 }
@@ -514,8 +514,8 @@
     },
     "timepicker": {},
     "timezone": "",
-    "title": "Kora Metrics Dashboard",
-    "uid": "kora-metrics",
+    "title": "TrezoaKora Metrics Dashboard",
+    "uid": "trezoakora-metrics",
     "version": 1,
     "weekStart": ""
 }

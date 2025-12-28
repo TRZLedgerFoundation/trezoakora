@@ -1,16 +1,16 @@
 # Adversarial testing configuration file with restrictive fee payer policies
-[kora]
+[trezoakora]
 rate_limit = 100
 
-[kora.auth]
+[trezoakora.auth]
 
 # Cache configuration - disabled for testing
-[kora.cache]
+[trezoakora.cache]
 enabled = false
 default_ttl = 300
 account_ttl = 60
 
-[kora.enabled_methods]
+[trezoakora.enabled_methods]
 liveness = true
 estimate_transaction_fee = true
 get_supported_tokens = true
@@ -36,14 +36,14 @@ allowed_tokens = [
     "9BgeTKqmFsPVnfYscfM6NvsgmZxei7XfdciShQ6D3bxJ", # Test USDC mint for local testing
     "95kSi2m5MDiKAs8bucgzengMTP5M5FiQnJps9duYcmfG", # Test USDC mint 2022 for local testing
     "AtCGtK6HPgdpk2c2LcpZimbH8dtHXYmJdoKsawWNCh2m", # Test Interest Bearing mint 2022 for local testing
-    "G77RviT7Q7nrr6yx2Hzz4j8rxoMUspqzn9sGy2FZ6Zmt", # Fee payer policy test mint (SPL Token)
+    "G77RviT7Q7nrr6yx2Hzz4j8rxoMUspqzn9sGy2FZ6Zmt", # Fee payer policy test mint (TPL Token)
     "3KgNtQwmrAbxW7HsApDdUH2d8ar9eaPtLZqQdZfhsR6o", # Fee payer policy test mint (Token-2022)
 ]
-allowed_spl_paid_tokens = [
+allowed_tpl_paid_tokens = [
     "9BgeTKqmFsPVnfYscfM6NvsgmZxei7XfdciShQ6D3bxJ", # Test USDC mint for local testing
     "95kSi2m5MDiKAs8bucgzengMTP5M5FiQnJps9duYcmfG", # Test USDC mint 2022 for local testing
     "AtCGtK6HPgdpk2c2LcpZimbH8dtHXYmJdoKsawWNCh2m", # Test Interest Bearing mint 2022 for local testing
-    "G77RviT7Q7nrr6yx2Hzz4j8rxoMUspqzn9sGy2FZ6Zmt", # Fee payer policy test mint (SPL Token)
+    "G77RviT7Q7nrr6yx2Hzz4j8rxoMUspqzn9sGy2FZ6Zmt", # Fee payer policy test mint (TPL Token)
     "3KgNtQwmrAbxW7HsApDdUH2d8ar9eaPtLZqQdZfhsR6o", # Fee payer policy test mint (Token-2022)
 ]
 
@@ -66,7 +66,7 @@ allow_advance = false
 allow_authorize = false
 allow_withdraw = false
 
-[validation.fee_payer_policy.spl_token]
+[validation.fee_payer_policy.tpl_token]
 allow_transfer = false
 allow_burn = false
 allow_close_account = false
@@ -94,7 +94,7 @@ allow_initialize_multisig = false
 allow_freeze_account = false
 allow_thaw_account = false
 
-[kora.usage_limit]
+[trezoakora.usage_limit]
 enabled = false
 cache_url = "redis://redis:6379"
 max_transactions = 2

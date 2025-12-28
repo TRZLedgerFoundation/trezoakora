@@ -1,11 +1,11 @@
-use solana_message::{Message, VersionedMessage};
-use solana_sdk::{
+use trezoa_message::{Message, VersionedMessage};
+use trezoa_sdk::{
     pubkey::Pubkey,
     signature::Keypair,
     signer::Signer,
     transaction::{Transaction, VersionedTransaction},
 };
-use solana_system_interface::instruction::transfer;
+use trezoa_system_interface::instruction::transfer;
 
 use crate::transaction::TransactionUtil;
 

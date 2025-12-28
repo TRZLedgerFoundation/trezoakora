@@ -121,7 +121,7 @@ async fn test_fee_payer_policy_is_present() {
 
     // Validate nested policy structure
     assert!(fee_payer_policy.contains_key("system"));
-    assert!(fee_payer_policy.contains_key("spl_token"));
+    assert!(fee_payer_policy.contains_key("tpl_token"));
     assert!(fee_payer_policy.contains_key("token_2022"));
 
     // Validate system policy structure
@@ -148,27 +148,27 @@ async fn test_fee_payer_policy_is_present() {
     assert_eq!(nonce["allow_withdraw"], true);
     assert_eq!(nonce["allow_authorize"], true);
 
-    // Validate spl_token policy structure
-    let spl_token =
-        fee_payer_policy["spl_token"].as_object().expect("Expected spl_token policy object");
-    assert!(spl_token.contains_key("allow_transfer"));
-    assert!(spl_token.contains_key("allow_burn"));
-    assert!(spl_token.contains_key("allow_close_account"));
-    assert!(spl_token.contains_key("allow_approve"));
-    assert!(spl_token.contains_key("allow_revoke"));
-    assert!(spl_token.contains_key("allow_set_authority"));
-    assert!(spl_token.contains_key("allow_mint_to"));
-    assert!(spl_token.contains_key("allow_freeze_account"));
-    assert!(spl_token.contains_key("allow_thaw_account"));
-    assert_eq!(spl_token["allow_transfer"], true);
-    assert_eq!(spl_token["allow_burn"], true);
-    assert_eq!(spl_token["allow_close_account"], true);
-    assert_eq!(spl_token["allow_approve"], true);
-    assert_eq!(spl_token["allow_revoke"], true);
-    assert_eq!(spl_token["allow_set_authority"], true);
-    assert_eq!(spl_token["allow_mint_to"], true);
-    assert_eq!(spl_token["allow_freeze_account"], true);
-    assert_eq!(spl_token["allow_thaw_account"], true);
+    // Validate tpl_token policy structure
+    let tpl_token =
+        fee_payer_policy["tpl_token"].as_object().expect("Expected tpl_token policy object");
+    assert!(tpl_token.contains_key("allow_transfer"));
+    assert!(tpl_token.contains_key("allow_burn"));
+    assert!(tpl_token.contains_key("allow_close_account"));
+    assert!(tpl_token.contains_key("allow_approve"));
+    assert!(tpl_token.contains_key("allow_revoke"));
+    assert!(tpl_token.contains_key("allow_set_authority"));
+    assert!(tpl_token.contains_key("allow_mint_to"));
+    assert!(tpl_token.contains_key("allow_freeze_account"));
+    assert!(tpl_token.contains_key("allow_thaw_account"));
+    assert_eq!(tpl_token["allow_transfer"], true);
+    assert_eq!(tpl_token["allow_burn"], true);
+    assert_eq!(tpl_token["allow_close_account"], true);
+    assert_eq!(tpl_token["allow_approve"], true);
+    assert_eq!(tpl_token["allow_revoke"], true);
+    assert_eq!(tpl_token["allow_set_authority"], true);
+    assert_eq!(tpl_token["allow_mint_to"], true);
+    assert_eq!(tpl_token["allow_freeze_account"], true);
+    assert_eq!(tpl_token["allow_thaw_account"], true);
 
     // Validate token_2022 policy structure
     let token_2022 =

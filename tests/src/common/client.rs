@@ -5,8 +5,8 @@ use jsonrpsee::{
     core::{client::ClientT, traits::ToRpcParams},
     http_client::{HttpClient, HttpClientBuilder},
 };
-use solana_client::nonblocking::rpc_client::RpcClient;
-use solana_commitment_config::CommitmentConfig;
+use trezoa_client::nonblocking::rpc_client::RpcClient;
+use trezoa_commitment_config::CommitmentConfig;
 use std::sync::Arc;
 
 use crate::common::{
@@ -54,13 +54,13 @@ impl TestClient {
             .map_err(|e| anyhow::anyhow!("RPC call '{}' failed: {}", method, e))
     }
 
-    /// Get the default test server URL (Kora RPC server)
+    /// Get the default test server URL (TrezoaKora RPC server)
     pub fn get_default_server_url() -> String {
         dotenv::dotenv().ok();
         std::env::var(TEST_SERVER_URL_ENV).unwrap_or_else(|_| TEST_SERVER_URL.to_string())
     }
 
-    /// Get the default RPC URL (Solana RPC)
+    /// Get the default RPC URL (Trezoa RPC)
     pub fn get_default_rpc_url() -> String {
         dotenv::dotenv().ok();
         std::env::var(RPC_URL_ENV).unwrap_or_else(|_| DEFAULT_RPC_URL.to_string())
@@ -91,7 +91,7 @@ impl TestContext {
         &self.client.http_client
     }
 
-    /// Get the Solana RPC client
+    /// Get the Trezoa RPC client
     pub fn rpc_client(&self) -> &Arc<RpcClient> {
         &self.client.rpc_client
     }
@@ -118,7 +118,7 @@ impl TestContext {
     /// Create a V0 transaction builder with lookup tables
     pub fn v0_transaction_builder_with_lookup(
         &self,
-        lookup_tables: Vec<solana_sdk::pubkey::Pubkey>,
+        lookup_tables: Vec<trezoa_sdk::pubkey::Pubkey>,
     ) -> TransactionBuilder {
         TransactionBuilder::v0_with_lookup(lookup_tables).with_rpc_client(self.rpc_client().clone())
     }

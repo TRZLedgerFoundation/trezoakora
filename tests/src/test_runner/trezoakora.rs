@@ -9,19 +9,19 @@ use tokio::{net::TcpListener, process::Child};
 // Global port tracker to prevent immediate reuse
 static USED_PORTS: LazyLock<Mutex<HashSet<u16>>> = LazyLock::new(|| Mutex::new(HashSet::new()));
 
-pub const KORA_BINARY_PATH: &str = "target/debug/kora";
+pub const TREZOAKORA_BINARY_PATH: &str = "target/debug/trezoakora";
 pub const PORT_RANGE_START: u16 = 8080;
 pub const PORT_RANGE_END: u16 = 8180;
 
-pub async fn get_kora_binary_path() -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-    if !Path::new(KORA_BINARY_PATH).exists() {
+pub async fn get_trezoakora_binary_path() -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    if !Path::new(TREZOAKORA_BINARY_PATH).exists() {
         return Err(format!(
-            "Pre-built Kora binary not found at '{KORA_BINARY_PATH}'. \
-            Run 'cargo build --bin kora' or 'make build' first for much better performance.",
+            "Pre-built TrezoaKora binary not found at '{TREZOAKORA_BINARY_PATH}'. \
+            Run 'cargo build --bin trezoakora' or 'make build' first for much better performance.",
         )
         .into());
     }
-    Ok(KORA_BINARY_PATH.to_string())
+    Ok(TREZOAKORA_BINARY_PATH.to_string())
 }
 
 pub async fn check_port_available(port: u16) -> bool {
@@ -47,12 +47,12 @@ pub fn release_port(port: u16) {
     used_ports.remove(&port);
 }
 
-pub async fn is_kora_running_with_client(client: &reqwest::Client, port: &str) -> bool {
+pub async fn is_trezoakora_running_with_client(client: &reqwest::Client, port: &str) -> bool {
     let url = format!("http://127.0.0.1:{port}/liveness");
     client.get(&url).timeout(std::time::Duration::from_secs(5)).send().await.is_ok()
 }
 
-pub async fn start_kora_rpc_server(
+pub async fn start_trezoakora_rpc_server(
     rpc_url: String,
     config_file: &str,
     signers_config: &str,
@@ -72,7 +72,7 @@ pub async fn start_kora_rpc_server(
     } else {
         find_available_port().await?
     };
-    let kora_binary_path = get_kora_binary_path().await?;
+    let trezoakora_binary_path = get_trezoakora_binary_path().await?;
 
     let (std_out, std_err) = if verbose {
         (std::process::Stdio::inherit(), std::process::Stdio::inherit())
@@ -80,7 +80,7 @@ pub async fn start_kora_rpc_server(
         (std::process::Stdio::null(), std::process::Stdio::null())
     };
 
-    let kora_pid = tokio::process::Command::new(kora_binary_path)
+    let trezoakora_pid = tokio::process::Command::new(trezoakora_binary_path)
         .args([
             "--config",
             config_file,
@@ -93,11 +93,11 @@ pub async fn start_kora_rpc_server(
             "--port",
             &port.to_string(),
         ])
-        .env("KORA_PRIVATE_KEY", fee_payer_key.trim())
-        .env("KORA_PRIVATE_KEY_2", signer_2.trim())
+        .env("TREZOAKORA_PRIVATE_KEY", fee_payer_key.trim())
+        .env("TREZOAKORA_PRIVATE_KEY_2", signer_2.trim())
         .stdout(std_out)
         .stderr(std_err)
         .spawn()?;
 
-    Ok((kora_pid, port))
+    Ok((trezoakora_pid, port))
 }

@@ -28,11 +28,11 @@ pub struct RpcArgs {
 
 #[derive(Parser)]
 pub struct AuthArgs {
-    /// API key for authenticating requests to the Kora server (optional) - can be set in `kora.toml`
-    #[arg(long, env = "KORA_API_KEY", help_heading = "Authentication")]
+    /// API key for authenticating requests to the TrezoaKora server (optional) - can be set in `trezoakora.toml`
+    #[arg(long, env = "TREZOAKORA_API_KEY", help_heading = "Authentication")]
     pub api_key: Option<String>,
 
-    /// HMAC secret for request signature authentication (optional, provides stronger security than API key) - can be set in `kora.toml`
-    #[arg(long, env = "KORA_HMAC_SECRET", help_heading = "Authentication")]
+    /// HMAC secret for request signature authentication (optional, provides stronger security than API key) - can be set in `trezoakora.toml`
+    #[arg(long, env = "TREZOAKORA_HMAC_SECRET", help_heading = "Authentication")]
     pub hmac_secret: Option<String>,
 }

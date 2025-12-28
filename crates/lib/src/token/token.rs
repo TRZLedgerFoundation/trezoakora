@@ -1,16 +1,16 @@
 use crate::{
     config::Config,
     constant,
-    error::KoraError,
+    error::TrezoaKoraError,
     oracle::{get_price_oracle, RetryingPriceOracle, TokenPrice},
     token::{
         interface::TokenMint,
-        spl_token::TokenProgram,
-        spl_token_2022::{Token2022Account, Token2022Extensions, Token2022Mint, Token2022Program},
+        tpl_token::TokenProgram,
+        tpl_token_2022::{Token2022Account, Token2022Extensions, Token2022Mint, Token2022Program},
         TokenInterface,
     },
     transaction::{
-        ParsedSPLInstructionData, ParsedSPLInstructionType, VersionedTransactionResolved,
+        ParsedTPLInstructionData, ParsedTPLInstructionType, VersionedTransactionResolved,
     },
     CacheUtil,
 };
@@ -18,9 +18,9 @@ use rust_decimal::{
     prelude::{FromPrimitive, ToPrimitive},
     Decimal,
 };
-use solana_client::nonblocking::rpc_client::RpcClient;
-use solana_sdk::{instruction::Instruction, native_token::LAMPORTS_PER_SOL, pubkey::Pubkey};
-use spl_associated_token_account_interface::address::get_associated_token_address_with_program_id;
+use trezoa_client::nonblocking::rpc_client::RpcClient;
+use trezoa_sdk::{instruction::Instruction, native_token::LAMPORTS_PER_TRZ, pubkey::Pubkey};
+use tpl_associated_token_account_interface::address::get_associated_token_address_with_program_id;
 use std::{collections::HashMap, str::FromStr, time::Duration};
 
 #[cfg(test)]
@@ -28,26 +28,26 @@ use {crate::tests::config_mock::mock_state::get_config, rust_decimal_macros::dec
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum TokenType {
-    Spl,
+    Tpl,
     Token2022,
 }
 
 impl TokenType {
     pub fn get_token_program_from_owner(
         owner: &Pubkey,
-    ) -> Result<Box<dyn TokenInterface>, KoraError> {
-        if *owner == spl_token_interface::id() {
+    ) -> Result<Box<dyn TokenInterface>, TrezoaKoraError> {
+        if *owner == tpl_token_interface::id() {
             Ok(Box::new(TokenProgram::new()))
-        } else if *owner == spl_token_2022_interface::id() {
+        } else if *owner == tpl_token_2022_interface::id() {
             Ok(Box::new(Token2022Program::new()))
         } else {
-            Err(KoraError::TokenOperationError(format!("Invalid token program owner: {owner}")))
+            Err(TrezoaKoraError::TokenOperationError(format!("Invalid token program owner: {owner}")))
         }
     }
 
     pub fn get_token_program(&self) -> Box<dyn TokenInterface> {
         match self {
-            TokenType::Spl => Box::new(TokenProgram::new()),
+            TokenType::Tpl => Box::new(TokenProgram::new()),
             TokenType::Token2022 => Box::new(Token2022Program::new()),
         }
     }
@@ -56,12 +56,12 @@ impl TokenType {
 pub struct TokenUtil;
 
 impl TokenUtil {
-    pub fn check_valid_tokens(tokens: &[String]) -> Result<Vec<Pubkey>, KoraError> {
+    pub fn check_valid_tokens(tokens: &[String]) -> Result<Vec<Pubkey>, TrezoaKoraError> {
         tokens
             .iter()
             .map(|token| {
                 Pubkey::from_str(token).map_err(|_| {
-                    KoraError::ValidationError(format!("Invalid token address: {token}"))
+                    TrezoaKoraError::ValidationError(format!("Invalid token address: {token}"))
                 })
             })
             .collect()
@@ -74,7 +74,7 @@ impl TokenUtil {
         instructions: &[Instruction],
         destination_address: &Pubkey,
     ) -> Option<(Pubkey, Pubkey)> {
-        let ata_program_id = spl_associated_token_account_interface::program::id();
+        let ata_program_id = tpl_associated_token_account_interface::program::id();
 
         for ix in instructions {
             if ix.program_id == ata_program_id
@@ -101,21 +101,21 @@ impl TokenUtil {
         config: &Config,
         rpc_client: &RpcClient,
         mint_pubkey: &Pubkey,
-    ) -> Result<Box<dyn TokenMint + Send + Sync>, KoraError> {
+    ) -> Result<Box<dyn TokenMint + Send + Sync>, TrezoaKoraError> {
         let mint_account = CacheUtil::get_account(config, rpc_client, mint_pubkey, false).await?;
 
         let token_program = TokenType::get_token_program_from_owner(&mint_account.owner)?;
 
         token_program
             .unpack_mint(mint_pubkey, &mint_account.data)
-            .map_err(|e| KoraError::TokenOperationError(format!("Failed to unpack mint: {e}")))
+            .map_err(|e| TrezoaKoraError::TokenOperationError(format!("Failed to unpack mint: {e}")))
     }
 
     pub async fn get_mint_decimals(
         config: &Config,
         rpc_client: &RpcClient,
         mint_pubkey: &Pubkey,
-    ) -> Result<u8, KoraError> {
+    ) -> Result<u8, TrezoaKoraError> {
         let mint = Self::get_mint(config, rpc_client, mint_pubkey).await?;
         Ok(mint.decimals())
     }
@@ -124,7 +124,7 @@ impl TokenUtil {
         mint: &Pubkey,
         rpc_client: &RpcClient,
         config: &Config,
-    ) -> Result<(TokenPrice, u8), KoraError> {
+    ) -> Result<(TokenPrice, u8), TrezoaKoraError> {
         let decimals = Self::get_mint_decimals(config, rpc_client, mint).await?;
 
         let oracle = RetryingPriceOracle::new(
@@ -133,11 +133,11 @@ impl TokenUtil {
             get_price_oracle(config.validation.price_source.clone()),
         );
 
-        // Get token price in SOL directly
+        // Get token price in TRZ directly
         let token_price = oracle
             .get_token_price(&mint.to_string())
             .await
-            .map_err(|e| KoraError::RpcError(format!("Failed to fetch token price: {e}")))?;
+            .map_err(|e| TrezoaKoraError::RpcError(format!("Failed to fetch token price: {e}")))?;
 
         Ok((token_price, decimals))
     }
@@ -147,35 +147,35 @@ impl TokenUtil {
         mint: &Pubkey,
         rpc_client: &RpcClient,
         config: &Config,
-    ) -> Result<u64, KoraError> {
+    ) -> Result<u64, TrezoaKoraError> {
         let (token_price, decimals) =
             Self::get_token_price_and_decimals(mint, rpc_client, config).await?;
 
         // Convert amount to Decimal with proper scaling
         let amount_decimal = Decimal::from_u64(amount)
-            .ok_or_else(|| KoraError::ValidationError("Invalid token amount".to_string()))?;
+            .ok_or_else(|| TrezoaKoraError::ValidationError("Invalid token amount".to_string()))?;
         let decimals_scale = Decimal::from_u64(10u64.pow(decimals as u32))
-            .ok_or_else(|| KoraError::ValidationError("Invalid decimals".to_string()))?;
-        let lamports_per_sol = Decimal::from_u64(LAMPORTS_PER_SOL)
-            .ok_or_else(|| KoraError::ValidationError("Invalid LAMPORTS_PER_SOL".to_string()))?;
+            .ok_or_else(|| TrezoaKoraError::ValidationError("Invalid decimals".to_string()))?;
+        let lamports_per_trz = Decimal::from_u64(LAMPORTS_PER_TRZ)
+            .ok_or_else(|| TrezoaKoraError::ValidationError("Invalid LAMPORTS_PER_TRZ".to_string()))?;
 
-        // Calculate: (amount * price * LAMPORTS_PER_SOL) / 10^decimals
+        // Calculate: (amount * price * LAMPORTS_PER_TRZ) / 10^decimals
         // Multiply before divide to preserve precision
-        let lamports_decimal = amount_decimal.checked_mul(token_price.price).and_then(|result| result.checked_mul(lamports_per_sol)).and_then(|result| result.checked_div(decimals_scale)).ok_or_else(|| {
-            log::error!("Token value calculation overflow: amount={}, price={}, decimals={}, lamports_per_sol={}",
+        let lamports_decimal = amount_decimal.checked_mul(token_price.price).and_then(|result| result.checked_mul(lamports_per_trz)).and_then(|result| result.checked_div(decimals_scale)).ok_or_else(|| {
+            log::error!("Token value calculation overflow: amount={}, price={}, decimals={}, lamports_per_trz={}",
                 amount,
                 token_price.price,
                 decimals,
-                lamports_per_sol
+                lamports_per_trz
             );
-            KoraError::ValidationError("Token value calculation overflow".to_string())
+            TrezoaKoraError::ValidationError("Token value calculation overflow".to_string())
         })?;
 
         // Floor and convert to u64
         let lamports = lamports_decimal
             .floor()
             .to_u64()
-            .ok_or_else(|| KoraError::ValidationError("Lamports value overflow".to_string()))?;
+            .ok_or_else(|| TrezoaKoraError::ValidationError("Lamports value overflow".to_string()))?;
 
         Ok(lamports)
     }
@@ -185,58 +185,58 @@ impl TokenUtil {
         mint: &Pubkey,
         rpc_client: &RpcClient,
         config: &Config,
-    ) -> Result<u64, KoraError> {
+    ) -> Result<u64, TrezoaKoraError> {
         let (token_price, decimals) =
             Self::get_token_price_and_decimals(mint, rpc_client, config).await?;
 
         // Convert lamports to token base units
         let lamports_decimal = Decimal::from_u64(lamports)
-            .ok_or_else(|| KoraError::ValidationError("Invalid lamports value".to_string()))?;
-        let lamports_per_sol_decimal = Decimal::from_u64(LAMPORTS_PER_SOL)
-            .ok_or_else(|| KoraError::ValidationError("Invalid LAMPORTS_PER_SOL".to_string()))?;
+            .ok_or_else(|| TrezoaKoraError::ValidationError("Invalid lamports value".to_string()))?;
+        let lamports_per_trz_decimal = Decimal::from_u64(LAMPORTS_PER_TRZ)
+            .ok_or_else(|| TrezoaKoraError::ValidationError("Invalid LAMPORTS_PER_TRZ".to_string()))?;
         let scale = Decimal::from_u64(10u64.pow(decimals as u32))
-            .ok_or_else(|| KoraError::ValidationError("Invalid decimals".to_string()))?;
+            .ok_or_else(|| TrezoaKoraError::ValidationError("Invalid decimals".to_string()))?;
 
-        // Calculate: (lamports * 10^decimals) / (LAMPORTS_PER_SOL * price)
+        // Calculate: (lamports * 10^decimals) / (LAMPORTS_PER_TRZ * price)
         // Multiply before divide to preserve precision
         let token_amount = lamports_decimal
             .checked_mul(scale)
-            .and_then(|result| result.checked_div(lamports_per_sol_decimal.checked_mul(token_price.price)?))
+            .and_then(|result| result.checked_div(lamports_per_trz_decimal.checked_mul(token_price.price)?))
             .ok_or_else(|| {
-                log::error!("Token value calculation overflow: lamports={}, scale={}, lamports_per_sol_decimal={}, token_price.price={}",
+                log::error!("Token value calculation overflow: lamports={}, scale={}, lamports_per_trz_decimal={}, token_price.price={}",
                     lamports,
                     scale,
-                    lamports_per_sol_decimal,
+                    lamports_per_trz_decimal,
                     token_price.price
                 );
-                KoraError::ValidationError("Token value calculation overflow".to_string())
+                TrezoaKoraError::ValidationError("Token value calculation overflow".to_string())
             })?;
 
         // Ceil and convert to u64
         let result = token_amount
             .ceil()
             .to_u64()
-            .ok_or_else(|| KoraError::ValidationError("Token amount overflow".to_string()))?;
+            .ok_or_else(|| TrezoaKoraError::ValidationError("Token amount overflow".to_string()))?;
 
         Ok(result)
     }
 
-    /// Calculate the total lamports value of SPL token transfers where the fee payer is involved
+    /// Calculate the total lamports value of TPL token transfers where the fee payer is involved
     /// This includes both outflow (fee payer as owner/source) and inflow (fee payer owns destination)
-    pub async fn calculate_spl_transfers_value_in_lamports(
-        spl_transfers: &[ParsedSPLInstructionData],
+    pub async fn calculate_tpl_transfers_value_in_lamports(
+        tpl_transfers: &[ParsedTPLInstructionData],
         fee_payer: &Pubkey,
         rpc_client: &RpcClient,
         config: &Config,
-    ) -> Result<u64, KoraError> {
+    ) -> Result<u64, TrezoaKoraError> {
         // Collect all unique mints that need price lookups
         let mut mint_to_transfers: HashMap<
             Pubkey,
             Vec<(u64, bool)>, // (amount, is_outflow)
         > = HashMap::new();
 
-        for transfer in spl_transfers {
-            if let ParsedSPLInstructionData::SplTokenTransfer {
+        for transfer in tpl_transfers {
+            if let ParsedTPLInstructionData::TplTokenTransfer {
                 amount,
                 owner,
                 mint,
@@ -263,7 +263,7 @@ impl TokenUtil {
                                 let token_account = token_program
                                     .unpack_token_account(&dest_account.data)
                                     .map_err(|e| {
-                                        KoraError::TokenOperationError(format!(
+                                        TrezoaKoraError::TokenOperationError(format!(
                                             "Failed to unpack destination token account {}: {}",
                                             destination_address, e
                                         ))
@@ -278,9 +278,9 @@ impl TokenUtil {
                             Err(e) => {
                                 // If we get Account not found error, we try to match it to the ATA derivation for the fee payer
                                 // in case that ATA is being created in the current instruction
-                                if matches!(e, KoraError::AccountNotFound(_)) {
-                                    let spl_ata =
-                                        spl_associated_token_account_interface::address::get_associated_token_address(
+                                if matches!(e, TrezoaKoraError::AccountNotFound(_)) {
+                                    let tpl_ata =
+                                        tpl_associated_token_account_interface::address::get_associated_token_address(
                                             fee_payer,
                                             mint_pubkey,
                                         );
@@ -288,11 +288,11 @@ impl TokenUtil {
                                         get_associated_token_address_with_program_id(
                                             fee_payer,
                                             mint_pubkey,
-                                            &spl_token_2022_interface::id(),
+                                            &tpl_token_2022_interface::id(),
                                         );
 
                                     // If destination matches a valid ATA for fee payer, count as inflow
-                                    if *destination_address == spl_ata
+                                    if *destination_address == tpl_ata
                                         || *destination_address == token2022_ata
                                     {
                                         mint_to_transfers
@@ -342,46 +342,46 @@ impl TokenUtil {
         for (mint, transfers) in mint_to_transfers.iter() {
             let price = prices
                 .get(&mint.to_string())
-                .ok_or_else(|| KoraError::RpcError(format!("No price data for mint {mint}")))?;
+                .ok_or_else(|| TrezoaKoraError::RpcError(format!("No price data for mint {mint}")))?;
             let decimals = mint_decimals
                 .get(mint)
-                .ok_or_else(|| KoraError::RpcError(format!("No decimals data for mint {mint}")))?;
+                .ok_or_else(|| TrezoaKoraError::RpcError(format!("No decimals data for mint {mint}")))?;
 
             for (amount, is_outflow) in transfers {
                 // Convert token amount to lamports value using Decimal
                 let amount_decimal = Decimal::from_u64(*amount).ok_or_else(|| {
-                    KoraError::ValidationError("Invalid transfer amount".to_string())
+                    TrezoaKoraError::ValidationError("Invalid transfer amount".to_string())
                 })?;
                 let decimals_scale = Decimal::from_u64(10u64.pow(*decimals as u32))
-                    .ok_or_else(|| KoraError::ValidationError("Invalid decimals".to_string()))?;
-                let lamports_per_sol = Decimal::from_u64(LAMPORTS_PER_SOL).ok_or_else(|| {
-                    KoraError::ValidationError("Invalid LAMPORTS_PER_SOL".to_string())
+                    .ok_or_else(|| TrezoaKoraError::ValidationError("Invalid decimals".to_string()))?;
+                let lamports_per_trz = Decimal::from_u64(LAMPORTS_PER_TRZ).ok_or_else(|| {
+                    TrezoaKoraError::ValidationError("Invalid LAMPORTS_PER_TRZ".to_string())
                 })?;
 
-                // Calculate: (amount * price * LAMPORTS_PER_SOL) / 10^decimals
+                // Calculate: (amount * price * LAMPORTS_PER_TRZ) / 10^decimals
                 // Multiply before divide to preserve precision
                 let lamports_decimal = amount_decimal.checked_mul(price.price)
-                    .and_then(|result| result.checked_mul(lamports_per_sol))
+                    .and_then(|result| result.checked_mul(lamports_per_trz))
                     .and_then(|result| result.checked_div(decimals_scale))
                     .ok_or_else(|| {
-                        log::error!("Token value calculation overflow: amount={}, price={}, decimals={}, lamports_per_sol={}",
+                        log::error!("Token value calculation overflow: amount={}, price={}, decimals={}, lamports_per_trz={}",
                             amount,
                             price.price,
                             decimals,
-                            lamports_per_sol
+                            lamports_per_trz
                         );
-                        KoraError::ValidationError("Token value calculation overflow".to_string())
+                        TrezoaKoraError::ValidationError("Token value calculation overflow".to_string())
                     })?;
 
                 let lamports = lamports_decimal.floor().to_u64().ok_or_else(|| {
-                    KoraError::ValidationError("Lamports value overflow".to_string())
+                    TrezoaKoraError::ValidationError("Lamports value overflow".to_string())
                 })?;
 
                 if *is_outflow {
                     // Add outflow to total
                     total_lamports = total_lamports.checked_add(lamports).ok_or_else(|| {
-                        log::error!("SPL outflow calculation overflow");
-                        KoraError::ValidationError("SPL outflow calculation overflow".to_string())
+                        log::error!("TPL outflow calculation overflow");
+                        TrezoaKoraError::ValidationError("TPL outflow calculation overflow".to_string())
                     })?;
                 } else {
                     // Subtract inflow from total (using saturating_sub to prevent underflow)
@@ -401,7 +401,7 @@ impl TokenUtil {
         source_address: &Pubkey,
         destination_address: &Pubkey,
         mint: &Pubkey,
-    ) -> Result<(), KoraError> {
+    ) -> Result<(), TrezoaKoraError> {
         let token2022_config = &config.validation.token_2022;
 
         let token_program = Token2022Program::new();
@@ -415,13 +415,13 @@ impl TokenUtil {
 
         let mint_with_extensions =
             mint_state.as_any().downcast_ref::<Token2022Mint>().ok_or_else(|| {
-                KoraError::SerializationError("Failed to downcast mint state.".to_string())
+                TrezoaKoraError::SerializationError("Failed to downcast mint state.".to_string())
             })?;
 
         // Check each extension type present on the mint
         for extension_type in mint_with_extensions.get_extension_types() {
             if token2022_config.is_mint_extension_blocked(*extension_type) {
-                return Err(KoraError::ValidationError(format!(
+                return Err(TrezoaKoraError::ValidationError(format!(
                     "Blocked mint extension found on mint account {mint}",
                 )));
             }
@@ -436,12 +436,12 @@ impl TokenUtil {
 
         let source_with_extensions =
             source_state.as_any().downcast_ref::<Token2022Account>().ok_or_else(|| {
-                KoraError::SerializationError("Failed to downcast source state.".to_string())
+                TrezoaKoraError::SerializationError("Failed to downcast source state.".to_string())
             })?;
 
         for extension_type in source_with_extensions.get_extension_types() {
             if token2022_config.is_account_extension_blocked(*extension_type) {
-                return Err(KoraError::ValidationError(format!(
+                return Err(TrezoaKoraError::ValidationError(format!(
                     "Blocked account extension found on source account {source_address}",
                 )));
             }
@@ -456,12 +456,12 @@ impl TokenUtil {
 
         let destination_with_extensions =
             destination_state.as_any().downcast_ref::<Token2022Account>().ok_or_else(|| {
-                KoraError::SerializationError("Failed to downcast destination state.".to_string())
+                TrezoaKoraError::SerializationError("Failed to downcast destination state.".to_string())
             })?;
 
         for extension_type in destination_with_extensions.get_extension_types() {
             if token2022_config.is_account_extension_blocked(*extension_type) {
-                return Err(KoraError::ValidationError(format!(
+                return Err(TrezoaKoraError::ValidationError(format!(
                     "Blocked account extension found on destination account {destination_address}",
                 )));
             }
@@ -477,7 +477,7 @@ impl TokenUtil {
         rpc_client: &RpcClient,
         source_address: &Pubkey,
         mint: &Pubkey,
-    ) -> Result<(), KoraError> {
+    ) -> Result<(), TrezoaKoraError> {
         let token2022_config = &config.validation.token_2022;
         let token_program = Token2022Program::new();
 
@@ -487,12 +487,12 @@ impl TokenUtil {
 
         let mint_with_extensions =
             mint_state.as_any().downcast_ref::<Token2022Mint>().ok_or_else(|| {
-                KoraError::SerializationError("Failed to downcast mint state.".to_string())
+                TrezoaKoraError::SerializationError("Failed to downcast mint state.".to_string())
             })?;
 
         for extension_type in mint_with_extensions.get_extension_types() {
             if token2022_config.is_mint_extension_blocked(*extension_type) {
-                return Err(KoraError::ValidationError(format!(
+                return Err(TrezoaKoraError::ValidationError(format!(
                     "Blocked mint extension found on mint account {mint}",
                 )));
             }
@@ -505,12 +505,12 @@ impl TokenUtil {
 
         let source_with_extensions =
             source_state.as_any().downcast_ref::<Token2022Account>().ok_or_else(|| {
-                KoraError::SerializationError("Failed to downcast source state.".to_string())
+                TrezoaKoraError::SerializationError("Failed to downcast source state.".to_string())
             })?;
 
         for extension_type in source_with_extensions.get_extension_types() {
             if token2022_config.is_account_extension_blocked(*extension_type) {
-                return Err(KoraError::ValidationError(format!(
+                return Err(TrezoaKoraError::ValidationError(format!(
                     "Blocked account extension found on source account {source_address}",
                 )));
             }
@@ -526,18 +526,18 @@ impl TokenUtil {
         required_lamports: u64,
         // Wallet address of the owner of the destination token account
         expected_destination_owner: &Pubkey,
-    ) -> Result<bool, KoraError> {
+    ) -> Result<bool, TrezoaKoraError> {
         let mut total_lamport_value = 0u64;
 
         // Clone instructions to avoid borrow conflicts when checking for ATA creation instructions
         let all_instructions = transaction_resolved.all_instructions.clone();
 
         for instruction in transaction_resolved
-            .get_or_parse_spl_instructions()?
-            .get(&ParsedSPLInstructionType::SplTokenTransfer)
+            .get_or_parse_tpl_instructions()?
+            .get(&ParsedTPLInstructionType::TplTokenTransfer)
             .unwrap_or(&vec![])
         {
-            if let ParsedSPLInstructionData::SplTokenTransfer {
+            if let ParsedTPLInstructionData::TplTokenTransfer {
                 source_address,
                 destination_address,
                 mint,
@@ -562,7 +562,7 @@ impl TokenUtil {
                             let token_state = token_program
                                 .unpack_token_account(&destination_account.data)
                                 .map_err(|e| {
-                                    KoraError::InvalidTransaction(format!(
+                                    TrezoaKoraError::InvalidTransaction(format!(
                                         "Invalid token account: {e}"
                                     ))
                                 })?;
@@ -584,7 +584,7 @@ impl TokenUtil {
                         Err(e) => {
                             // If account not found, check if there's an ATA creation instruction
                             // in this transaction that creates this destination address
-                            if matches!(e, KoraError::AccountNotFound(_)) {
+                            if matches!(e, TrezoaKoraError::AccountNotFound(_)) {
                                 if let Some((wallet_owner, ata_mint)) =
                                     Self::find_ata_creation_for_destination(
                                         &all_instructions,
@@ -605,13 +605,13 @@ impl TokenUtil {
                                     (wallet_owner, ata_mint)
                                 } else {
                                     // No ATA creation instruction found and destination doesn't exist
-                                    return Err(KoraError::AccountNotFound(
+                                    return Err(TrezoaKoraError::AccountNotFound(
                                         destination_address.to_string(),
                                     ));
                                 }
                             } else {
                                 // Other error (not AccountNotFound), propagate it
-                                return Err(KoraError::RpcError(e.to_string()));
+                                return Err(TrezoaKoraError::RpcError(e.to_string()));
                             }
                         }
                     };
@@ -641,7 +641,7 @@ impl TokenUtil {
                             total_lamport_value,
                             lamport_value
                         );
-                        KoraError::ValidationError("Payment accumulation overflow".to_string())
+                        TrezoaKoraError::ValidationError("Payment accumulation overflow".to_string())
                     })?;
             }
         }
@@ -653,7 +653,7 @@ impl TokenUtil {
 #[cfg(test)]
 mod tests_token {
     use crate::{
-        oracle::utils::{USDC_DEVNET_MINT, WSOL_DEVNET_MINT},
+        oracle::utils::{USDC_DEVNET_MINT, WTRZ_DEVNET_MINT},
         tests::{
             common::{RpcMockBuilder, TokenAccountMockBuilder},
             config_mock::ConfigMockBuilder,
@@ -663,17 +663,17 @@ mod tests_token {
     use super::*;
 
     #[test]
-    fn test_token_type_get_token_program_from_owner_spl() {
-        let spl_token_owner = spl_token_interface::id();
-        let result = TokenType::get_token_program_from_owner(&spl_token_owner).unwrap();
-        assert_eq!(result.program_id(), spl_token_interface::id());
+    fn test_token_type_get_token_program_from_owner_tpl() {
+        let tpl_token_owner = tpl_token_interface::id();
+        let result = TokenType::get_token_program_from_owner(&tpl_token_owner).unwrap();
+        assert_eq!(result.program_id(), tpl_token_interface::id());
     }
 
     #[test]
     fn test_token_type_get_token_program_from_owner_token2022() {
-        let token2022_owner = spl_token_2022_interface::id();
+        let token2022_owner = tpl_token_2022_interface::id();
         let result = TokenType::get_token_program_from_owner(&token2022_owner).unwrap();
-        assert_eq!(result.program_id(), spl_token_2022_interface::id());
+        assert_eq!(result.program_id(), tpl_token_2022_interface::id());
     }
 
     #[test]
@@ -682,30 +682,30 @@ mod tests_token {
         let result = TokenType::get_token_program_from_owner(&invalid_owner);
         assert!(result.is_err());
         if let Err(error) = result {
-            assert!(matches!(error, KoraError::TokenOperationError(_)));
+            assert!(matches!(error, TrezoaKoraError::TokenOperationError(_)));
         }
     }
 
     #[test]
-    fn test_token_type_get_token_program_spl() {
-        let token_type = TokenType::Spl;
+    fn test_token_type_get_token_program_tpl() {
+        let token_type = TokenType::Tpl;
         let result = token_type.get_token_program();
-        assert_eq!(result.program_id(), spl_token_interface::id());
+        assert_eq!(result.program_id(), tpl_token_interface::id());
     }
 
     #[test]
     fn test_token_type_get_token_program_token2022() {
         let token_type = TokenType::Token2022;
         let result = token_type.get_token_program();
-        assert_eq!(result.program_id(), spl_token_2022_interface::id());
+        assert_eq!(result.program_id(), tpl_token_2022_interface::id());
     }
 
     #[test]
     fn test_check_valid_tokens_valid() {
-        let valid_tokens = vec![WSOL_DEVNET_MINT.to_string(), USDC_DEVNET_MINT.to_string()];
+        let valid_tokens = vec![WTRZ_DEVNET_MINT.to_string(), USDC_DEVNET_MINT.to_string()];
         let result = TokenUtil::check_valid_tokens(&valid_tokens).unwrap();
         assert_eq!(result.len(), 2);
-        assert_eq!(result[0].to_string(), WSOL_DEVNET_MINT);
+        assert_eq!(result[0].to_string(), WTRZ_DEVNET_MINT);
         assert_eq!(result[1].to_string(), USDC_DEVNET_MINT);
     }
 
@@ -714,7 +714,7 @@ mod tests_token {
         let invalid_tokens = vec!["invalid_token_address".to_string()];
         let result = TokenUtil::check_valid_tokens(&invalid_tokens);
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), KoraError::ValidationError(_)));
+        assert!(matches!(result.unwrap_err(), TrezoaKoraError::ValidationError(_)));
     }
 
     #[test]
@@ -726,17 +726,17 @@ mod tests_token {
 
     #[test]
     fn test_check_valid_tokens_mixed_valid_invalid() {
-        let mixed_tokens = vec![WSOL_DEVNET_MINT.to_string(), "invalid_address".to_string()];
+        let mixed_tokens = vec![WTRZ_DEVNET_MINT.to_string(), "invalid_address".to_string()];
         let result = TokenUtil::check_valid_tokens(&mixed_tokens);
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), KoraError::ValidationError(_)));
+        assert!(matches!(result.unwrap_err(), TrezoaKoraError::ValidationError(_)));
     }
 
     #[tokio::test]
     async fn test_get_mint_valid() {
-        // Any valid mint account (valid owner and valid data) will count as valid here. (not related to allowed mint in Kora's config)
+        // Any valid mint account (valid owner and valid data) will count as valid here. (not related to allowed mint in TrezoaKora's config)
         let _lock = ConfigMockBuilder::new().build_and_setup();
-        let mint = Pubkey::from_str(WSOL_DEVNET_MINT).unwrap();
+        let mint = Pubkey::from_str(WTRZ_DEVNET_MINT).unwrap();
         let rpc_client = RpcMockBuilder::new().with_mint_account(9).build();
 
         let config = get_config().unwrap();
@@ -749,7 +749,7 @@ mod tests_token {
     #[tokio::test]
     async fn test_get_mint_account_not_found() {
         let _lock = ConfigMockBuilder::new().build_and_setup();
-        let mint = Pubkey::from_str(WSOL_DEVNET_MINT).unwrap();
+        let mint = Pubkey::from_str(WTRZ_DEVNET_MINT).unwrap();
         let rpc_client = RpcMockBuilder::new().with_account_not_found().build();
 
         let config = get_config().unwrap();
@@ -760,7 +760,7 @@ mod tests_token {
     #[tokio::test]
     async fn test_get_mint_decimals_valid() {
         let _lock = ConfigMockBuilder::new().build_and_setup();
-        let mint = Pubkey::from_str(WSOL_DEVNET_MINT).unwrap();
+        let mint = Pubkey::from_str(WTRZ_DEVNET_MINT).unwrap();
         let rpc_client = RpcMockBuilder::new().with_mint_account(6).build();
 
         let config = get_config().unwrap();
@@ -770,10 +770,10 @@ mod tests_token {
     }
 
     #[tokio::test]
-    async fn test_get_token_price_and_decimals_spl() {
+    async fn test_get_token_price_and_decimals_tpl() {
         let _lock = ConfigMockBuilder::new().build_and_setup();
         let config = get_config().unwrap();
-        let mint = Pubkey::from_str(WSOL_DEVNET_MINT).unwrap();
+        let mint = Pubkey::from_str(WTRZ_DEVNET_MINT).unwrap();
         let rpc_client = RpcMockBuilder::new().with_mint_account(9).build();
 
         let (token_price, decimals) =
@@ -801,7 +801,7 @@ mod tests_token {
     async fn test_get_token_price_and_decimals_account_not_found() {
         let _lock = ConfigMockBuilder::new().build_and_setup();
         let config = get_config().unwrap();
-        let mint = Pubkey::from_str(WSOL_DEVNET_MINT).unwrap();
+        let mint = Pubkey::from_str(WTRZ_DEVNET_MINT).unwrap();
         let rpc_client = RpcMockBuilder::new().with_account_not_found().build();
 
         let result = TokenUtil::get_token_price_and_decimals(&mint, &rpc_client, &config).await;
@@ -809,19 +809,19 @@ mod tests_token {
     }
 
     #[tokio::test]
-    async fn test_calculate_token_value_in_lamports_sol() {
+    async fn test_calculate_token_value_in_lamports_trz() {
         let _lock = ConfigMockBuilder::new().build_and_setup();
         let config = get_config().unwrap();
-        let mint = Pubkey::from_str(WSOL_DEVNET_MINT).unwrap();
+        let mint = Pubkey::from_str(WTRZ_DEVNET_MINT).unwrap();
         let rpc_client = RpcMockBuilder::new().with_mint_account(9).build();
 
-        let amount = 1_000_000_000; // 1 SOL in lamports
+        let amount = 1_000_000_000; // 1 TRZ in lamports
         let result =
             TokenUtil::calculate_token_value_in_lamports(amount, &mint, &rpc_client, &config)
                 .await
                 .unwrap();
 
-        assert_eq!(result, 1_000_000_000); // Should equal input since SOL price is 1.0
+        assert_eq!(result, 1_000_000_000); // Should equal input since TRZ price is 1.0
     }
 
     #[tokio::test]
@@ -837,7 +837,7 @@ mod tests_token {
                 .await
                 .unwrap();
 
-        // 1 USDC * 0.0075 SOL/USDC = 0.0075 SOL = 7,500,000 lamports
+        // 1 USDC * 0.0075 TRZ/USDC = 0.0075 TRZ = 7,500,000 lamports
         assert_eq!(result, 7_500_000);
     }
 
@@ -845,7 +845,7 @@ mod tests_token {
     async fn test_calculate_token_value_in_lamports_zero_amount() {
         let _lock = ConfigMockBuilder::new().build_and_setup();
         let config = get_config().unwrap();
-        let mint = Pubkey::from_str(WSOL_DEVNET_MINT).unwrap();
+        let mint = Pubkey::from_str(WTRZ_DEVNET_MINT).unwrap();
         let rpc_client = RpcMockBuilder::new().with_mint_account(9).build();
 
         let amount = 0;
@@ -870,24 +870,24 @@ mod tests_token {
                 .await
                 .unwrap();
 
-        // 0.000001 USDC * 0.0075 SOL/USDC = 0.0000000075 SOL = 7.5 lamports, floors to 7
+        // 0.000001 USDC * 0.0075 TRZ/USDC = 0.0000000075 TRZ = 7.5 lamports, floors to 7
         assert_eq!(result, 7);
     }
 
     #[tokio::test]
-    async fn test_calculate_lamports_value_in_token_sol() {
+    async fn test_calculate_lamports_value_in_token_trz() {
         let _lock = ConfigMockBuilder::new().build_and_setup();
         let config = get_config().unwrap();
-        let mint = Pubkey::from_str(WSOL_DEVNET_MINT).unwrap();
+        let mint = Pubkey::from_str(WTRZ_DEVNET_MINT).unwrap();
         let rpc_client = RpcMockBuilder::new().with_mint_account(9).build();
 
-        let lamports = 1_000_000_000; // 1 SOL
+        let lamports = 1_000_000_000; // 1 TRZ
         let result =
             TokenUtil::calculate_lamports_value_in_token(lamports, &mint, &rpc_client, &config)
                 .await
                 .unwrap();
 
-        assert_eq!(result, 1_000_000_000); // Should equal input since SOL price is 1.0
+        assert_eq!(result, 1_000_000_000); // Should equal input since TRZ price is 1.0
     }
 
     #[tokio::test]
@@ -897,13 +897,13 @@ mod tests_token {
         let mint = Pubkey::from_str(USDC_DEVNET_MINT).unwrap();
         let rpc_client = RpcMockBuilder::new().with_mint_account(6).build();
 
-        let lamports = 7_500_000; // 0.0075 SOL
+        let lamports = 7_500_000; // 0.0075 TRZ
         let result =
             TokenUtil::calculate_lamports_value_in_token(lamports, &mint, &rpc_client, &config)
                 .await
                 .unwrap();
 
-        // 0.0075 SOL / 0.0075 SOL/USDC = 1 USDC = 1,000,000 base units
+        // 0.0075 TRZ / 0.0075 TRZ/USDC = 1 USDC = 1,000,000 base units
         assert_eq!(result, 1_000_000);
     }
 
@@ -911,7 +911,7 @@ mod tests_token {
     async fn test_calculate_lamports_value_in_token_zero_lamports() {
         let _lock = ConfigMockBuilder::new().build_and_setup();
         let config = get_config().unwrap();
-        let mint = Pubkey::from_str(WSOL_DEVNET_MINT).unwrap();
+        let mint = Pubkey::from_str(WTRZ_DEVNET_MINT).unwrap();
         let rpc_client = RpcMockBuilder::new().with_mint_account(9).build();
 
         let lamports = 0;
@@ -994,9 +994,9 @@ mod tests_token {
         let mint = Pubkey::from_str(USDC_DEVNET_MINT).unwrap();
 
         // Explanation (i.e. for case 1)
-        // With USDC price = 0.0075 SOL/USDC:
-        // 1. Lamports → SOL: 5,000 / 1,000,000,000 = 0.000005 SOL
-        // 2. SOL → USDC: 0.000005 SOL / 0.0075 SOL/USDC = 0.000666... USDC
+        // With USDC price = 0.0075 TRZ/USDC:
+        // 1. Lamports → TRZ: 5,000 / 1,000,000,000 = 0.000005 TRZ
+        // 2. TRZ → USDC: 0.000005 TRZ / 0.0075 TRZ/USDC = 0.000666... USDC
         // 3. USDC → Base units: 0.000666... USDC × 10^6 = 666.666... base units, ceil to 667
 
         let test_cases = vec![
@@ -1086,7 +1086,7 @@ mod tests_token {
 
     #[test]
     fn test_config_token2022_extension_blocking() {
-        use spl_token_2022_interface::extension::ExtensionType;
+        use tpl_token_2022_interface::extension::ExtensionType;
 
         let mut config_builder = ConfigMockBuilder::new();
         config_builder = config_builder
@@ -1137,7 +1137,7 @@ mod tests_token {
 
     #[test]
     fn test_config_token2022_empty_extension_blocking() {
-        use spl_token_2022_interface::extension::ExtensionType;
+        use tpl_token_2022_interface::extension::ExtensionType;
 
         let _lock = ConfigMockBuilder::new().build_and_setup();
         let config = crate::tests::config_mock::mock_state::get_config().unwrap();
@@ -1160,16 +1160,16 @@ mod tests_token {
 
     #[test]
     fn test_find_ata_creation_for_destination_found() {
-        use solana_sdk::instruction::AccountMeta;
+        use trezoa_sdk::instruction::AccountMeta;
 
         let funding_account = Pubkey::new_unique();
         let wallet_owner = Pubkey::new_unique();
         let mint = Pubkey::from_str(USDC_DEVNET_MINT).unwrap();
-        let ata_program_id = spl_associated_token_account_interface::program::id();
+        let ata_program_id = tpl_associated_token_account_interface::program::id();
 
         // Derive the ATA address
         let ata_address =
-            spl_associated_token_account_interface::address::get_associated_token_address(
+            tpl_associated_token_account_interface::address::get_associated_token_address(
                 &wallet_owner,
                 &mint,
             );
@@ -1182,8 +1182,8 @@ mod tests_token {
                 AccountMeta::new(ata_address, false),    // 1: ATA to be created
                 AccountMeta::new_readonly(wallet_owner, false), // 2: wallet owner
                 AccountMeta::new_readonly(mint, false),  // 3: mint
-                AccountMeta::new_readonly(solana_system_interface::program::ID, false), // 4: system program
-                AccountMeta::new_readonly(spl_token_interface::id(), false), // 5: token program
+                AccountMeta::new_readonly(trezoa_system_interface::program::ID, false), // 4: system program
+                AccountMeta::new_readonly(tpl_token_interface::id(), false), // 5: token program
             ],
             data: vec![0], // CreateAssociatedTokenAccount instruction discriminator
         };
@@ -1200,16 +1200,16 @@ mod tests_token {
 
     #[test]
     fn test_find_ata_creation_for_destination_not_found() {
-        use solana_sdk::instruction::AccountMeta;
+        use trezoa_sdk::instruction::AccountMeta;
 
         let funding_account = Pubkey::new_unique();
         let wallet_owner = Pubkey::new_unique();
         let mint = Pubkey::from_str(USDC_DEVNET_MINT).unwrap();
-        let ata_program_id = spl_associated_token_account_interface::program::id();
+        let ata_program_id = tpl_associated_token_account_interface::program::id();
 
         // Derive the ATA address
         let ata_address =
-            spl_associated_token_account_interface::address::get_associated_token_address(
+            tpl_associated_token_account_interface::address::get_associated_token_address(
                 &wallet_owner,
                 &mint,
             );
@@ -1223,8 +1223,8 @@ mod tests_token {
                 AccountMeta::new(different_ata, false), // Different ATA
                 AccountMeta::new_readonly(wallet_owner, false),
                 AccountMeta::new_readonly(mint, false),
-                AccountMeta::new_readonly(solana_system_interface::program::ID, false),
-                AccountMeta::new_readonly(spl_token_interface::id(), false),
+                AccountMeta::new_readonly(trezoa_system_interface::program::ID, false),
+                AccountMeta::new_readonly(tpl_token_interface::id(), false),
             ],
             data: vec![0],
         };
@@ -1247,7 +1247,7 @@ mod tests_token {
 
     #[test]
     fn test_find_ata_creation_for_destination_wrong_program() {
-        use solana_sdk::instruction::AccountMeta;
+        use trezoa_sdk::instruction::AccountMeta;
 
         let target_address = Pubkey::new_unique();
         let wallet_owner = Pubkey::new_unique();
@@ -1261,8 +1261,8 @@ mod tests_token {
                 AccountMeta::new(target_address, false),
                 AccountMeta::new_readonly(wallet_owner, false),
                 AccountMeta::new_readonly(mint, false),
-                AccountMeta::new_readonly(solana_system_interface::program::ID, false),
-                AccountMeta::new_readonly(spl_token_interface::id(), false),
+                AccountMeta::new_readonly(trezoa_system_interface::program::ID, false),
+                AccountMeta::new_readonly(tpl_token_interface::id(), false),
             ],
             data: vec![0],
         };

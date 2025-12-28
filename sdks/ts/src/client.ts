@@ -1,5 +1,5 @@
 // TODO Make sure to change necessary deps from devdeps to deps
-import { assertIsAddress, createNoopSigner, Instruction } from '@solana/kit';
+import { assertIsAddress, createNoopSigner, Instruction } from '@trezoa/kit';
 import {
     Config,
     EstimateTransactionFeeRequest,
@@ -15,24 +15,24 @@ import {
     RpcError,
     RpcRequest,
     AuthenticationHeaders,
-    KoraClientOptions,
+    TrezoaKoraClientOptions,
     GetPayerSignerResponse,
     GetPaymentInstructionRequest,
     GetPaymentInstructionResponse,
 } from './types/index.js';
 import crypto from 'crypto';
 import { getInstructionsFromBase64Message } from './utils/transaction.js';
-import { findAssociatedTokenPda, TOKEN_PROGRAM_ADDRESS, getTransferInstruction } from '@solana-program/token';
+import { findAssociatedTokenPda, TOKEN_PROGRAM_ADDRESS, getTransferInstruction } from '@trezoa-program/token';
 
 /**
- * Kora RPC client for interacting with the Kora paymaster service.
+ * TrezoaKora RPC client for interacting with the TrezoaKora paymaster service.
  *
  * Provides methods to estimate fees, sign transactions, and perform gasless transfers
- * on Solana as specified by the Kora paymaster operator.
+ * on Trezoa as specified by the TrezoaKora paymaster operator.
  *
- * @example Kora Initialization
+ * @example TrezoaKora Initialization
  * ```typescript
- * const client = new KoraClient({
+ * const client = new TrezoaKoraClient({
  *   rpcUrl: 'http://localhost:8080',
  *   // apiKey may be required by some operators
  *   // apiKey: 'your-api-key',
@@ -44,19 +44,19 @@ import { findAssociatedTokenPda, TOKEN_PROGRAM_ADDRESS, getTransferInstruction }
  * const config = await client.getConfig();
  * ```
  */
-export class KoraClient {
+export class TrezoaKoraClient {
     private rpcUrl: string;
     private apiKey?: string;
     private hmacSecret?: string;
 
     /**
-     * Creates a new Kora client instance.
+     * Creates a new TrezoaKora client instance.
      * @param options - Client configuration options
-     * @param options.rpcUrl - The Kora RPC server URL
+     * @param options.rpcUrl - The TrezoaKora RPC server URL
      * @param options.apiKey - Optional API key for authentication
      * @param options.hmacSecret - Optional HMAC secret for signature-based authentication
      */
-    constructor({ rpcUrl, apiKey, hmacSecret }: KoraClientOptions) {
+    constructor({ rpcUrl, apiKey, hmacSecret }: TrezoaKoraClientOptions) {
         this.rpcUrl = rpcUrl;
         this.apiKey = apiKey;
         this.hmacSecret = hmacSecret;
@@ -109,7 +109,7 @@ export class KoraClient {
     }
 
     /**
-     * Retrieves the current Kora server configuration.
+     * Retrieves the current TrezoaKora server configuration.
      * @returns The server configuration including fee payer address and validation rules
      * @throws {Error} When the RPC call fails
      *
@@ -125,7 +125,7 @@ export class KoraClient {
     }
 
     /**
-     * Retrieves the payer signer and payment destination from the Kora server.
+     * Retrieves the payer signer and payment destination from the TrezoaKora server.
      * @returns Object containing the payer signer and payment destination
      * @throws {Error} When the RPC call fails
      *
@@ -136,7 +136,7 @@ export class KoraClient {
     }
 
     /**
-     * Gets the latest blockhash from the Solana RPC that the Kora server is connected to.
+     * Gets the latest blockhash from the Trezoa RPC that the TrezoaKora server is connected to.
      * @returns Object containing the current blockhash
      * @throws {Error} When the RPC call fails
      *
@@ -192,7 +192,7 @@ export class KoraClient {
     }
 
     /**
-     * Signs a transaction with the Kora fee payer without broadcasting it.
+     * Signs a transaction with the TrezoaKora fee payer without broadcasting it.
      * @param request - Sign request parameters
      * @param request.transaction - Base64-encoded transaction to sign
      * @returns Signature and the signed transaction
@@ -212,7 +212,7 @@ export class KoraClient {
     }
 
     /**
-     * Signs a transaction and immediately broadcasts it to the Solana network.
+     * Signs a transaction and immediately broadcasts it to the Trezoa network.
      * @param request - Sign and send request parameters
      * @param request.transaction - Base64-encoded transaction to sign and send
      * @returns Signature and the signed transaction
@@ -234,7 +234,7 @@ export class KoraClient {
     }
 
     /**
-     * Creates a token transfer transaction with Kora as the fee payer.
+     * Creates a token transfer transaction with TrezoaKora as the fee payer.
      * @param request - Transfer request parameters
      * @param request.amount - Amount to transfer (in token's smallest unit)
      * @param request.token - Mint address of the token to transfer
@@ -270,10 +270,10 @@ export class KoraClient {
     }
 
     /**
-     * Creates a payment instruction to append to a transaction for fee payment to the Kora paymaster.
+     * Creates a payment instruction to append to a transaction for fee payment to the TrezoaKora paymaster.
      *
      * This method estimates the required fee and generates a token transfer instruction
-     * from the source wallet to the Kora payment address. The server handles decimal
+     * from the source wallet to the TrezoaKora payment address. The server handles decimal
      * conversion internally, so the raw token amount is used directly.
      *
      * @param request - Payment instruction request parameters

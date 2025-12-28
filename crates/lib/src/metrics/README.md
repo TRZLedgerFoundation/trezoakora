@@ -1,10 +1,10 @@
-# Kora Metrics
+# TrezoaKora Metrics
 
-This crate provides comprehensive metrics collection and monitoring for the Kora RPC server.
+This crate provides comprehensive metrics collection and monitoring for the TrezoaKora RPC server.
 
 ## Configuration
 
-Metrics are configured in the main `kora.toml` file:
+Metrics are configured in the main `trezoakora.toml` file:
 
 ```toml
 [metrics]
@@ -16,7 +16,7 @@ scrape_interval = 60    # Prometheus scrape interval in seconds
 
 ## Auto-Configuration
 
-The metrics Docker stack (Prometheus + Grafana) automatically reads configuration from `kora.toml`:
+The metrics Docker stack (Prometheus + Grafana) automatically reads configuration from `trezoakora.toml`:
 
 ```bash
 # Run metrics (automatically updates config first)
@@ -33,7 +33,7 @@ cargo run --bin update-config
 ```
 
 This utility will:
-1. Read metrics configuration from `../../kora.toml`
+1. Read metrics configuration from `../../trezoakora.toml`
 2. Update `prometheus.yml` with the correct port, endpoint, and scrape interval
 3. **Preserve custom modifications** in existing files
 4. Display the configuration that was applied
@@ -41,8 +41,8 @@ This utility will:
 ## Metrics Exported
 
 ### HTTP Metrics
-- `kora_http_requests_total{method, status}` - Counter of HTTP requests by JSON-RPC method and status code
-- `kora_http_request_duration_seconds{method}` - Histogram of request durations by JSON-RPC method
+- `trezoakora_http_requests_total{method, status}` - Counter of HTTP requests by JSON-RPC method and status code
+- `trezoakora_http_request_duration_seconds{method}` - Histogram of request durations by JSON-RPC method
 
 ## Monitoring Stack
 
@@ -51,7 +51,7 @@ This utility will:
 
 ### Grafana Dashboard
 - `grafana/provisioning/datasources/prometheus.yml` - Auto-configures Prometheus data source
-- `grafana/provisioning/dashboards/kora-metrics.json` - Pre-built dashboard with:
+- `grafana/provisioning/dashboards/trezoakora-metrics.json` - Pre-built dashboard with:
   - HTTP Request Rate
   - Response Time Percentiles (95th/50th)
   - Total Request Counter
@@ -74,10 +74,10 @@ just run-metrics
 ```
 
 This will:
-- Automatically update configuration from kora.toml
+- Automatically update configuration from trezoakora.toml
 - Start Prometheus on port 9090
 - Start Grafana on port 3000
-- Configure Prometheus to scrape Kora metrics
+- Configure Prometheus to scrape TrezoaKora metrics
 
 Access:
 - Prometheus: http://localhost:9090
@@ -85,4 +85,4 @@ Access:
 
 ## Additional Documentation
 
-- [Kora Monitoring Guide](https://launch.solana.com/docs/kora/operators/monitoring)
+- [TrezoaKora Monitoring Guide](https://launch.trezoa.com/docs/trezoakora/operators/monitoring)

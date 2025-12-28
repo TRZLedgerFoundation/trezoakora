@@ -2,7 +2,7 @@ use crate::{
     config::{EnabledMethods, ValidationConfig},
     signer::SelectionStrategy,
     state::{self, get_signer_pool},
-    KoraError,
+    TrezoaKoraError,
 };
 use serde::Serialize;
 use utoipa::ToSchema;
@@ -19,12 +19,12 @@ pub struct GetConfigResponse {
     pub enabled_methods: EnabledMethods,
 }
 
-pub async fn get_config() -> Result<GetConfigResponse, KoraError> {
+pub async fn get_config() -> Result<GetConfigResponse, TrezoaKoraError> {
     let config = state::get_config()?;
 
     // Get signer pool information (required in multi-signer mode)
     let pool = get_signer_pool()
-        .map_err(|e| KoraError::InternalServerError(format!("Signer pool not initialized: {e}")))?;
+        .map_err(|e| TrezoaKoraError::InternalServerError(format!("Signer pool not initialized: {e}")))?;
 
     // Get all fee payer public keys from the signer pool
     let fee_payers: Vec<String> =
@@ -33,7 +33,7 @@ pub async fn get_config() -> Result<GetConfigResponse, KoraError> {
     Ok(GetConfigResponse {
         fee_payers,
         validation_config: config.validation.clone(),
-        enabled_methods: config.kora.enabled_methods.clone(),
+        enabled_methods: config.trezoakora.enabled_methods.clone(),
     })
 }
 
@@ -80,9 +80,9 @@ mod tests {
             response.validation_config.allowed_tokens[0],
             "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"
         ); // USDC devnet
-        assert_eq!(response.validation_config.allowed_spl_paid_tokens.as_slice().len(), 1);
+        assert_eq!(response.validation_config.allowed_tpl_paid_tokens.as_slice().len(), 1);
         assert_eq!(
-            response.validation_config.allowed_spl_paid_tokens.as_slice()[0],
+            response.validation_config.allowed_tpl_paid_tokens.as_slice()[0],
             "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"
         ); // USDC devnet
         assert_eq!(response.validation_config.disallowed_accounts.len(), 0);
@@ -99,19 +99,19 @@ mod tests {
         assert!(!response.validation_config.fee_payer_policy.system.nonce.allow_authorize);
         // Note: allow_upgrade removed - no authority parameter to validate
 
-        // Assert FeePayerPolicy defaults - SPL Token (secure by default - all false)
-        assert!(!response.validation_config.fee_payer_policy.spl_token.allow_transfer);
-        assert!(!response.validation_config.fee_payer_policy.spl_token.allow_burn);
-        assert!(!response.validation_config.fee_payer_policy.spl_token.allow_close_account);
-        assert!(!response.validation_config.fee_payer_policy.spl_token.allow_approve);
-        assert!(!response.validation_config.fee_payer_policy.spl_token.allow_revoke);
-        assert!(!response.validation_config.fee_payer_policy.spl_token.allow_set_authority);
-        assert!(!response.validation_config.fee_payer_policy.spl_token.allow_mint_to);
-        assert!(!response.validation_config.fee_payer_policy.spl_token.allow_initialize_mint);
-        assert!(!response.validation_config.fee_payer_policy.spl_token.allow_initialize_account);
-        assert!(!response.validation_config.fee_payer_policy.spl_token.allow_initialize_multisig);
-        assert!(!response.validation_config.fee_payer_policy.spl_token.allow_freeze_account);
-        assert!(!response.validation_config.fee_payer_policy.spl_token.allow_thaw_account);
+        // Assert FeePayerPolicy defaults - TPL Token (secure by default - all false)
+        assert!(!response.validation_config.fee_payer_policy.tpl_token.allow_transfer);
+        assert!(!response.validation_config.fee_payer_policy.tpl_token.allow_burn);
+        assert!(!response.validation_config.fee_payer_policy.tpl_token.allow_close_account);
+        assert!(!response.validation_config.fee_payer_policy.tpl_token.allow_approve);
+        assert!(!response.validation_config.fee_payer_policy.tpl_token.allow_revoke);
+        assert!(!response.validation_config.fee_payer_policy.tpl_token.allow_set_authority);
+        assert!(!response.validation_config.fee_payer_policy.tpl_token.allow_mint_to);
+        assert!(!response.validation_config.fee_payer_policy.tpl_token.allow_initialize_mint);
+        assert!(!response.validation_config.fee_payer_policy.tpl_token.allow_initialize_account);
+        assert!(!response.validation_config.fee_payer_policy.tpl_token.allow_initialize_multisig);
+        assert!(!response.validation_config.fee_payer_policy.tpl_token.allow_freeze_account);
+        assert!(!response.validation_config.fee_payer_policy.tpl_token.allow_thaw_account);
 
         // Assert FeePayerPolicy defaults - Token2022 (secure by default - all false)
         assert!(!response.validation_config.fee_payer_policy.token_2022.allow_transfer);

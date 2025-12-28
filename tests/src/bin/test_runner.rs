@@ -1,6 +1,6 @@
 use clap::Parser;
-use solana_client::nonblocking::rpc_client::RpcClient;
-use solana_commitment_config::CommitmentConfig;
+use trezoa_client::nonblocking::rpc_client::RpcClient;
+use trezoa_commitment_config::CommitmentConfig;
 use std::{collections::HashMap, sync::Arc, time::Instant};
 use tests::{
     common::{constants::DEFAULT_RPC_URL, setup::TestAccountSetup, TestAccountInfo},
@@ -11,8 +11,8 @@ use tests::{
         },
         commands::{TestCommandHelper, TestLanguage},
         config::{TestPhaseConfig, TestRunnerConfig},
-        kora::{
-            get_kora_binary_path, is_kora_running_with_client, release_port, start_kora_rpc_server,
+        trezoakora::{
+            get_trezoakora_binary_path, is_trezoakora_running_with_client, release_port, start_trezoakora_rpc_server,
         },
         output::{
             filter_command_output, limit_output_size, OutputFilter, PhaseOutput, TestPhaseColor,
@@ -25,9 +25,9 @@ use tokio::{process::Child, task::JoinSet};
 pub struct TestRunner {
     pub rpc_client: Arc<RpcClient>,
     pub reqwest_client: reqwest::Client,
-    pub solana_test_validator_pid: Option<Child>,
+    pub trezoa_test_validator_pid: Option<Child>,
     pub test_accounts: TestAccountInfo,
-    pub kora_pids: Vec<Child>,
+    pub trezoakora_pids: Vec<Child>,
     pub cached_keys: Arc<HashMap<AccountFile, String>>,
 }
 
@@ -36,7 +36,7 @@ impl TestRunner {
         let mut cached_keys = HashMap::new();
 
         // Cache all required keys
-        for &account_file in AccountFile::required_for_kora() {
+        for &account_file in AccountFile::required_for_trezoakora() {
             let key = tokio::fs::read_to_string(account_file.local_key_path()).await?;
             cached_keys.insert(account_file, key);
         }
@@ -47,9 +47,9 @@ impl TestRunner {
                 CommitmentConfig::confirmed(),
             )),
             reqwest_client: reqwest::Client::new(),
-            solana_test_validator_pid: None,
+            trezoa_test_validator_pid: None,
             test_accounts: TestAccountInfo::default(),
-            kora_pids: Vec::new(),
+            trezoakora_pids: Vec::new(),
             cached_keys: Arc::new(cached_keys),
         })
     }
@@ -70,17 +70,17 @@ CLI
 */
 #[derive(Parser, Debug)]
 #[command(name = "test_runner")]
-#[command(about = "Kora integration test runner with configurable options")]
+#[command(about = "TrezoaKora integration test runner with configurable options")]
 pub struct Args {
     /// Enable verbose output showing detailed test information
     #[arg(long, help = "Enable verbose output")]
     pub verbose: bool,
 
-    /// RPC URL to use for Solana connection
+    /// RPC URL to use for Trezoa connection
     #[arg(
         long,
         default_value = DEFAULT_RPC_URL,
-        help = "Solana RPC URL to connect to"
+        help = "Trezoa RPC URL to connect to"
     )]
     pub rpc_url: String,
 
@@ -166,7 +166,7 @@ async fn setup_test_env(
 
     // Only start local validator if using default RPC URL
     if !custom_rpc_url {
-        test_runner.solana_test_validator_pid =
+        test_runner.trezoa_test_validator_pid =
             Some(start_test_validator(found_all_accounts).await?);
     } else {
         println!("Using external RPC, skipping local validator startup");
@@ -313,7 +313,7 @@ pub async fn run_test_phase(
     output
         .push_str(&color.colorize_with_controlled_flow(&format!("=== Starting {phase_name} ===")));
 
-    let (mut kora_pid, actual_port) = match start_kora_rpc_server(
+    let (mut trezoakora_pid, actual_port) = match start_trezoakora_rpc_server(
         rpc_url.clone(),
         config_file,
         signers_config,
@@ -326,7 +326,7 @@ pub async fn run_test_phase(
         Ok((pid, port)) => (pid, port),
         Err(e) => {
             output.push_str(
-                &color.colorize_with_controlled_flow(&format!("Failed to start Kora server: {e}")),
+                &color.colorize_with_controlled_flow(&format!("Failed to start TrezoaKora server: {e}")),
             );
             let (limited_output, truncated) = limit_output_size(output);
             return PhaseOutput {
@@ -344,13 +344,13 @@ pub async fn run_test_phase(
     let max_attempts = 10;
     let port_str = actual_port.to_string();
 
-    while !is_kora_running_with_client(&http_client, &port_str).await {
+    while !is_trezoakora_running_with_client(&http_client, &port_str).await {
         attempts += 1;
         if attempts > max_attempts {
             output.push_str(&color.colorize_with_controlled_flow(&format!(
-                "Kora server failed to start on port {actual_port} within {max_attempts} attempts"
+                "TrezoaKora server failed to start on port {actual_port} within {max_attempts} attempts"
             )));
-            kora_pid.kill().await.ok();
+            trezoakora_pid.kill().await.ok();
             release_port(actual_port);
             let (limited_output, truncated) = limit_output_size(output);
             return PhaseOutput {
@@ -365,12 +365,12 @@ pub async fn run_test_phase(
         delay = std::cmp::min(delay * 2, max_delay);
     }
     output.push_str(
-        &color.colorize_with_controlled_flow(&format!("Kora server started on port {actual_port}")),
+        &color.colorize_with_controlled_flow(&format!("TrezoaKora server started on port {actual_port}")),
     );
 
     let result = async {
         if initialize_payment_atas {
-            run_initialize_atas_for_kora_cli_tests_buffered(
+            run_initialize_atas_for_trezoakora_cli_tests_buffered(
                 config_file,
                 &rpc_url,
                 signers_config,
@@ -412,7 +412,7 @@ pub async fn run_test_phase(
     }
     .await;
 
-    kora_pid.kill().await.ok();
+    trezoakora_pid.kill().await.ok();
     release_port(actual_port);
 
     let success = result.is_ok();
@@ -429,7 +429,7 @@ pub async fn run_test_phase(
     PhaseOutput { phase_name: phase_name.to_string(), output: limited_output, success, truncated }
 }
 
-pub async fn run_initialize_atas_for_kora_cli_tests_buffered(
+pub async fn run_initialize_atas_for_trezoakora_cli_tests_buffered(
     config_file: &str,
     rpc_url: &str,
     signers_config: &str,
@@ -442,9 +442,9 @@ pub async fn run_initialize_atas_for_kora_cli_tests_buffered(
     let fee_payer_key =
         cached_keys.get(&AccountFile::FeePayer).ok_or("FeePayer key not found in cache")?;
 
-    let kora_binary_path = get_kora_binary_path().await?;
+    let trezoakora_binary_path = get_trezoakora_binary_path().await?;
 
-    let cmd_output = tokio::process::Command::new(kora_binary_path)
+    let cmd_output = tokio::process::Command::new(trezoakora_binary_path)
         .args([
             "--config",
             config_file,
@@ -455,7 +455,7 @@ pub async fn run_initialize_atas_for_kora_cli_tests_buffered(
             "--signers-config",
             signers_config,
         ])
-        .env("KORA_PRIVATE_KEY", fee_payer_key.trim())
+        .env("TREZOAKORA_PRIVATE_KEY", fee_payer_key.trim())
         .output()
         .await?;
 
@@ -486,20 +486,20 @@ pub async fn clean_up(
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     println!("=== Cleaning up processes ===");
 
-    if let Some(solana_test_validator_pid) = &mut test_runner.solana_test_validator_pid {
-        if let Err(e) = solana_test_validator_pid.kill().await {
-            println!("Failed to stop Solana test validator: {e}");
+    if let Some(trezoa_test_validator_pid) = &mut test_runner.trezoa_test_validator_pid {
+        if let Err(e) = trezoa_test_validator_pid.kill().await {
+            println!("Failed to stop Trezoa test validator: {e}");
         } else {
-            println!("Stopped Solana test validator");
+            println!("Stopped Trezoa test validator");
         }
     }
 
-    // Kill tracked Kora processes (though they're managed locally in each test phase)
-    for kora_pid in &mut test_runner.kora_pids {
-        if let Err(e) = kora_pid.kill().await {
-            println!("Failed to stop Kora process: {e}");
+    // Kill tracked TrezoaKora processes (though they're managed locally in each test phase)
+    for trezoakora_pid in &mut test_runner.trezoakora_pids {
+        if let Err(e) = trezoakora_pid.kill().await {
+            println!("Failed to stop TrezoaKora process: {e}");
         } else {
-            println!("Stopped Kora process");
+            println!("Stopped TrezoaKora process");
         }
     }
 

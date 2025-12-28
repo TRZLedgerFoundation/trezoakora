@@ -1,2 +1,2 @@
 export * from './types/index.js';
-export { KoraClient } from './client.js';
+export { TrezoaKoraClient } from './client.js';

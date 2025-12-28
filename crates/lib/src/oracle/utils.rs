@@ -5,10 +5,10 @@ use std::{collections::HashMap, sync::Arc};
 
 pub const DEFAULT_MOCKED_PRICE: Decimal = dec!(0.001);
 pub const DEFAULT_MOCKED_USDC_PRICE: Decimal = dec!(0.0075);
-pub const DEFAULT_MOCKED_WSOL_PRICE: Decimal = dec!(1.0);
+pub const DEFAULT_MOCKED_WTRZ_PRICE: Decimal = dec!(1.0);
 
 pub const USDC_DEVNET_MINT: &str = "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU";
-pub const WSOL_DEVNET_MINT: &str = "So11111111111111111111111111111111111111112";
+pub const WTRZ_DEVNET_MINT: &str = "tr11111111111111111111111111111111111111112";
 
 pub struct OracleUtil {}
 
@@ -21,7 +21,7 @@ impl OracleUtil {
             .returning(|_, mint_address| {
                 let price = match mint_address {
                     USDC_DEVNET_MINT => DEFAULT_MOCKED_USDC_PRICE, // USDC
-                    WSOL_DEVNET_MINT => DEFAULT_MOCKED_WSOL_PRICE, // SOL
+                    WTRZ_DEVNET_MINT => DEFAULT_MOCKED_WTRZ_PRICE, // TRZ
                     _ => DEFAULT_MOCKED_PRICE, // Default price for unknown tokens
                 };
                 Ok(TokenPrice { price, confidence: 1.0, source: PriceSource::Mock })
@@ -34,7 +34,7 @@ impl OracleUtil {
                 for mint_address in mint_addresses {
                     let price = match mint_address.as_str() {
                         USDC_DEVNET_MINT => DEFAULT_MOCKED_USDC_PRICE, // USDC
-                        WSOL_DEVNET_MINT => DEFAULT_MOCKED_WSOL_PRICE, // SOL
+                        WTRZ_DEVNET_MINT => DEFAULT_MOCKED_WTRZ_PRICE, // TRZ
                         _ => DEFAULT_MOCKED_PRICE, // Default price for unknown tokens
                     };
                     result.insert(
@@ -64,11 +64,11 @@ mod tests {
         assert_eq!(usdc_price.confidence, 1.0);
         assert_eq!(usdc_price.source, PriceSource::Mock);
 
-        // Test SOL price
-        let sol_price = oracle.get_price(&client, WSOL_DEVNET_MINT).await.unwrap();
-        assert_eq!(sol_price.price, DEFAULT_MOCKED_WSOL_PRICE);
-        assert_eq!(sol_price.confidence, 1.0);
-        assert_eq!(sol_price.source, PriceSource::Mock);
+        // Test TRZ price
+        let trz_price = oracle.get_price(&client, WTRZ_DEVNET_MINT).await.unwrap();
+        assert_eq!(trz_price.price, DEFAULT_MOCKED_WTRZ_PRICE);
+        assert_eq!(trz_price.confidence, 1.0);
+        assert_eq!(trz_price.source, PriceSource::Mock);
 
         // Test unknown token (should return default price)
         let unknown_price = oracle.get_price(&client, "unknown_token").await.unwrap();

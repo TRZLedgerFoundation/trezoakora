@@ -1,4 +1,4 @@
-// Authentication tests for Kora RPC server
+// Authentication tests for TrezoaKora RPC server
 //
 // CONFIG: Uses tests/src/common/fixtures/auth-test.toml (auth enabled)
 // TESTS: API key and HMAC authentication middleware

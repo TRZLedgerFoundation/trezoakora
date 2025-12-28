@@ -18,7 +18,7 @@ pub struct HttpMetrics {
 impl HttpMetrics {
     fn new() -> Self {
         let requests_total = CounterVec::new(
-            Opts::new("http_requests_total", "Total number of HTTP requests").namespace("kora"),
+            Opts::new("http_requests_total", "Total number of HTTP requests").namespace("trezoakora"),
             &["method", "status"],
         )
         .unwrap_or_else(|e| {
@@ -31,7 +31,7 @@ impl HttpMetrics {
                 "http_request_duration_seconds",
                 "HTTP request duration in seconds",
             )
-            .namespace("kora")
+            .namespace("trezoakora")
             .buckets(vec![0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1.0, 5.0, 10.0]),
             &["method"],
         )

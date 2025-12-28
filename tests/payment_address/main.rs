@@ -1,4 +1,4 @@
-// Payment address tests for Kora RPC server
+// Payment address tests for TrezoaKora RPC server
 //
 // CONFIG: Uses tests/common/fixtures/paymaster-address-test.toml
 // TESTS: Special payment address functionality and ATA initialization

@@ -6,7 +6,7 @@ pub use balance::BalanceTracker;
 pub use handler::{MetricsHandlerLayer, MetricsHandlerService};
 pub use middleware::{HttpMetricsLayer, HttpMetricsService};
 pub use prometheus;
-use solana_client::nonblocking::rpc_client::RpcClient;
+use trezoa_client::nonblocking::rpc_client::RpcClient;
 use tokio::task::JoinHandle;
 
 use crate::{config::MetricsConfig, state::get_config};

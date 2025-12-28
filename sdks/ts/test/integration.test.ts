@@ -1,4 +1,4 @@
-import { KoraClient } from '../src/index.js';
+import { TrezoaKoraClient } from '../src/index.js';
 import setupTestSuite from './setup.js';
 import { runAuthenticationTests } from './auth-setup.js';
 import {
@@ -10,8 +10,8 @@ import {
     signTransaction,
     type KeyPairSigner,
     type Transaction,
-} from '@solana/kit';
-import { ASSOCIATED_TOKEN_PROGRAM_ADDRESS, findAssociatedTokenPda, TOKEN_PROGRAM_ADDRESS } from '@solana-program/token';
+} from '@trezoa/kit';
+import { ASSOCIATED_TOKEN_PROGRAM_ADDRESS, findAssociatedTokenPda, TOKEN_PROGRAM_ADDRESS } from '@trezoa-program/token';
 
 function transactionFromBase64(base64: string): Transaction {
     const encoder = getBase64Encoder();
@@ -21,25 +21,25 @@ function transactionFromBase64(base64: string): Transaction {
 }
 
 const AUTH_ENABLED = process.env.ENABLE_AUTH === 'true';
-const KORA_SIGNER_TYPE = process.env.KORA_SIGNER_TYPE || 'memory';
-describe(`KoraClient Integration Tests (${AUTH_ENABLED ? 'with auth' : 'without auth'} | signer type: ${KORA_SIGNER_TYPE})`, () => {
-    let client: KoraClient;
+const TREZOAKORA_SIGNER_TYPE = process.env.TREZOAKORA_SIGNER_TYPE || 'memory';
+describe(`TrezoaKoraClient Integration Tests (${AUTH_ENABLED ? 'with auth' : 'without auth'} | signer type: ${TREZOAKORA_SIGNER_TYPE})`, () => {
+    let client: TrezoaKoraClient;
     let testWallet: KeyPairSigner;
     let testWalletAddress: Address;
     let destinationAddress: Address;
     let usdcMint: Address;
-    let koraAddress: Address;
-    let koraRpcUrl: string;
+    let trezoakoraAddress: Address;
+    let trezoakoraRpcUrl: string;
 
     beforeAll(async () => {
         const testSuite = await setupTestSuite();
-        client = testSuite.koraClient;
+        client = testSuite.trezoakoraClient;
         testWallet = testSuite.testWallet;
         testWalletAddress = testWallet.address;
         destinationAddress = testSuite.destinationAddress;
         usdcMint = testSuite.usdcMint;
-        koraAddress = testSuite.koraAddress;
-        koraRpcUrl = testSuite.koraRpcUrl;
+        trezoakoraAddress = testSuite.trezoakoraAddress;
+        trezoakoraRpcUrl = testSuite.trezoakoraRpcUrl;
     }, 90000); // allow adequate time for airdrops and token initialization
 
     // Run authentication tests only when auth is enabled
@@ -78,17 +78,17 @@ describe(`KoraClient Integration Tests (${AUTH_ENABLED ? 'with auth' : 'without 
             expect(config.validation_config.fee_payer_policy.system.nonce.allow_authorize).toBeDefined();
             expect(config.validation_config.fee_payer_policy.system.nonce.allow_withdraw).toBeDefined();
 
-            // SPL token policy
-            expect(config.validation_config.fee_payer_policy.spl_token).toBeDefined();
-            expect(config.validation_config.fee_payer_policy.spl_token.allow_transfer).toBeDefined();
-            expect(config.validation_config.fee_payer_policy.spl_token.allow_burn).toBeDefined();
-            expect(config.validation_config.fee_payer_policy.spl_token.allow_close_account).toBeDefined();
-            expect(config.validation_config.fee_payer_policy.spl_token.allow_approve).toBeDefined();
-            expect(config.validation_config.fee_payer_policy.spl_token.allow_revoke).toBeDefined();
-            expect(config.validation_config.fee_payer_policy.spl_token.allow_set_authority).toBeDefined();
-            expect(config.validation_config.fee_payer_policy.spl_token.allow_mint_to).toBeDefined();
-            expect(config.validation_config.fee_payer_policy.spl_token.allow_freeze_account).toBeDefined();
-            expect(config.validation_config.fee_payer_policy.spl_token.allow_thaw_account).toBeDefined();
+            // TPL token policy
+            expect(config.validation_config.fee_payer_policy.tpl_token).toBeDefined();
+            expect(config.validation_config.fee_payer_policy.tpl_token.allow_transfer).toBeDefined();
+            expect(config.validation_config.fee_payer_policy.tpl_token.allow_burn).toBeDefined();
+            expect(config.validation_config.fee_payer_policy.tpl_token.allow_close_account).toBeDefined();
+            expect(config.validation_config.fee_payer_policy.tpl_token.allow_approve).toBeDefined();
+            expect(config.validation_config.fee_payer_policy.tpl_token.allow_revoke).toBeDefined();
+            expect(config.validation_config.fee_payer_policy.tpl_token.allow_set_authority).toBeDefined();
+            expect(config.validation_config.fee_payer_policy.tpl_token.allow_mint_to).toBeDefined();
+            expect(config.validation_config.fee_payer_policy.tpl_token.allow_freeze_account).toBeDefined();
+            expect(config.validation_config.fee_payer_policy.tpl_token.allow_thaw_account).toBeDefined();
 
             // Token2022 policy
             expect(config.validation_config.fee_payer_policy.token_2022).toBeDefined();
@@ -249,8 +249,8 @@ describe(`KoraClient Integration Tests (${AUTH_ENABLED ? 'with auth' : 'without 
                 tokenProgram: TOKEN_PROGRAM_ADDRESS,
                 mint: usdcMint,
             });
-            const [koraAta] = await findAssociatedTokenPda({
-                owner: koraAddress,
+            const [trezoakoraAta] = await findAssociatedTokenPda({
+                owner: trezoakoraAddress,
                 tokenProgram: TOKEN_PROGRAM_ADDRESS,
                 mint: usdcMint,
             });
@@ -271,13 +271,13 @@ describe(`KoraClient Integration Tests (${AUTH_ENABLED ? 'with auth' : 'without 
             expect(payment_instruction).toBeDefined();
             expect(payment_instruction.programAddress).toBe(TOKEN_PROGRAM_ADDRESS);
             expect(payment_instruction.accounts?.[0].address).toBe(expectedSenderAta);
-            expect(payment_instruction.accounts?.[1].address).toBe(koraAta);
+            expect(payment_instruction.accounts?.[1].address).toBe(trezoakoraAta);
             expect(payment_instruction.accounts?.[2].address).toBe(testWalletAddress);
             // todo math to verify payment amount
             // expect(payment_amount).toBe(1000000);
             expect(payment_token).toBe(usdcMint);
-            expect(payment_address).toBe(koraAddress);
-            expect(signer_address).toBe(koraAddress);
+            expect(payment_address).toBe(trezoakoraAddress);
+            expect(signer_address).toBe(trezoakoraAddress);
             expect(original_transaction).toBe(transaction);
         });
     });

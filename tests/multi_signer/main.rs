@@ -1,6 +1,6 @@
 // Multi-Signer Integration Tests
 //
-// CONFIG: Uses tests/src/common/fixtures/kora-test.toml (multi-signer configuration)
+// CONFIG: Uses tests/src/common/fixtures/trezoakora-test.toml (multi-signer configuration)
 // TESTS: Multi-signer functionality and management
 //        - Round-robin signer selection behavior
 //        - Signer key consistency across RPC calls

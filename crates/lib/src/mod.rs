@@ -22,8 +22,8 @@ pub mod usage_limit;
 pub mod validator;
 pub use cache::CacheUtil;
 pub use config::Config;
-pub use error::KoraError;
-pub use signer::SolanaSigner;
+pub use error::TrezoaKoraError;
+pub use signer::TrezoaSigner;
 pub use state::get_request_signer_with_signer_key;
 
 #[cfg(test)]

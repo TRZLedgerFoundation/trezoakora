@@ -1,8 +1,8 @@
 use crate::common::*;
 use jsonrpsee::rpc_params;
-use kora_lib::token::{spl_token::TokenProgram, TokenInterface};
-use solana_sdk::{pubkey::Pubkey, signature::Signer};
-use spl_associated_token_account_interface::address::get_associated_token_address;
+use trezoakora_lib::token::{tpl_token::TokenProgram, TokenInterface};
+use trezoa_sdk::{pubkey::Pubkey, signature::Signer};
+use tpl_associated_token_account_interface::address::get_associated_token_address;
 use std::str::FromStr;
 
 #[tokio::test]
@@ -131,14 +131,14 @@ async fn test_sign_transaction_if_paid_with_multiple_sources_legacy() {
         .transaction_builder()
         .with_fee_payer(fee_payer)
         .with_signer(&sender)
-        .with_spl_transfer_checked(
+        .with_tpl_transfer_checked(
             &test_mint,
             &sender.pubkey(),
             &payment_address,
             payment_amount,
             6,
         )
-        .with_spl_token_2022_transfer_checked(
+        .with_tpl_token_2022_transfer_checked(
             &test_mint2,
             &sender.pubkey(),
             &payment_address,

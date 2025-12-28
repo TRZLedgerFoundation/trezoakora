@@ -42,8 +42,8 @@ jobs:
       - name: Build
         run: just build
 
-      - name: Setup Solana CLI
-        uses: ./.github/actions/setup-solana
+      - name: Setup Trezoa CLI
+        uses: ./.github/actions/setup-trezoa
 
       - name: Install cargo-llvm-cov for coverage
         run: cargo install cargo-llvm-cov

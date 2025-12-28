@@ -2,8 +2,8 @@ use std::str::FromStr;
 
 use crate::common::*;
 use jsonrpsee::rpc_params;
-use kora_lib::transaction::TransactionUtil;
-use solana_sdk::{
+use trezoakora_lib::transaction::TransactionUtil;
+use trezoa_sdk::{
     pubkey::Pubkey,
     signature::{Keypair, Signer},
 };
@@ -99,13 +99,13 @@ async fn test_sign_token_2022_transaction_legacy() {
         .transaction_builder()
         .with_fee_payer(fee_payer)
         .with_signer(&sender)
-        .with_spl_transfer(
+        .with_tpl_transfer(
             &token_mint,
             &sender.pubkey(),
             &fee_payer,
             tests::common::helpers::get_fee_for_default_transaction_in_usdc(),
         )
-        .with_spl_token_2022_transfer_checked(&token_mint_2022, &sender.pubkey(), &recipient, 10, 6)
+        .with_tpl_token_2022_transfer_checked(&token_mint_2022, &sender.pubkey(), &recipient, 10, 6)
         .build()
         .await
         .expect("Failed to create Token 2022 test transaction");
@@ -146,14 +146,14 @@ async fn test_sign_token_2022_transaction_v0() {
         .v0_transaction_builder()
         .with_fee_payer(fee_payer)
         .with_signer(&sender)
-        .with_spl_transfer_checked(
+        .with_tpl_transfer_checked(
             &token_mint,
             &sender.pubkey(),
             &fee_payer,
             tests::common::helpers::get_fee_for_default_transaction_in_usdc(),
             TEST_USDC_MINT_DECIMALS,
         )
-        .with_spl_token_2022_transfer_checked(&token_mint_2022, &sender.pubkey(), &recipient, 10, 6)
+        .with_tpl_token_2022_transfer_checked(&token_mint_2022, &sender.pubkey(), &recipient, 10, 6)
         .build()
         .await
         .expect("Failed to create V0 Token 2022 test transaction");
@@ -190,7 +190,7 @@ async fn test_sign_token_2022_transaction_v0_with_lookup() {
     let token_mint = USDCMintTestHelper::get_test_usdc_mint_pubkey();
     let token_mint_2022 = USDCMint2022TestHelper::get_test_usdc_mint_2022_pubkey();
 
-    // Use the transaction lookup table which contains the mint address and the spl token program
+    // Use the transaction lookup table which contains the mint address and the tpl token program
     let transaction_lookup_table = LookupTableHelper::get_transaction_lookup_table_address()
         .expect("Failed to get transaction lookup table from fixtures");
 
@@ -198,14 +198,14 @@ async fn test_sign_token_2022_transaction_v0_with_lookup() {
         .v0_transaction_builder_with_lookup(vec![transaction_lookup_table])
         .with_fee_payer(fee_payer)
         .with_signer(&sender)
-        .with_spl_transfer_checked(
+        .with_tpl_transfer_checked(
             &token_mint,
             &sender.pubkey(),
             &fee_payer,
             tests::common::helpers::get_fee_for_default_transaction_in_usdc(),
             TEST_USDC_MINT_DECIMALS,
         )
-        .with_spl_token_2022_transfer_checked(&token_mint_2022, &sender.pubkey(), &recipient, 10, 6)
+        .with_tpl_token_2022_transfer_checked(&token_mint_2022, &sender.pubkey(), &recipient, 10, 6)
         .build()
         .await
         .expect("Failed to create V0 Token 2022 test transaction with lookup table");
@@ -254,13 +254,13 @@ async fn test_sign_and_send_token_2022_transaction_legacy() {
         .transaction_builder()
         .with_fee_payer(fee_payer)
         .with_signer(&sender)
-        .with_spl_transfer(
+        .with_tpl_transfer(
             &token_mint,
             &sender.pubkey(),
             &fee_payer,
             tests::common::helpers::get_fee_for_default_transaction_in_usdc(),
         )
-        .with_spl_token_2022_transfer_checked(&token_mint_2022, &sender.pubkey(), &recipient, 10, 6)
+        .with_tpl_token_2022_transfer_checked(&token_mint_2022, &sender.pubkey(), &recipient, 10, 6)
         .build()
         .await
         .expect("Failed to create signed Token 2022 test transaction");
@@ -291,14 +291,14 @@ async fn test_sign_and_send_token_2022_transaction_v0() {
         .v0_transaction_builder()
         .with_fee_payer(fee_payer)
         .with_signer(&sender)
-        .with_spl_transfer_checked(
+        .with_tpl_transfer_checked(
             &token_mint,
             &sender.pubkey(),
             &fee_payer,
             tests::common::helpers::get_fee_for_default_transaction_in_usdc(),
             TEST_USDC_MINT_DECIMALS,
         )
-        .with_spl_token_2022_transfer_checked(&token_mint_2022, &sender.pubkey(), &recipient, 10, 6)
+        .with_tpl_token_2022_transfer_checked(&token_mint_2022, &sender.pubkey(), &recipient, 10, 6)
         .build()
         .await
         .expect("Failed to create V0 Token 2022 test transaction");
@@ -325,7 +325,7 @@ async fn test_sign_and_send_token_2022_transaction_v0_with_lookup() {
 
     let ctx = TestContext::new().await.expect("Failed to create test context");
 
-    // Use the transaction lookup table which contains the mint address and the spl token program used for ATA derivation
+    // Use the transaction lookup table which contains the mint address and the tpl token program used for ATA derivation
     let transaction_lookup_table = LookupTableHelper::get_transaction_lookup_table_address()
         .expect("Failed to get transaction lookup table from fixtures");
 
@@ -333,14 +333,14 @@ async fn test_sign_and_send_token_2022_transaction_v0_with_lookup() {
         .v0_transaction_builder_with_lookup(vec![transaction_lookup_table])
         .with_fee_payer(fee_payer)
         .with_signer(&sender)
-        .with_spl_transfer_checked(
+        .with_tpl_transfer_checked(
             &token_mint,
             &sender.pubkey(),
             &fee_payer,
             tests::common::helpers::get_fee_for_default_transaction_in_usdc(),
             TEST_USDC_MINT_DECIMALS,
         )
-        .with_spl_token_2022_transfer_checked(&token_mint_2022, &sender.pubkey(), &recipient, 10, 6)
+        .with_tpl_token_2022_transfer_checked(&token_mint_2022, &sender.pubkey(), &recipient, 10, 6)
         .build()
         .await
         .expect("Failed to create V0 Token 2022 test transaction with lookup table");
@@ -390,14 +390,14 @@ async fn test_sign_token_2022_transaction_if_paid_legacy() {
         .transaction_builder()
         .with_fee_payer(fee_payer)
         .with_signer(&sender)
-        .with_spl_token_2022_transfer_checked(
+        .with_tpl_token_2022_transfer_checked(
             &token_mint_2022,
             &sender.pubkey(),
             &fee_payer,
             fee_amount,
             6,
         )
-        .with_spl_token_2022_transfer_checked(&token_mint_2022, &sender.pubkey(), &recipient, 1, 6)
+        .with_tpl_token_2022_transfer_checked(&token_mint_2022, &sender.pubkey(), &recipient, 1, 6)
         .build()
         .await
         .expect("Failed to create signed Token 2022 transaction");
@@ -453,14 +453,14 @@ async fn test_sign_token_2022_transaction_if_paid_v0() {
         .v0_transaction_builder()
         .with_fee_payer(fee_payer)
         .with_signer(&sender)
-        .with_spl_token_2022_transfer_checked(
+        .with_tpl_token_2022_transfer_checked(
             &token_mint_2022,
             &sender.pubkey(),
             &fee_payer,
             fee_amount,
             6,
         )
-        .with_spl_token_2022_transfer_checked(&token_mint_2022, &sender.pubkey(), &recipient, 1, 6)
+        .with_tpl_token_2022_transfer_checked(&token_mint_2022, &sender.pubkey(), &recipient, 1, 6)
         .build()
         .await
         .expect("Failed to create V0 signed Token 2022 transaction");
@@ -512,7 +512,7 @@ async fn test_sign_token_2022_transaction_if_paid_v0_with_lookup() {
 
     let fee_amount = 100000;
 
-    // Use the transaction lookup table which contains the mint address and the spl token program
+    // Use the transaction lookup table which contains the mint address and the tpl token program
     let transaction_lookup_table = LookupTableHelper::get_transaction_lookup_table_address()
         .expect("Failed to get transaction lookup table from fixtures");
 
@@ -521,14 +521,14 @@ async fn test_sign_token_2022_transaction_if_paid_v0_with_lookup() {
         .v0_transaction_builder_with_lookup(vec![transaction_lookup_table])
         .with_fee_payer(fee_payer)
         .with_signer(&sender)
-        .with_spl_token_2022_transfer_checked(
+        .with_tpl_token_2022_transfer_checked(
             &token_mint_2022,
             &sender.pubkey(),
             &fee_payer,
             fee_amount,
             6,
         )
-        .with_spl_token_2022_transfer_checked(&token_mint_2022, &sender.pubkey(), &recipient, 1, 6)
+        .with_tpl_token_2022_transfer_checked(&token_mint_2022, &sender.pubkey(), &recipient, 1, 6)
         .build()
         .await
         .expect("Failed to create V0 signed Token 2022 transaction with lookup table");

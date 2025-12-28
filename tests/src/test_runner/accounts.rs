@@ -1,5 +1,5 @@
 use crate::common::{
-    TestAccountInfo, KORA_PRIVATE_KEY_ENV, PAYMENT_ADDRESS_KEYPAIR_ENV, SIGNER_2_KEYPAIR_ENV,
+    TestAccountInfo, TREZOAKORA_PRIVATE_KEY_ENV, PAYMENT_ADDRESS_KEYPAIR_ENV, SIGNER_2_KEYPAIR_ENV,
     TEST_ALLOWED_LOOKUP_TABLE_ADDRESS_ENV, TEST_DISALLOWED_LOOKUP_TABLE_ADDRESS_ENV,
     TEST_FEE_PAYER_POLICY_MINT_2022_KEYPAIR_ENV, TEST_FEE_PAYER_POLICY_MINT_KEYPAIR_ENV,
     TEST_INTEREST_BEARING_MINT_KEYPAIR_ENV, TEST_RECIPIENT_PUBKEY_ENV, TEST_SENDER_KEYPAIR_ENV,
@@ -7,8 +7,8 @@ use crate::common::{
     TEST_USDC_MINT_2022_KEYPAIR_ENV, TEST_USDC_MINT_KEYPAIR_ENV,
 };
 use base64::{engine::general_purpose::STANDARD, Engine};
-use solana_client::nonblocking::rpc_client::RpcClient;
-use solana_sdk::pubkey::Pubkey;
+use trezoa_client::nonblocking::rpc_client::RpcClient;
+use trezoa_sdk::pubkey::Pubkey;
 use std::{fs, path::Path};
 
 const TEST_ACCOUNTS_DIR: &str = "tests/src/common/fixtures/test-accounts";
@@ -89,7 +89,7 @@ impl AccountFile {
 
     pub fn local_key_env_var(&self) -> &'static str {
         match self {
-            Self::FeePayer => KORA_PRIVATE_KEY_ENV,
+            Self::FeePayer => TREZOAKORA_PRIVATE_KEY_ENV,
             Self::Sender => TEST_SENDER_KEYPAIR_ENV,
             Self::Recipient => TEST_RECIPIENT_PUBKEY_ENV,
             Self::UsdcMint => TEST_USDC_MINT_KEYPAIR_ENV,
@@ -161,7 +161,7 @@ impl AccountFile {
         ]
     }
 
-    pub fn required_for_kora() -> &'static [AccountFile] {
+    pub fn required_for_trezoakora() -> &'static [AccountFile] {
         &[Self::FeePayer, Self::Signer2]
     }
 

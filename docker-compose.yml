@@ -9,14 +9,14 @@ services:
     restart: unless-stopped
     command: redis-server /usr/local/etc/redis/redis.conf
 
-  kora:
+  trezoakora:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
     volumes:
-      - ./kora.toml:/app/kora.toml
+      - ./trezoakora.toml:/app/trezoakora.toml
       - ./signers.toml:/app/signers.toml
       - ./.env:/app/.env:ro
     environment:
@@ -26,7 +26,7 @@ services:
     command:
       - sh
       - -c
-      - "kora --config /app/kora.toml --rpc-url ${RPC_URL:-http://127.0.0.1:8899} rpc start --signers-config /app/signers.toml"
+      - "trezoakora --config /app/trezoakora.toml --rpc-url ${RPC_URL:-http://127.0.0.1:8899} rpc start --signers-config /app/signers.toml"
     restart: unless-stopped
     depends_on:
       - redis

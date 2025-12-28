@@ -1,11 +1,11 @@
 
-import { KoraClient } from "@solana/kora";
+import { TrezoaKoraClient } from "@trezoa/trezoakora";
 
 async function main() {
-    const client = new KoraClient({ rpcUrl: 'http://localhost:8080/' });
+    const client = new TrezoaKoraClient({ rpcUrl: 'http://localhost:8080/' });
     try {
         const config = await client.getConfig();
-        console.log('Kora Config:', config);
+        console.log('TrezoaKora Config:', config);
         const blockhash = await client.getBlockhash();
         console.log('Blockhash: ', blockhash.blockhash);
     } catch (error) {

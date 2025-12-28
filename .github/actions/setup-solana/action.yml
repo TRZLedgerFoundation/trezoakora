@@ -1,5 +1,5 @@
-name: 'Setup Solana CLI'
-description: 'Install and cache Solana CLI'
+name: 'Setup Trezoa CLI'
+description: 'Install and cache Trezoa CLI'
 
 runs:
   using: 'composite'
@@ -9,29 +9,29 @@ runs:
       shell: bash
       run: echo "week=$(date +'%Y-W%U')" >> $GITHUB_OUTPUT
 
-    - name: Cache Solana CLI installation
+    - name: Cache Trezoa CLI installation
       uses: actions/cache@v4
       with:
-        path: ~/.local/share/solana
-        key: solana-cli-stable-${{ runner.os }}-${{ steps.week.outputs.week }}
+        path: ~/.local/share/trezoa
+        key: trezoa-cli-stable-${{ runner.os }}-${{ steps.week.outputs.week }}
         restore-keys: |
-          solana-cli-stable-${{ runner.os }}-
+          trezoa-cli-stable-${{ runner.os }}-
 
-    - name: Install Solana CLI
+    - name: Install Trezoa CLI
       shell: bash
       run: |
         # Check if already installed
-        if command -v solana &> /dev/null; then
-          echo "Solana CLI already installed"
-          solana --version
+        if command -v trezoa &> /dev/null; then
+          echo "Trezoa CLI already installed"
+          trezoa --version
           exit 0
         fi
         
-        # Install Solana CLI (stable version)
-        sh -c "$(curl -sSfL https://release.anza.xyz/stable/install)"
-        echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
-        export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
+        # Install Trezoa CLI (stable version)
+        sh -c "$(curl -sSfL https://release.trezoa.xyz/stable/install)"
+        echo "$HOME/.local/share/trezoa/install/active_release/bin" >> $GITHUB_PATH
+        export PATH="$HOME/.local/share/trezoa/install/active_release/bin:$PATH"
 
         # Verify installation
-        solana --version
-        solana-test-validator --version
+        trezoa --version
+        trezoa-test-validator --version

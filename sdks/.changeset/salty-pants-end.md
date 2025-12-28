@@ -1,5 +1,5 @@
 ---
-"@solana/kora": minor
+"@trezoa/trezoakora": minor
 ---
 
 testing changeset and npm release

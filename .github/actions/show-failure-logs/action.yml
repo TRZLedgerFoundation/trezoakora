@@ -6,11 +6,11 @@ inputs:
     description: 'Type of test that failed (e.g., "Rust integration", "TypeScript integration")'
     required: true
   validator-port:
-    description: 'Solana validator port'
+    description: 'Trezoa validator port'
     required: false
     default: '8899'
-  kora-port:
-    description: 'Kora RPC port'
+  trezoakora-port:
+    description: 'TrezoaKora RPC port'
     required: false
     default: '8080'
 
@@ -26,11 +26,11 @@ runs:
         echo ""
         
         echo "=== Process status ==="
-        ps aux | grep -E "(solana|kora|node)" || echo "No matching processes found"
+        ps aux | grep -E "(trezoa|trezoakora|node)" || echo "No matching processes found"
         echo ""
         
         echo "=== Network status ==="
-        netstat -tlnp | grep -E "(${{ inputs.validator-port }}|${{ inputs.kora-port }})" || echo "No matching ports found"
+        netstat -tlnp | grep -E "(${{ inputs.validator-port }}|${{ inputs.trezoakora-port }})" || echo "No matching ports found"
         echo ""
         
         echo "=== Recent log files ==="
@@ -46,7 +46,7 @@ runs:
         echo ""
         
         echo "=== Environment variables ==="
-        env | grep -E "(KORA|RPC|VALIDATOR|SOLANA)" | sort || echo "No relevant environment variables"
+        env | grep -E "(TREZOAKORA|RPC|VALIDATOR|TREZOA)" | sort || echo "No relevant environment variables"
         echo ""
         
         echo "=== End of failure logs ==="

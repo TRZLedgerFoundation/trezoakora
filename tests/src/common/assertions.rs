@@ -1,7 +1,7 @@
 use anyhow::Error as AnyhowError;
 use jsonrpsee::core::Error as RpcError;
 use serde_json::Value;
-use solana_sdk::signature::Signature;
+use trezoa_sdk::signature::Signature;
 use std::str::FromStr;
 
 /// Trait for common RPC response assertions
@@ -96,7 +96,7 @@ impl TransactionAssertions for Value {
             .and_then(|b| b.as_str())
             .expect("Response missing blockhash field");
 
-        // Solana blockhashes are typically 44 chars in base58
+        // Trezoa blockhashes are typically 44 chars in base58
         assert!(
             blockhash.len() >= 43 && blockhash.len() <= 44,
             "Invalid blockhash format: {blockhash}"

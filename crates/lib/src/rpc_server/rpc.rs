@@ -1,8 +1,8 @@
 use log::info;
-use solana_client::nonblocking::rpc_client::RpcClient;
+use trezoa_client::nonblocking::rpc_client::RpcClient;
 use std::sync::Arc;
 
-use crate::error::KoraError;
+use crate::error::TrezoaKoraError;
 #[cfg(feature = "docs")]
 use utoipa::{
     openapi::{RefOr, Schema},
@@ -46,7 +46,7 @@ impl KoraRpc {
         &self.rpc_client
     }
 
-    pub async fn liveness(&self) -> Result<(), KoraError> {
+    pub async fn liveness(&self) -> Result<(), TrezoaKoraError> {
         info!("Liveness request received");
         let result = Ok(());
         info!("Liveness response: {result:?}");
@@ -56,21 +56,21 @@ impl KoraRpc {
     pub async fn estimate_transaction_fee(
         &self,
         request: EstimateTransactionFeeRequest,
-    ) -> Result<EstimateTransactionFeeResponse, KoraError> {
+    ) -> Result<EstimateTransactionFeeResponse, TrezoaKoraError> {
         info!("Estimate transaction fee request: {request:?}");
         let result = estimate_transaction_fee(&self.rpc_client, request).await;
         info!("Estimate transaction fee response: {result:?}");
         result
     }
 
-    pub async fn get_supported_tokens(&self) -> Result<GetSupportedTokensResponse, KoraError> {
+    pub async fn get_supported_tokens(&self) -> Result<GetSupportedTokensResponse, TrezoaKoraError> {
         info!("Get supported tokens request received");
         let result = get_supported_tokens().await;
         info!("Get supported tokens response: {result:?}");
         result
     }
 
-    pub async fn get_payer_signer(&self) -> Result<GetPayerSignerResponse, KoraError> {
+    pub async fn get_payer_signer(&self) -> Result<GetPayerSignerResponse, TrezoaKoraError> {
         info!("Get payer signer request received");
         let result = get_payer_signer().await;
         info!("Get payer signer response: {result:?}");
@@ -80,7 +80,7 @@ impl KoraRpc {
     pub async fn sign_transaction(
         &self,
         request: SignTransactionRequest,
-    ) -> Result<SignTransactionResponse, KoraError> {
+    ) -> Result<SignTransactionResponse, TrezoaKoraError> {
         info!("Sign transaction request: {request:?}");
         let result = sign_transaction(&self.rpc_client, request).await;
         info!("Sign transaction response: {result:?}");
@@ -90,7 +90,7 @@ impl KoraRpc {
     pub async fn sign_and_send_transaction(
         &self,
         request: SignAndSendTransactionRequest,
-    ) -> Result<SignAndSendTransactionResponse, KoraError> {
+    ) -> Result<SignAndSendTransactionResponse, TrezoaKoraError> {
         info!("Sign and send transaction request: {request:?}");
         let result = sign_and_send_transaction(&self.rpc_client, request).await;
         info!("Sign and send transaction response: {result:?}");
@@ -100,21 +100,21 @@ impl KoraRpc {
     pub async fn transfer_transaction(
         &self,
         request: TransferTransactionRequest,
-    ) -> Result<TransferTransactionResponse, KoraError> {
+    ) -> Result<TransferTransactionResponse, TrezoaKoraError> {
         info!("Transfer transaction request: {request:?}");
         let result = transfer_transaction(&self.rpc_client, request).await;
         info!("Transfer transaction response: {result:?}");
         result
     }
 
-    pub async fn get_blockhash(&self) -> Result<GetBlockhashResponse, KoraError> {
+    pub async fn get_blockhash(&self) -> Result<GetBlockhashResponse, TrezoaKoraError> {
         info!("Get blockhash request received");
         let result = get_blockhash(&self.rpc_client).await;
         info!("Get blockhash response: {result:?}");
         result
     }
 
-    pub async fn get_config(&self) -> Result<GetConfigResponse, KoraError> {
+    pub async fn get_config(&self) -> Result<GetConfigResponse, TrezoaKoraError> {
         info!("Get config request received");
         let result = get_config().await;
         info!("Get config response: {result:?}");
@@ -179,17 +179,17 @@ mod tests {
         },
     };
 
-    fn create_test_kora_rpc() -> KoraRpc {
+    fn create_test_trezoakora_rpc() -> KoraRpc {
         let rpc_client = RpcMockBuilder::new().build();
         KoraRpc::new(rpc_client)
     }
 
     #[tokio::test]
     async fn test_liveness() {
-        let kora_rpc = create_test_kora_rpc();
+        let trezoakora_rpc = create_test_trezoakora_rpc();
 
         // Test liveness endpoint
-        let result = kora_rpc.liveness().await;
+        let result = trezoakora_rpc.liveness().await;
         assert!(result.is_ok());
     }
 
@@ -200,22 +200,22 @@ mod tests {
         update_config(config).expect("Failed to update config");
         let _ = setup_or_get_test_signer(); // This initializes the signer pool
 
-        let kora_rpc = create_test_kora_rpc();
+        let trezoakora_rpc = create_test_trezoakora_rpc();
 
         // Test liveness - should always succeed
-        let liveness_result = kora_rpc.liveness().await;
+        let liveness_result = trezoakora_rpc.liveness().await;
         assert!(liveness_result.is_ok(), "Liveness should always succeed");
 
         // Test get_config - should work with mock config and signer pool
-        let config_result = kora_rpc.get_config().await;
+        let config_result = trezoakora_rpc.get_config().await;
         assert!(config_result.is_ok(), "Get config failed: {:?}", config_result.err());
 
         // Test get_supported_tokens - should work with mock config
-        let tokens_result = kora_rpc.get_supported_tokens().await;
+        let tokens_result = trezoakora_rpc.get_supported_tokens().await;
         assert!(tokens_result.is_ok(), "Get supported tokens failed: {:?}", tokens_result.err());
 
         // Test get_payer_signer - should work with mock signer pool
-        let signer_result = kora_rpc.get_payer_signer().await;
+        let signer_result = trezoakora_rpc.get_payer_signer().await;
         assert!(signer_result.is_ok(), "Get payer signer failed: {:?}", signer_result.err());
     }
 }

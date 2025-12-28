@@ -1,25 +1,25 @@
-# Solana x402 Protocol Integration with Kora RPC
+# Trezoa x402 Protocol Integration with TrezoaKora RPC
 
 *Updated December 18, 2025 to x402 v2 spec*
 
 ## What You'll Build
 
-This guide walks you through implementing a complete x402 (HTTP 402 Payment Required) integration with Kora, Solana gasless signing infrastructure. By the end, you'll have a working system where:
+This guide walks you through implementing a complete x402 (HTTP 402 Payment Required) integration with TrezoaKora, Trezoa gasless signing infrastructure. By the end, you'll have a working system where:
 
 - APIs can charge micropayments for access using the x402 protocol
-- Users pay in USDC without needing SOL for gas fees
-- Kora handles all transaction fees as the gasless facilitator
-- Payments are settled atomically on Solana blockchain
+- Users pay in USDC without needing TRZ for gas fees
+- TrezoaKora handles all transaction fees as the gasless facilitator
+- Payments are settled atomically on Trezoa blockchain
 
 The final result will be a fully functional payment-protected API:
 
 ```shell
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-X402 + KORA PAYMENT FLOW DEMONSTRATION
+X402 + TREZOAKORA PAYMENT FLOW DEMONSTRATION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 [1/4] Initializing payment signer
-  → Network: solana-devnet
+  → Network: trezoa-devnet
   → Payer address: BYJV...TbBc
   ✓ Signer initialized
 
@@ -30,8 +30,8 @@ X402 + KORA PAYMENT FLOW DEMONSTRATION
 
 [3/4] Accessing protected endpoint with x402 payment
   → Using x402 fetch wrapper
-  → Payment will be processed via Kora facilitator
-  → Transaction submitted to Solana
+  → Payment will be processed via TrezoaKora facilitator
+  → Transaction submitted to Trezoa
   ✅ Status code: 200
 
 [4/4] Processing response data
@@ -51,12 +51,12 @@ Response Data:
     "payment_response": {
         "transaction": "5ULZpdeThaMAy6hcEGfAoMFqJqPpCtxdCxb6JYUV6nA4x8Lk2hKEuzofGUPoe1pop6BdWMSmF5oRPrXsbdWmpruf",
         "success": true,
-        "network": "solana-devnet"
+        "network": "trezoa-devnet"
     }
 }
 ```
 
-Full Guide available [here](https://launch.solana.com/docs/kora/guides/x402).
+Full Guide available [here](https://launch.trezoa.com/docs/trezoakora/guides/x402).
 
 ## What is x402?
 
@@ -78,5 +78,5 @@ Facilitators are a crucial component in the x402 ecosystem. They act as speciali
 **What Facilitators Do:**
 - **Verify Payments**: Validate that client's payment payloads are correctly formed and sufficient
 - **Abstract Complexity**: Remove the need for servers to directly interact with blockchain infrastructure (signing and paying network fees)
-- **Settle Transactions**: Submit validated transactions to Solana (or other networks)
+- **Settle Transactions**: Submit validated transactions to Trezoa (or other networks)
 

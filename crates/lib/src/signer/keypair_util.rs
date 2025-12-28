@@ -1,6 +1,6 @@
-use crate::{error::KoraError, sanitize_error};
+use crate::{error::TrezoaKoraError, sanitize_error};
 use serde_json;
-use solana_sdk::signature::Keypair;
+use trezoa_sdk::signature::Keypair;
 use std::fs;
 
 /// Utility functions for parsing private keys in multiple formats
@@ -11,7 +11,7 @@ impl KeypairUtil {
     /// - Base58 encoded string (current format)
     /// - U8Array format: "[0, 1, 2, ...]"
     /// - File path to a JSON keypair file
-    pub fn from_private_key_string(private_key: &str) -> Result<Keypair, KoraError> {
+    pub fn from_private_key_string(private_key: &str) -> Result<Keypair, TrezoaKoraError> {
         // Try to parse as a file path first
         if let Ok(file_content) = fs::read_to_string(private_key) {
             return Self::from_json_keypair(&file_content);
@@ -27,32 +27,32 @@ impl KeypairUtil {
     }
 
     /// Creates a new keypair from a base58-encoded private key string with proper error handling
-    pub fn from_base58_safe(private_key: &str) -> Result<Keypair, KoraError> {
+    pub fn from_base58_safe(private_key: &str) -> Result<Keypair, TrezoaKoraError> {
         // Try to decode as base58 first
         let decoded = bs58::decode(private_key).into_vec().map_err(|e| {
-            KoraError::SigningError(format!("Invalid base58 string: {}", sanitize_error!(e)))
+            TrezoaKoraError::SigningError(format!("Invalid base58 string: {}", sanitize_error!(e)))
         })?;
 
         if decoded.len() != 64 {
-            return Err(KoraError::SigningError(format!(
+            return Err(TrezoaKoraError::SigningError(format!(
                 "Invalid private key length: expected 64 bytes, got {}",
                 decoded.len()
             )));
         }
 
         let keypair = Keypair::try_from(&decoded[..]).map_err(|e| {
-            KoraError::SigningError(format!("Invalid private key bytes: {}", sanitize_error!(e)))
+            TrezoaKoraError::SigningError(format!("Invalid private key bytes: {}", sanitize_error!(e)))
         })?;
 
         Ok(keypair)
     }
 
     /// Creates a new keypair from a U8Array format string like "[0, 1, 2, ...]"
-    pub fn from_u8_array_string(array_str: &str) -> Result<Keypair, KoraError> {
+    pub fn from_u8_array_string(array_str: &str) -> Result<Keypair, TrezoaKoraError> {
         let trimmed = array_str.trim();
 
         if !trimmed.starts_with('[') || !trimmed.ends_with(']') {
-            return Err(KoraError::SigningError(
+            return Err(TrezoaKoraError::SigningError(
                 "U8Array string must start with '[' and end with ']'".to_string(),
             ));
         }
@@ -60,7 +60,7 @@ impl KeypairUtil {
         let inner = &trimmed[1..trimmed.len() - 1];
 
         if inner.trim().is_empty() {
-            return Err(KoraError::SigningError("U8Array string cannot be empty".to_string()));
+            return Err(TrezoaKoraError::SigningError("U8Array string cannot be empty".to_string()));
         }
 
         let bytes: Result<Vec<u8>, _> = inner.split(',').map(|s| s.trim().parse::<u8>()).collect();
@@ -68,19 +68,19 @@ impl KeypairUtil {
         match bytes {
             Ok(byte_array) => {
                 if byte_array.len() != 64 {
-                    return Err(KoraError::SigningError(format!(
+                    return Err(TrezoaKoraError::SigningError(format!(
                         "Private key must be exactly 64 bytes, got {}",
                         byte_array.len()
                     )));
                 }
                 Keypair::try_from(&byte_array[..]).map_err(|e| {
-                    KoraError::SigningError(format!(
+                    TrezoaKoraError::SigningError(format!(
                         "Invalid private key bytes: {}",
                         sanitize_error!(e)
                     ))
                 })
             }
-            Err(e) => Err(KoraError::SigningError(format!(
+            Err(e) => Err(TrezoaKoraError::SigningError(format!(
                 "Failed to parse U8Array: {}",
                 sanitize_error!(e)
             ))),
@@ -88,24 +88,24 @@ impl KeypairUtil {
     }
 
     /// Creates a new keypair from a JSON keypair file content
-    pub fn from_json_keypair(json_content: &str) -> Result<Keypair, KoraError> {
+    pub fn from_json_keypair(json_content: &str) -> Result<Keypair, TrezoaKoraError> {
         // Try to parse as a simple JSON array first
         if let Ok(byte_array) = serde_json::from_str::<Vec<u8>>(json_content) {
             if byte_array.len() != 64 {
-                return Err(KoraError::SigningError(format!(
+                return Err(TrezoaKoraError::SigningError(format!(
                     "JSON keypair must be exactly 64 bytes, got {}",
                     byte_array.len()
                 )));
             }
             return Keypair::try_from(&byte_array[..]).map_err(|e| {
-                KoraError::SigningError(format!(
+                TrezoaKoraError::SigningError(format!(
                     "Invalid private key bytes: {}",
                     sanitize_error!(e)
                 ))
             });
         }
 
-        Err(KoraError::SigningError(
+        Err(TrezoaKoraError::SigningError(
             "Invalid JSON keypair format. Expected either a JSON array of 64 bytes or an object with a 'keypair' field".to_string()
         ))
     }
@@ -114,7 +114,7 @@ impl KeypairUtil {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use solana_sdk::{signature::Keypair, signer::Signer};
+    use trezoa_sdk::{signature::Keypair, signer::Signer};
     use std::fs;
     use tempfile::NamedTempFile;
 

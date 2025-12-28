@@ -1,6 +1,6 @@
 use std::env;
 
-use crate::KoraError;
+use crate::TrezoaKoraError;
 
 pub fn hex_to_bytes(hex: &str) -> Result<Vec<u8>, anyhow::Error> {
     if !hex.len().is_multiple_of(2) {
@@ -18,9 +18,9 @@ pub fn bytes_to_hex(bytes: &[u8]) -> Result<String, anyhow::Error> {
     Ok(bytes.iter().map(|byte| format!("{byte:02x}")).collect())
 }
 
-pub fn get_env_var_for_signer(env_var_name: &str, signer_name: &str) -> Result<String, KoraError> {
+pub fn get_env_var_for_signer(env_var_name: &str, signer_name: &str) -> Result<String, TrezoaKoraError> {
     env::var(env_var_name).map_err(|_| {
-        KoraError::ValidationError(format!(
+        TrezoaKoraError::ValidationError(format!(
             "Environment variable '{env_var_name}' required for signer '{signer_name}' is not set"
         ))
     })
@@ -104,7 +104,7 @@ mod tests {
         env::remove_var("NONEXISTENT_VAR");
         let result = get_env_var_for_signer("NONEXISTENT_VAR", "test_signer");
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), KoraError::ValidationError(_)));
+        assert!(matches!(result.unwrap_err(), TrezoaKoraError::ValidationError(_)));
     }
 
     #[test]

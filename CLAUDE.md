@@ -14,25 +14,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - `chore:`, `docs:`, `refactor:` → patch version bump
 
 ### Publishing Flow
-- **Rust crates**: Manual release process with synchronized versioning (both kora-lib and kora-cli released together)
+- **Rust crates**: Manual release process with synchronized versioning (both trezoakora-lib and trezoakora-cli released together)
 - **TypeScript SDKs**: Changeset-based releases (require `pnpm changeset`)
 - **CHANGELOG**: Auto-generated from conventional commits using git-cliff
 - **GitHub releases**: Auto-generated with commit-based release notes
 
 ## Project Overview
 
-Kora is a Solana paymaster node that provides a JSON-RPC interface for handling gasless transactions and fee abstractions. It enables developers to build applications where users can pay transaction fees in tokens other than SOL.
+TrezoaKora is a Trezoa paymaster node that provides a JSON-RPC interface for handling gasless transactions and fee abstractions. It enables developers to build applications where users can pay transaction fees in tokens other than TRZ.
 
 The repository consists of 2 main workspace crates:
 
-- `kora-lib`: Core library with integrated RPC server functionality, signers, transaction handling, and configuration
-- `kora-cli`: Unified command-line interface with RPC server and configuration commands
+- `trezoakora-lib`: Core library with integrated RPC server functionality, signers, transaction handling, and configuration
+- `trezoakora-cli`: Unified command-line interface with RPC server and configuration commands
 - `tests`: Integration tests for the entire workspace
 - `sdks/`: TypeScript SDKs for client integration
 
 ## TL;DR - Authentication Methods
 
-Kora supports two authentication methods that can be used individually or together:
+TrezoaKora supports two authentication methods that can be used individually or together:
 
 1. **API Key Authentication**: Simple header-based auth using `x-api-key` header
 2. **HMAC Authentication**: Request signature auth using `x-timestamp` and `x-hmac-signature` headers
@@ -84,14 +84,14 @@ just test-integration
 ```
 
 **What happens automatically:**
-1. **Solana Validator**: Starts local test validator with reset
+1. **Trezoa Validator**: Starts local test validator with reset
 2. **Test Environment Setup**: Creates test accounts, tokens, and ATAs
 3. **Sequential Test Phases**: Runs 3 test suites with different configurations
 
 **Test Phases (Configured in `tests/src/test_runner/test_cases.toml`):**
 
 **Regular Tests**
-- Config: `tests/src/common/fixtures/kora-test.toml` (no auth)
+- Config: `tests/src/common/fixtures/trezoakora-test.toml` (no auth)
 - Tests: Core RPC functionality, token operations, compute budget
 
 **Auth Tests**
@@ -100,7 +100,7 @@ just test-integration
 
 **Payment Address Tests**
 - Config: `tests/src/common/fixtures/paymaster-address-test.toml` (payment address)
-- **CLI ATA Initialization**: Automatically runs `kora rpc initialize-atas` before tests
+- **CLI ATA Initialization**: Automatically runs `trezoakora rpc initialize-atas` before tests
 - Tests: Payment address validation and wrong destination rejection
 
 **Multi-Signer Tests**
@@ -116,7 +116,7 @@ tests/
 ├── src/
 │   ├── common/
 │   │   ├── fixtures/
-│   │   │   ├── kora-test.toml           # Regular tests config
+│   │   │   ├── trezoakora-test.toml           # Regular tests config
 │   │   │   ├── auth-test.toml           # Auth tests config  
 │   │   │   └── paymaster-address-test.toml  # Payment address config
 │   │   ├── local-keys/
@@ -129,10 +129,10 @@ tests/
 │   │   ├── accounts.rs                  # Account management
 │   │   ├── commands.rs                  # Test command execution
 │   │   ├── config.rs                    # Test configuration
-│   │   ├── kora.rs                      # Kora server management
+│   │   ├── trezoakora.rs                      # TrezoaKora server management
 │   │   ├── output.rs                    # Output handling
 │   │   ├── test_cases.toml              # Test phase configurations
-│   │   └── validator.rs                 # Solana validator management
+│   │   └── validator.rs                 # Trezoa validator management
 │   └── bin/
 │       └── test_runner.rs               # Main test runner binary
 ├── integration/                         # Regular integration tests
@@ -164,7 +164,7 @@ just test-integration-filtered --filter typescript_auth
 
 The test suite uses environment variables for configuration specified in `tests/src/common/constants.rs`.
 
-Make sure to update the appropriate config file (kora.toml for production, tests/common/fixtures/kora-test.toml for testing) to reflect the public key of TEST_USDC_MINT_KEYPAIR.
+Make sure to update the appropriate config file (trezoakora.toml for production, tests/common/fixtures/trezoakora-test.toml for testing) to reflect the public key of TEST_USDC_MINT_KEYPAIR.
 
 ### Running Services
 
@@ -173,32 +173,32 @@ Make sure to update the appropriate config file (kora.toml for production, tests
 just run
 
 # Run with test configuration (for integration testing)
-cargo run -p kora --bin kora -- --config tests/common/fixtures/kora-test.toml --rpc-url http://127.0.0.1:8899 rpc --signers-config tests/common/fixtures/signers.toml
+cargo run -p trezoakora --bin trezoakora -- --config tests/common/fixtures/trezoakora-test.toml --rpc-url http://127.0.0.1:8899 rpc --signers-config tests/common/fixtures/signers.toml
 
 # Run with debug logging
-RUST_LOG=debug cargo run -p kora --bin kora -- rpc start
+RUST_LOG=debug cargo run -p trezoakora --bin trezoakora -- rpc start
 
 # Run RPC server with all parameters
-cargo run -p kora --bin kora -- --config kora.toml --rpc-url https://api.devnet.solana.com rpc start \
+cargo run -p trezoakora --bin trezoakora -- --config trezoakora.toml --rpc-url https://api.devnet.trezoa.com rpc start \
   --port 8080 \
   --logging-format standard
 
 # Run with Turnkey signer
-cargo run -p kora --bin kora -- rpc start --signers-config path/to/turnkey-signers.toml
+cargo run -p trezoakora --bin trezoakora -- rpc start --signers-config path/to/turnkey-signers.toml
 
 # Run with Privy signer
-cargo run -p kora --bin kora -- rpc start --signers-config path/to/privy-signers.toml
+cargo run -p trezoakora --bin trezoakora -- rpc start --signers-config path/to/privy-signers.toml
 
 # Run with Vault signer  
-cargo run -p kora --bin kora -- rpc start \
+cargo run -p trezoakora --bin trezoakora -- rpc start \
   --signers-config path/to/vault-signers.toml
 
 # Configuration validation commands
-cargo run -p kora --bin kora -- config validate
-cargo run -p kora --bin kora -- config validate-with-rpc
+cargo run -p trezoakora --bin trezoakora -- config validate
+cargo run -p trezoakora --bin trezoakora -- config validate-with-rpc
 
 # Generate OpenAPI documentation
-cargo run -p kora --bin kora --features docs -- openapi -o openapi.json
+cargo run -p trezoakora --bin trezoakora --features docs -- openapi -o openapi.json
 ```
 
 ### TypeScript SDK Development
@@ -213,7 +213,7 @@ pnpm run format
 
 ### Release Process
 
-Kora uses a manual release process with synchronized versioning across all workspace crates. Both `kora-lib` and `kora-cli` are always released together with the same version number.
+TrezoaKora uses a manual release process with synchronized versioning across all workspace crates. Both `trezoakora-lib` and `trezoakora-cli` are always released together with the same version number.
 
 **Prerequisites:**
 ```bash
@@ -250,11 +250,11 @@ cargo install git-cliff     # For CHANGELOG generation
      - Read version from `Cargo.toml`
      - Create git tags on main:
        - `v{VERSION}` (generic version tag)
-       - `kora-lib-v{VERSION}` (crate-specific tag)
-       - `kora-cli-v{VERSION}` (crate-specific tag)
-     - Publish `kora-lib` to crates.io
+       - `trezoakora-lib-v{VERSION}` (crate-specific tag)
+       - `trezoakora-cli-v{VERSION}` (crate-specific tag)
+     - Publish `trezoakora-lib` to crates.io
      - Wait for indexing
-     - Publish `kora-cli` to crates.io
+     - Publish `trezoakora-cli` to crates.io
 
 **Conventional Commits:**
 
@@ -269,35 +269,35 @@ The CHANGELOG is auto-generated from conventional commits. Use these prefixes:
 
 **Version Strategy:**
 
-Kora uses synchronized versioning where all workspace crates share the same version number:
-- Simplifies user understanding ("Kora v2.0.0")
+TrezoaKora uses synchronized versioning where all workspace crates share the same version number:
+- Simplifies user understanding ("TrezoaKora v2.0.0")
 - Ensures compatibility across all components
 - Both crates published together in dependency order
 
 **GitHub Secrets Required:**
-- `KORA_CLI_REGISTRY_TOKEN` - crates.io API token for publishing
+- `TREZOAKORA_CLI_REGISTRY_TOKEN` - crates.io API token for publishing
 
 ## Architecture Overview
 
-### Core Library (`kora-lib/src/`)
+### Core Library (`trezoakora-lib/src/`)
 
 - **signer/** - Abstraction layer supporting multiple signer types (configured in `signers.toml`)
-  - `SolanaMemorySigner` - Local keypair signing
+  - `TrezoaMemorySigner` - Local keypair signing
   - `VaultSigner` - HashiCorp Vault integration
   - `TurnkeySigner` - Turnkey API integration  
   - `PrivySigner` - Privy API integration
   - Unified `KoraSigner` enum with trait implementation
-  - optionally, `--no-signer` flag to run Kora without a signer
+  - optionally, `--no-signer` flag to run TrezoaKora without a signer
 
 - **transaction/** - Transaction processing pipeline:
   - Fee estimation and calculation
   - Transaction validation against configuration rules
   - Paid transaction verification
-  - Solana transaction utilities
+  - Trezoa transaction utilities
   - **Lookup Table Resolution**: V0 transactions require address lookup table resolution for proper fee calculation and validation. The system uses `VersionedTransactionExt` trait and `VersionedTransactionResolved` wrapper for efficient caching of resolved addresses.
 
-- **token/** - SPL token handling:
-  - Token interface abstractions (SPL vs Token-2022)
+- **token/** - TPL token handling:
+  - Token interface abstractions (TPL vs Token-2022)
   - Token account management
   - Token validation and metadata
 
@@ -308,9 +308,9 @@ Kora uses synchronized versioning where all workspace crates share the same vers
 - **config.rs** - TOML-based configuration system with validation
 - **state.rs** - Global signer state management
 - **cache.rs** - Token account caching
-- **rpc.rs** - Solana RPC client utilities
+- **rpc.rs** - Trezoa RPC client utilities
 
-### RPC Server (now in `kora-lib/src/rpc_server/`)
+### RPC Server (now in `trezoakora-lib/src/rpc_server/`)
 
 - **server.rs** - HTTP JSON-RPC server setup with middleware:
   - CORS configuration
@@ -332,37 +332,37 @@ Kora uses synchronized versioning where all workspace crates share the same vers
 - **openapi/** - Auto-generated API documentation using `utoipa`
 - **args.rs** - RPC-specific command line arguments
 
-### CLI Tool (`kora-cli/src/`)
+### CLI Tool (`trezoakora-cli/src/`)
 
 - Unified command-line interface with subcommands:
-  - `kora config validate` - Validate configuration file
-  - `kora config validate-with-rpc` - Validate configuration with RPC calls
-  - `kora rpc start --signers-config path/to/signers.toml` - Start the RPC server with all signer options (kora.toml in cwd)
-  - `kora --config path/to/kora.toml rpc start --signers-config path/to/signers.toml` - Start the RPC server with specific config and signers
-  - `kora openapi` - Generate OpenAPI documentation
+  - `trezoakora config validate` - Validate configuration file
+  - `trezoakora config validate-with-rpc` - Validate configuration with RPC calls
+  - `trezoakora rpc start --signers-config path/to/signers.toml` - Start the RPC server with all signer options (trezoakora.toml in cwd)
+  - `trezoakora --config path/to/trezoakora.toml rpc start --signers-config path/to/signers.toml` - Start the RPC server with specific config and signers
+  - `trezoakora openapi` - Generate OpenAPI documentation
 - Global arguments (rpc-url, config) separated from RPC-specific arguments
 - All signer types supported for RPC server mode
 
 **Example CLI usage:**
 ```bash
 # Validate configuration
-cargo run -p kora --bin kora -- --config kora.toml config validate
+cargo run -p trezoakora --bin trezoakora -- --config trezoakora.toml config validate
 
 # Start RPC server with local private key
-cargo run -p kora --bin kora -- --config path/to/kora.toml --rpc-url https://api.devnet.solana.com rpc start --signers-config path/to/signers.toml
+cargo run -p trezoakora --bin trezoakora -- --config path/to/trezoakora.toml --rpc-url https://api.devnet.trezoa.com rpc start --signers-config path/to/signers.toml
 
 # Start RPC server with Turnkey signer
-cargo run -p kora --bin kora -- rpc start --signers-config path/to/turnkey-signers.toml
+cargo run -p trezoakora --bin trezoakora -- rpc start --signers-config path/to/turnkey-signers.toml
 
 # Generate OpenAPI documentation
-cargo run -p kora --bin kora --features docs -- openapi -o openapi.json
+cargo run -p trezoakora --bin trezoakora --features docs -- openapi -o openapi.json
 ```
 
 ### Signer Integrations
 
-- **kora-turnkey** - Turnkey key management API integration (separate crate)
-- **kora-privy** - Privy wallet API integration (separate crate)  
-- **VaultSigner** - HashiCorp Vault integration (built into kora-lib)
+- **trezoakora-turnkey** - Turnkey key management API integration (separate crate)
+- **trezoakora-privy** - Privy wallet API integration (separate crate)  
+- **VaultSigner** - HashiCorp Vault integration (built into trezoakora-lib)
 - Remote signers integrate via HTTP APIs to external services
 
 ### TypeScript SDKs
@@ -372,10 +372,10 @@ cargo run -p kora --bin kora --features docs -- openapi -o openapi.json
 
 ## Configuration & Environment
 
-### Main Configuration (`kora.toml`)
+### Main Configuration (`trezoakora.toml`)
 
 ```toml
-[kora]
+[trezoakora]
 rate_limit = 100  # Requests per second
 
 [validation]
@@ -383,7 +383,7 @@ max_allowed_lamports = 1000000  # Maximum transaction value
 max_signatures = 10             # Maximum signatures per transaction
 price_source = "Mock"           # Price source: "Mock", "Jupiter", etc.
 
-# Allowed Solana programs (by public key)
+# Allowed Trezoa programs (by public key)
 allowed_programs = [
     "11111111111111111111111111111111",      # System Program
     "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",  # Token Program
@@ -397,8 +397,8 @@ allowed_tokens = [
     "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",  # USDC devnet
 ]
 
-# SPL tokens accepted for paid transactions
-allowed_spl_paid_tokens = [
+# TPL tokens accepted for paid transactions
+allowed_tpl_paid_tokens = [
     "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",  # USDC devnet
 ] 
 
@@ -419,7 +419,7 @@ allow_advance = false            # AdvanceNonceAccount
 allow_authorize = false          # AuthorizeNonceAccount
 allow_withdraw = false           # WithdrawNonceAccount
 
-[validation.fee_payer_policy.spl_token]
+[validation.fee_payer_policy.tpl_token]
 allow_transfer = false           # Transfer/TransferChecked
 allow_burn = false               # Burn/BurnChecked
 allow_close_account = false      # CloseAccount
@@ -459,14 +459,14 @@ RUST_LOG=debug  # Logging level
 
 ### Overview
 
-The fee payer policy system provides granular control over what actions the fee payer can perform in transactions. The policy is organized by program type (System, SPL Token, Token-2022) and covers 28 different instruction types. By default, all actions are permitted to maintain backward compatibility with existing behavior.
+The fee payer policy system provides granular control over what actions the fee payer can perform in transactions. The policy is organized by program type (System, TPL Token, Token-2022) and covers 28 different instruction types. By default, all actions are permitted to maintain backward compatibility with existing behavior.
 
 ### Policy Configuration
 
-The fee payer policy is configured via nested sections in `kora.toml`:
+The fee payer policy is configured via nested sections in `trezoakora.toml`:
 - `[validation.fee_payer_policy.system]` - System program instructions (4 fields)
 - `[validation.fee_payer_policy.system.nonce]` - Nonce account operations (4 fields)
-- `[validation.fee_payer_policy.spl_token]` - SPL Token program instructions (12 fields)
+- `[validation.fee_payer_policy.tpl_token]` - TPL Token program instructions (12 fields)
 - `[validation.fee_payer_policy.token_2022]` - Token-2022 program instructions (12 fields)
 
 ### Implementation Details
@@ -474,7 +474,7 @@ The fee payer policy is configured via nested sections in `kora.toml`:
 **Core Structure** (`crates/lib/src/config.rs`):
 - `FeePayerPolicy` struct with nested policy structs for each program type
 - `SystemInstructionPolicy` - Controls System program operations including nested `NonceInstructionPolicy`
-- `SplTokenInstructionPolicy` - Controls SPL Token program operations
+- `TplTokenInstructionPolicy` - Controls TPL Token program operations
 - `Token2022InstructionPolicy` - Controls Token-2022 program operations
 - All `Default` implementations set fields to `true` (permissive) for backward compatibility
 - `#[serde(default)]` attribute ensures backward compatibility
@@ -483,7 +483,7 @@ The fee payer policy is configured via nested sections in `kora.toml`:
 - `TransactionValidator` stores the policy configuration
 - Program-specific validation methods check policy flags before validating restrictions
 - Uses macro-based validation patterns for consistent enforcement across instruction types
-- Different validation logic for each program type (System, SPL Token, Token2022)
+- Different validation logic for each program type (System, TPL Token, Token2022)
 
 **Supported Actions by Program Type**:
 
@@ -497,7 +497,7 @@ The fee payer policy is configured via nested sections in `kora.toml`:
 7. **Nonce Authorize** - AuthorizeNonceAccount instruction (fee payer as current authority)
 8. **Nonce Withdraw** - WithdrawNonceAccount instruction (fee payer as authority)
 
-**SPL Token Program (12 controls)**:
+**TPL Token Program (12 controls)**:
 1. **Transfer** - Transfer and TransferChecked instructions (fee payer as owner)
 2. **Burn** - Burn and BurnChecked instructions (fee payer as owner)
 3. **CloseAccount** - CloseAccount instruction (fee payer as owner)
@@ -512,28 +512,28 @@ The fee payer policy is configured via nested sections in `kora.toml`:
 12. **ThawAccount** - ThawAccount instruction (fee payer as freeze authority)
 
 **Token-2022 Program (12 controls)**:
-- Identical instruction set and controls as SPL Token Program
+- Identical instruction set and controls as TPL Token Program
 
 ## Private Key Formats
 
-Kora supports multiple private key formats for enhanced usability and compatibility with different tooling, each specified in `signers.toml`
+TrezoaKora supports multiple private key formats for enhanced usability and compatibility with different tooling, each specified in `signers.toml`
 
 ### 1. Base58 Format
-Traditional Solana private key format - base58-encoded 64-byte private key:
+Traditional Trezoa private key format - base58-encoded 64-byte private key:
 ```bash
-KORA_PRIVATE_KEY=your_base58_private_key
+TREZOAKORA_PRIVATE_KEY=your_base58_private_key
 ```
 
 ### 2. U8Array Format
-Comma-separated byte array format compatible with Solana CLI outputs:
+Comma-separated byte array format compatible with Trezoa CLI outputs:
 ```bash
-KORA_PRIVATE_KEY="[123,45,67,89,12,34,56,78,90,12,34,56,78,90,12,34,56,78,90,12,34,56,78,90,12,34,56,78,90,12,34,56,78,90,12,34,56,78,90,12,34,56,78,90,12,34,56,78,90,12,34,56,78,90,12,34,56]"
+TREZOAKORA_PRIVATE_KEY="[123,45,67,89,12,34,56,78,90,12,34,56,78,90,12,34,56,78,90,12,34,56,78,90,12,34,56,78,90,12,34,56,78,90,12,34,56,78,90,12,34,56,78,90,12,34,56,78,90,12,34,56,78,90,12,34,56]"
 ```
 
 ### 3. JSON File Path
 Path to a JSON file containing the private key:
 ```bash
-KORA_PRIVATE_KEY="/path/to/keypair.json"
+TREZOAKORA_PRIVATE_KEY="/path/to/keypair.json"
 ```
 
 ### Format Detection
@@ -549,7 +549,7 @@ All private key environment variables support the same multiple formats.
 
 ### Overview
 
-Kora handles both legacy and V0 versioned transactions. V0 transactions use address lookup tables to compress transaction size by referencing frequently used addresses. Before processing V0 transactions for fee calculation or validation, these lookup tables must be resolved to get the actual addresses.
+TrezoaKora handles both legacy and V0 versioned transactions. V0 transactions use address lookup tables to compress transaction size by referencing frequently used addresses. Before processing V0 transactions for fee calculation or validation, these lookup tables must be resolved to get the actual addresses.
 
 ### Design Pattern
 
@@ -596,7 +596,7 @@ pub trait VersionedTransactionExt {
 
 ### Concurrency & Thread Safety
 
-Kora is designed for high-performance concurrent operations:
+TrezoaKora is designed for high-performance concurrent operations:
 
 - **Global State Management**: Use `Arc<Mutex<T>>` for shared state across threads
 - **Signer State**: Global signer accessed via `get_signer()` with thread-safe initialization
@@ -608,7 +608,7 @@ Kora is designed for high-performance concurrent operations:
 
 All I/O operations and external API calls are async:
 
-- **RPC Client Operations**: Solana RPC calls are async to avoid blocking
+- **RPC Client Operations**: Trezoa RPC calls are async to avoid blocking
 - **Remote Signer APIs**: Turnkey and Privy API calls are async HTTP requests
 - **Database Operations**: Token cache operations are async
 - **Error Propagation**: Use `?` operator with async functions
@@ -656,10 +656,10 @@ Use structured logging throughout the codebase:
 
 ## Authentication Methods
 
-Kora supports two optional authentication methods:
+TrezoaKora supports two optional authentication methods:
 
-1. **API Key Auth** (`api_key` in kora.toml): Simple header-based auth using `x-api-key`
-2. **HMAC Auth** (`hmac_secret` in kora.toml): Secure signature-based auth using `x-timestamp` + `x-hmac-signature` (SHA256 of timestamp+body)
+1. **API Key Auth** (`api_key` in trezoakora.toml): Simple header-based auth using `x-api-key`
+2. **HMAC Auth** (`hmac_secret` in trezoakora.toml): Secure signature-based auth using `x-timestamp` + `x-hmac-signature` (SHA256 of timestamp+body)
 
 Both skip `/liveness` endpoint and can be used simultaneously. Implementation uses async tower middleware for non-blocking concurrent requests.
 
@@ -689,8 +689,8 @@ The project uses a Rust-based test runner for integration testing:
 │   ├── test_cases.toml    # Test phase configurations
 │   ├── accounts.rs        # Account management & caching
 │   ├── commands.rs        # Test execution logic
-│   ├── kora.rs            # Kora server lifecycle
-│   └── validator.rs       # Solana validator management
+│   ├── trezoakora.rs            # TrezoaKora server lifecycle
+│   └── validator.rs       # Trezoa validator management
 └── common/                # Shared test utilities
 ```
 
@@ -726,7 +726,7 @@ The project uses a Rust-based test runner for integration testing:
 - Zero manual intervention required
 
 **✅ CLI Integration for Payment Address Tests**
-- Automated `kora rpc initialize-atas` execution before payment tests
+- Automated `trezoakora rpc initialize-atas` execution before payment tests
 - Real-world workflow simulation (CLI → tests)
 - Payment address ATA creation and validation
 
@@ -739,7 +739,7 @@ The project uses a Rust-based test runner for integration testing:
 
 **✅ Test Infrastructure**
 - File reorganization: `tests/src/common/` structure for proper Rust crate organization
-- Config files: `kora-test.toml`, `auth-test.toml`, `paymaster-address-test.toml`
+- Config files: `trezoakora-test.toml`, `auth-test.toml`, `paymaster-address-test.toml`
 - Binary setup: `setup_test_env` binary for account/token initialization
 - Path resolution fixes for workspace vs. crate directory differences
 

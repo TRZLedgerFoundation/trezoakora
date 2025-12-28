@@ -2,7 +2,7 @@ use crate::{
     common::constants::DEFAULT_RPC_URL,
     test_runner::accounts::{get_account_address_from_file, AccountFile},
 };
-use solana_client::nonblocking::rpc_client::RpcClient;
+use trezoa_client::nonblocking::rpc_client::RpcClient;
 use std::path::Path;
 use tokio::process::Child;
 
@@ -13,7 +13,7 @@ const TRANSFER_HOOK_PROGRAM_PATH: &str =
 pub async fn check_test_validator(rpc_url: &str) -> bool {
     let client = RpcClient::new_with_commitment(
         rpc_url.to_string(),
-        solana_commitment_config::CommitmentConfig::confirmed(),
+        trezoa_commitment_config::CommitmentConfig::confirmed(),
     );
     client.get_health().await.is_ok()
 }
@@ -21,7 +21,7 @@ pub async fn check_test_validator(rpc_url: &str) -> bool {
 pub async fn start_test_validator(
     load_accounts: bool,
 ) -> Result<Child, Box<dyn std::error::Error + Send + Sync>> {
-    let mut cmd = tokio::process::Command::new("solana-test-validator");
+    let mut cmd = tokio::process::Command::new("trezoa-test-validator");
     cmd.arg("--reset").arg("--quiet");
 
     if Path::new(TRANSFER_HOOK_PROGRAM_PATH).exists() {
@@ -60,7 +60,7 @@ pub async fn start_test_validator(
         attempts += 1;
         if attempts > max_attempts {
             return Err(format!(
-                "Solana test validator failed to start within {max_attempts} attempts"
+                "Trezoa test validator failed to start within {max_attempts} attempts"
             )
             .into());
         }
@@ -69,6 +69,6 @@ pub async fn start_test_validator(
         delay = std::cmp::min(delay * 2, max_delay);
     }
 
-    println!("Solana test validator started successfully");
+    println!("Trezoa test validator started successfully");
     Ok(validator_pid)
 }

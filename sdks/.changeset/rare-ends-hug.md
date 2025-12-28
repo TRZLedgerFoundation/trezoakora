@@ -1,5 +1,5 @@
 ---
-"@solana/kora": minor
+"@trezoa/trezoakora": minor
 ---
 
 Add Types for EstimateTransactionFeeRequest and EstimateTransactionFeeResponse

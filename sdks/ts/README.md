@@ -1,6 +1,6 @@
-# Kora TypeScript SDK
+# TrezoaKora TypeScript SDK
 
-A TypeScript SDK for interacting with the Kora RPC server. This SDK provides a type-safe interface to all Kora RPC methods.
+A TypeScript SDK for interacting with the TrezoaKora RPC server. This SDK provides a type-safe interface to all TrezoaKora RPC methods.
 
 ## Development
 
@@ -17,13 +17,13 @@ pnpm run build
 ### Running Tests
 
 
-Start your local Kora RPC Server from the root project directory: 
+Start your local TrezoaKora RPC Server from the root project directory: 
 
 ```bash
-kora --config tests/src/common/fixtures/kora-test.toml rpc start --signers-config tests/src/common/fixtures/signers.toml
+trezoakora --config tests/src/common/fixtures/trezoakora-test.toml rpc start --signers-config tests/src/common/fixtures/signers.toml
 ```
 
-Tests rely on [Solana CLI's](https://solana.com/docs/intro/installation) local test validator. 
+Tests rely on [Trezoa CLI's](https://trezoa.com/docs/intro/installation) local test validator. 
 
 Run:
 
@@ -37,10 +37,10 @@ This will start a local test validator and run all tests.
 ## Quick Start
 
 ```typescript
-import { KoraClient } from '@solana/kora';
+import { TrezoaKoraClient } from '@trezoa/trezoakora';
 
 // Initialize the client with your RPC endpoint
-const client = new KoraClient({ rpcUrl: 'http://localhost:8080' });
+const client = new TrezoaKoraClient({ rpcUrl: 'http://localhost:8080' });
 
 // Example: Transfer tokens
 const result = await client.transferTransaction({
@@ -56,5 +56,5 @@ console.log('Message:', result.message);
 console.log('Instructions:', result.instructions);
 ```
 
-**[→ API Reference](https://launch.solana.com/docs/kora/json-rpc-api)**
-**[→ Quick Start](https://launch.solana.com/docs/kora/getting-started/quick-start)**
+**[→ API Reference](https://launch.trezoa.com/docs/trezoakora/json-rpc-api)**
+**[→ Quick Start](https://launch.trezoa.com/docs/trezoakora/getting-started/quick-start)**

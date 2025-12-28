@@ -1,17 +1,17 @@
 use crate::{
     config::Config,
-    error::KoraError,
+    error::TrezoaKoraError,
     state::{get_request_signer_with_signer_key, get_signer_pool},
     token::token::TokenType,
     transaction::TransactionUtil,
 };
-use solana_client::nonblocking::rpc_client::RpcClient;
-use solana_compute_budget_interface::ComputeBudgetInstruction;
-use solana_keychain::SolanaSigner;
-use solana_message::{Message, VersionedMessage};
-use solana_sdk::{instruction::Instruction, pubkey::Pubkey};
+use trezoa_client::nonblocking::rpc_client::RpcClient;
+use trezoa_compute_budget_interface::ComputeBudgetInstruction;
+use trezoa_keychain::TrezoaSigner;
+use trezoa_message::{Message, VersionedMessage};
+use trezoa_sdk::{instruction::Instruction, pubkey::Pubkey};
 
-use spl_associated_token_account_interface::{
+use tpl_associated_token_account_interface::{
     address::get_associated_token_address, instruction::create_associated_token_account,
 };
 use std::{fmt::Display, str::FromStr, sync::Arc};
@@ -21,7 +21,7 @@ use {crate::cache::CacheUtil, crate::state::get_config};
 
 #[cfg(test)]
 use {
-    crate::config::SplTokenConfig, crate::tests::cache_mock::MockCacheUtil as CacheUtil,
+    crate::config::TplTokenConfig, crate::tests::cache_mock::MockCacheUtil as CacheUtil,
     crate::tests::config_mock::mock_state::get_config,
 };
 
@@ -55,14 +55,14 @@ pub async fn initialize_atas(
     compute_unit_limit: Option<u32>,
     chunk_size: Option<usize>,
     fee_payer_key: Option<String>,
-) -> Result<(), KoraError> {
+) -> Result<(), TrezoaKoraError> {
     let config = get_config()?;
 
     let fee_payer = get_request_signer_with_signer_key(fee_payer_key.as_deref())?;
 
-    let addresses_to_initialize_atas = if let Some(payment_address) = &config.kora.payment_address {
+    let addresses_to_initialize_atas = if let Some(payment_address) = &config.trezoakora.payment_address {
         vec![Pubkey::from_str(payment_address)
-            .map_err(|e| KoraError::InternalServerError(format!("Invalid payment address: {e}")))?]
+            .map_err(|e| TrezoaKoraError::InternalServerError(format!("Invalid payment address: {e}")))?]
     } else {
         get_signer_pool()?
             .get_signers_info()
@@ -86,12 +86,12 @@ pub async fn initialize_atas(
 /// This function does not use cache and directly checks on-chain
 pub async fn initialize_atas_with_chunk_size(
     rpc_client: &RpcClient,
-    fee_payer: &Arc<solana_keychain::Signer>,
+    fee_payer: &Arc<trezoa_keychain::Signer>,
     addresses_to_initialize_atas: &Vec<Pubkey>,
     compute_unit_price: Option<u64>,
     compute_unit_limit: Option<u32>,
     chunk_size: usize,
-) -> Result<(), KoraError> {
+) -> Result<(), TrezoaKoraError> {
     let config = get_config()?;
 
     for address in addresses_to_initialize_atas {
@@ -125,13 +125,13 @@ pub async fn initialize_atas_with_chunk_size(
 /// Helper function to create ATAs for a single signer
 async fn create_atas_for_signer(
     rpc_client: &RpcClient,
-    fee_payer: &Arc<solana_keychain::Signer>,
+    fee_payer: &Arc<trezoa_keychain::Signer>,
     address: &Pubkey,
     atas_to_create: &[ATAToCreate],
     compute_unit_price: Option<u64>,
     compute_unit_limit: Option<u32>,
     chunk_size: usize,
-) -> Result<usize, KoraError> {
+) -> Result<usize, TrezoaKoraError> {
     let instructions = atas_to_create
         .iter()
         .map(|ata| {
@@ -178,7 +178,7 @@ async fn create_atas_for_signer(
         let blockhash = rpc_client
             .get_latest_blockhash()
             .await
-            .map_err(|e| KoraError::RpcError(format!("Failed to get blockhash: {e}")))?;
+            .map_err(|e| TrezoaKoraError::RpcError(format!("Failed to get blockhash: {e}")))?;
 
         let fee_payer_pubkey = fee_payer.pubkey();
         let message = VersionedMessage::Legacy(Message::new_with_blockhash(
@@ -192,7 +192,7 @@ async fn create_atas_for_signer(
         let signature = fee_payer
             .sign_message(&message_bytes)
             .await
-            .map_err(|e| KoraError::SigningError(e.to_string()))?;
+            .map_err(|e| TrezoaKoraError::SigningError(e.to_string()))?;
 
         tx.signatures = vec![signature];
 
@@ -230,7 +230,7 @@ async fn create_atas_for_signer(
                 }
 
                 println!("This may be a temporary network issue. Please re-run the command to retry ATA creation.");
-                return Err(KoraError::RpcError(format!(
+                return Err(TrezoaKoraError::RpcError(format!(
                     "Failed to send ATA creation transaction for chunk {chunk_num}/{num_chunks}: {e}"
                 )));
             }
@@ -252,10 +252,10 @@ pub async fn find_missing_atas(
     config: &Config,
     rpc_client: &RpcClient,
     payment_address: &Pubkey,
-) -> Result<Vec<ATAToCreate>, KoraError> {
-    // Parse all allowed SPL paid token mints
+) -> Result<Vec<ATAToCreate>, TrezoaKoraError> {
+    // Parse all allowed TPL paid token mints
     let mut token_mints = Vec::new();
-    for token_str in &config.validation.allowed_spl_paid_tokens {
+    for token_str in &config.validation.allowed_tpl_paid_tokens {
         match Pubkey::from_str(token_str) {
             Ok(mint) => token_mints.push(mint),
             Err(_) => {
@@ -266,7 +266,7 @@ pub async fn find_missing_atas(
     }
 
     if token_mints.is_empty() {
-        println!("✓ No SPL payment tokens configured");
+        println!("✓ No TPL payment tokens configured");
         return Ok(Vec::new());
     }
 
@@ -281,10 +281,10 @@ pub async fn find_missing_atas(
                 println!("✓ ATA already exists for token {mint}: {ata}");
             }
             Err(_) => {
-                // Fetch mint account to determine if it's SPL or Token2022
+                // Fetch mint account to determine if it's TPL or Token2022
                 let mint_account =
                     CacheUtil::get_account(config, rpc_client, mint, false).await.map_err(|e| {
-                        KoraError::RpcError(format!("Failed to fetch mint account for {mint}: {e}"))
+                        TrezoaKoraError::RpcError(format!("Failed to fetch mint account for {mint}: {e}"))
                     })?;
 
                 let token_program = TokenType::get_token_program_from_owner(&mint_account.owner)?;
@@ -308,7 +308,7 @@ mod tests {
     use super::*;
     use crate::tests::{
         common::{
-            create_mock_rpc_client_account_not_found, create_mock_spl_mint_account,
+            create_mock_rpc_client_account_not_found, create_mock_tpl_mint_account,
             create_mock_token_account, setup_or_get_test_signer, RpcMockBuilder,
         },
         config_mock::{ConfigMockBuilder, ValidationConfigBuilder},
@@ -319,11 +319,11 @@ mod tests {
     };
 
     #[tokio::test]
-    async fn test_find_missing_atas_no_spl_tokens() {
+    async fn test_find_missing_atas_no_tpl_tokens() {
         let _m = ConfigMockBuilder::new()
             .with_validation(
                 ValidationConfigBuilder::new()
-                    .with_allowed_spl_paid_tokens(SplTokenConfig::Allowlist(vec![]))
+                    .with_allowed_tpl_paid_tokens(TplTokenConfig::Allowlist(vec![]))
                     .build(),
             )
             .build_and_setup();
@@ -334,18 +334,18 @@ mod tests {
         let config = get_config().unwrap();
         let result = find_missing_atas(&config, &rpc_client, &payment_address).await.unwrap();
 
-        assert!(result.is_empty(), "Should return empty vec when no SPL tokens configured");
+        assert!(result.is_empty(), "Should return empty vec when no TPL tokens configured");
     }
 
     #[tokio::test]
-    async fn test_find_missing_atas_with_spl_tokens() {
-        let allowed_spl_tokens = [Pubkey::new_unique(), Pubkey::new_unique()];
+    async fn test_find_missing_atas_with_tpl_tokens() {
+        let allowed_tpl_tokens = [Pubkey::new_unique(), Pubkey::new_unique()];
 
         let _m = ConfigMockBuilder::new()
             .with_validation(
                 ValidationConfigBuilder::new()
-                    .with_allowed_spl_paid_tokens(SplTokenConfig::Allowlist(
-                        allowed_spl_tokens.iter().map(|p| p.to_string()).collect(),
+                    .with_allowed_tpl_paid_tokens(TplTokenConfig::Allowlist(
+                        allowed_tpl_tokens.iter().map(|p| p.to_string()).collect(),
                     ))
                     .build(),
             )
@@ -362,8 +362,8 @@ mod tests {
         // Third call: mint account found (Ok)
         let responses = Arc::new(Mutex::new(VecDeque::from([
             Ok(create_mock_token_account(&Pubkey::new_unique(), &Pubkey::new_unique())),
-            Err(KoraError::RpcError("ATA not found".to_string())),
-            Ok(create_mock_spl_mint_account(6)),
+            Err(TrezoaKoraError::RpcError("ATA not found".to_string())),
+            Ok(create_mock_tpl_mint_account(6)),
         ])));
 
         let responses_clone = responses.clone();
@@ -375,7 +375,7 @@ mod tests {
         let config = get_config().unwrap();
         let result = find_missing_atas(&config, &rpc_client, &payment_address).await;
 
-        assert!(result.is_ok(), "Should handle SPL tokens with proper mocking");
+        assert!(result.is_ok(), "Should handle TPL tokens with proper mocking");
         let atas = result.unwrap();
         assert_eq!(atas.len(), 1, "Should return 1 missing ATAs");
     }
@@ -393,17 +393,17 @@ mod tests {
         let atas_to_create = vec![
             ATAToCreate {
                 mint: mint1,
-                ata: spl_associated_token_account_interface::address::get_associated_token_address(
+                ata: tpl_associated_token_account_interface::address::get_associated_token_address(
                     &address, &mint1,
                 ),
-                token_program: spl_token_interface::id(),
+                token_program: tpl_token_interface::id(),
             },
             ATAToCreate {
                 mint: mint2,
-                ata: spl_associated_token_account_interface::address::get_associated_token_address(
+                ata: tpl_associated_token_account_interface::address::get_associated_token_address(
                     &address, &mint2,
                 ),
-                token_program: spl_token_interface::id(),
+                token_program: tpl_token_interface::id(),
             },
         ];
 
@@ -442,7 +442,7 @@ mod tests {
     #[tokio::test]
     async fn test_initialize_atas_when_all_tokens_are_allowed() {
         let _m = ConfigMockBuilder::new()
-            .with_allowed_spl_paid_tokens(SplTokenConfig::All)
+            .with_allowed_tpl_paid_tokens(TplTokenConfig::All)
             .build_and_setup();
 
         let _ = setup_or_get_test_signer();

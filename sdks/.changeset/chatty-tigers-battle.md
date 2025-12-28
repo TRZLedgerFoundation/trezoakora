@@ -1,5 +1,5 @@
 ---
-"@solana/kora": patch
+"@trezoa/trezoakora": patch
 ---
 
 add support for fee_in_token response in EstimateTransactionFeeResponse.

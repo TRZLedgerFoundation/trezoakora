@@ -34,9 +34,9 @@ const JSON_CONTENT_TYPE: &str = "application/json";
 #[derive(OpenApi)]
 #[openapi(
     info(
-        title = "kora-rpc",
+        title = "trezoakora-rpc",
         version = "0.1.0",
-        description = "RPC server for Kora gasless relayer",
+        description = "RPC server for TrezoaKora gasless relayer",
         license(name = "MIT")
     ),
     components(schemas(

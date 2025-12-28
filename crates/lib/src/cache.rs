@@ -1,11 +1,11 @@
 use deadpool_redis::{Pool, Runtime};
 use redis::AsyncCommands;
 use serde::{Deserialize, Serialize};
-use solana_client::nonblocking::rpc_client::RpcClient;
-use solana_sdk::{account::Account, pubkey::Pubkey};
+use trezoa_client::nonblocking::rpc_client::RpcClient;
+use trezoa_sdk::{account::Account, pubkey::Pubkey};
 use tokio::sync::OnceCell;
 
-use crate::{config::Config, error::KoraError, sanitize_error};
+use crate::{config::Config, error::TrezoaKoraError, sanitize_error};
 
 #[cfg(not(test))]
 use crate::state::get_config;
@@ -25,21 +25,21 @@ pub struct CachedAccount {
     pub cached_at: i64, // Unix timestamp
 }
 
-/// Cache utility for Solana RPC calls
+/// Cache utility for Trezoa RPC calls
 pub struct CacheUtil;
 
 impl CacheUtil {
     /// Initialize the cache pool based on configuration
-    pub async fn init() -> Result<(), KoraError> {
+    pub async fn init() -> Result<(), TrezoaKoraError> {
         let config = get_config()?;
 
         #[allow(clippy::needless_borrow)]
         let pool = if CacheUtil::is_cache_enabled(&config) {
-            let redis_url = config.kora.cache.url.as_ref().ok_or(KoraError::ConfigError)?;
+            let redis_url = config.trezoakora.cache.url.as_ref().ok_or(TrezoaKoraError::ConfigError)?;
 
             let cfg = deadpool_redis::Config::from_url(redis_url);
             let pool = cfg.create_pool(Some(Runtime::Tokio1)).map_err(|e| {
-                KoraError::InternalServerError(format!(
+                TrezoaKoraError::InternalServerError(format!(
                     "Failed to create cache pool: {}",
                     sanitize_error!(e)
                 ))
@@ -47,7 +47,7 @@ impl CacheUtil {
 
             // Test connection
             let mut conn = pool.get().await.map_err(|e| {
-                KoraError::InternalServerError(format!(
+                TrezoaKoraError::InternalServerError(format!(
                     "Failed to connect to cache: {}",
                     sanitize_error!(e)
                 ))
@@ -55,7 +55,7 @@ impl CacheUtil {
 
             // Simple connection test - try to get a non-existent key
             let _: Option<String> = conn.get("__connection_test__").await.map_err(|e| {
-                KoraError::InternalServerError(format!(
+                TrezoaKoraError::InternalServerError(format!(
                     "Cache connection test failed: {}",
                     sanitize_error!(e)
                 ))
@@ -70,15 +70,15 @@ impl CacheUtil {
         };
 
         CACHE_POOL.set(pool).map_err(|_| {
-            KoraError::InternalServerError("Cache pool already initialized".to_string())
+            TrezoaKoraError::InternalServerError("Cache pool already initialized".to_string())
         })?;
 
         Ok(())
     }
 
-    async fn get_connection(pool: &Pool) -> Result<deadpool_redis::Connection, KoraError> {
+    async fn get_connection(pool: &Pool) -> Result<deadpool_redis::Connection, TrezoaKoraError> {
         pool.get().await.map_err(|e| {
-            KoraError::InternalServerError(format!(
+            TrezoaKoraError::InternalServerError(format!(
                 "Failed to get cache connection: {}",
                 sanitize_error!(e)
             ))
@@ -93,14 +93,14 @@ impl CacheUtil {
     async fn get_account_from_rpc(
         rpc_client: &RpcClient,
         pubkey: &Pubkey,
-    ) -> Result<Account, KoraError> {
+    ) -> Result<Account, TrezoaKoraError> {
         match rpc_client.get_account(pubkey).await {
             Ok(account) => Ok(account),
             Err(e) => {
-                let kora_error = e.into();
-                match kora_error {
-                    KoraError::AccountNotFound(_) => {
-                        Err(KoraError::AccountNotFound(pubkey.to_string()))
+                let trezoakora_error = e.into();
+                match trezoakora_error {
+                    TrezoaKoraError::AccountNotFound(_) => {
+                        Err(TrezoaKoraError::AccountNotFound(pubkey.to_string()))
                     }
                     other_error => Err(other_error),
                 }
@@ -109,11 +109,11 @@ impl CacheUtil {
     }
 
     /// Get data from cache
-    async fn get_from_cache(pool: &Pool, key: &str) -> Result<Option<CachedAccount>, KoraError> {
+    async fn get_from_cache(pool: &Pool, key: &str) -> Result<Option<CachedAccount>, TrezoaKoraError> {
         let mut conn = Self::get_connection(pool).await?;
 
         let cached_data: Option<String> = conn.get(key).await.map_err(|e| {
-            KoraError::InternalServerError(format!(
+            TrezoaKoraError::InternalServerError(format!(
                 "Failed to get from cache: {}",
                 sanitize_error!(e)
             ))
@@ -122,7 +122,7 @@ impl CacheUtil {
         match cached_data {
             Some(data) => {
                 let cached_account: CachedAccount = serde_json::from_str(&data).map_err(|e| {
-                    KoraError::InternalServerError(format!(
+                    TrezoaKoraError::InternalServerError(format!(
                         "Failed to deserialize cached data: {e}"
                     ))
                 })?;
@@ -138,7 +138,7 @@ impl CacheUtil {
         pubkey: &Pubkey,
         pool: &Pool,
         ttl: u64,
-    ) -> Result<Account, KoraError> {
+    ) -> Result<Account, TrezoaKoraError> {
         let account = Self::get_account_from_rpc(rpc_client, pubkey).await?;
 
         let cache_key = Self::get_account_key(pubkey);
@@ -159,18 +159,18 @@ impl CacheUtil {
         key: &str,
         data: &CachedAccount,
         ttl_seconds: u64,
-    ) -> Result<(), KoraError> {
+    ) -> Result<(), TrezoaKoraError> {
         let mut conn = Self::get_connection(pool).await?;
 
         let serialized = serde_json::to_string(data).map_err(|e| {
-            KoraError::InternalServerError(format!(
+            TrezoaKoraError::InternalServerError(format!(
                 "Failed to serialize cache data: {}",
                 sanitize_error!(e)
             ))
         })?;
 
         conn.set_ex::<_, _, ()>(key, serialized, ttl_seconds).await.map_err(|e| {
-            KoraError::InternalServerError(format!(
+            TrezoaKoraError::InternalServerError(format!(
                 "Failed to set cache data: {}",
                 sanitize_error!(e)
             ))
@@ -181,7 +181,7 @@ impl CacheUtil {
 
     /// Check if cache is enabled and available
     fn is_cache_enabled(config: &Config) -> bool {
-        config.kora.cache.enabled && config.kora.cache.url.is_some()
+        config.trezoakora.cache.enabled && config.trezoakora.cache.url.is_some()
     }
 
     /// Get account from cache with optional force refresh
@@ -190,7 +190,7 @@ impl CacheUtil {
         rpc_client: &RpcClient,
         pubkey: &Pubkey,
         force_refresh: bool,
-    ) -> Result<Account, KoraError> {
+    ) -> Result<Account, TrezoaKoraError> {
         // If cache is disabled or force refresh is requested, go directly to RPC
         if !CacheUtil::is_cache_enabled(config) {
             return Self::get_account_from_rpc(rpc_client, pubkey).await;
@@ -218,7 +218,7 @@ impl CacheUtil {
                 rpc_client,
                 pubkey,
                 pool,
-                config.kora.cache.account_ttl,
+                config.trezoakora.cache.account_ttl,
             )
             .await;
         }
@@ -231,7 +231,7 @@ impl CacheUtil {
             let cache_age = current_time - cached_account.cached_at;
 
             // Check if cache is still valid
-            if cache_age < config.kora.cache.account_ttl as i64 {
+            if cache_age < config.trezoakora.cache.account_ttl as i64 {
                 return Ok(cached_account.account);
             }
         }
@@ -241,7 +241,7 @@ impl CacheUtil {
             rpc_client,
             pubkey,
             pool,
-            config.kora.cache.account_ttl,
+            config.trezoakora.cache.account_ttl,
         )
         .await?;
 
@@ -320,7 +320,7 @@ mod tests {
 
         assert!(result.is_err());
         match result.unwrap_err() {
-            KoraError::AccountNotFound(account_key) => {
+            TrezoaKoraError::AccountNotFound(account_key) => {
                 assert_eq!(account_key, pubkey.to_string());
             }
             _ => panic!("Expected AccountNotFound for account not found error"),

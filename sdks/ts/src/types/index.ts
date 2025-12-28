@@ -1,4 +1,4 @@
-import { Instruction, Address } from '@solana/kit';
+import { Instruction, Address } from '@trezoa/kit';
 
 /**
  * Request Types
@@ -8,7 +8,7 @@ import { Instruction, Address } from '@solana/kit';
  * Parameters for creating a token transfer transaction.
  */
 export interface TransferTransactionRequest {
-    /** Amount to transfer in the token's smallest unit (e.g., lamports for SOL) */
+    /** Amount to transfer in the token's smallest unit (e.g., lamports for TRZ) */
     amount: number;
     /** Mint address of the token to transfer */
     token: string;
@@ -185,7 +185,7 @@ export interface GetPaymentInstructionResponse {
 export type PriceSource = 'Jupiter' | 'Mock';
 
 /**
- * Validation configuration for the Kora server.
+ * Validation configuration for the TrezoaKora server.
  */
 export interface ValidationConfig {
     /** Maximum allowed transaction value in lamports */
@@ -194,12 +194,12 @@ export interface ValidationConfig {
     max_signatures: number;
     /** Price oracle source for token conversions */
     price_source: PriceSource;
-    /** List of allowed Solana program IDs */
+    /** List of allowed Trezoa program IDs */
     allowed_programs: string[];
     /** List of allowed token mint addresses for fee payment */
     allowed_tokens: string[];
-    /** List of SPL tokens accepted for paid transactions */
-    allowed_spl_paid_tokens: string[];
+    /** List of TPL tokens accepted for paid transactions */
+    allowed_tpl_paid_tokens: string[];
     /** List of blocked account addresses */
     disallowed_accounts: string[];
     /** Policy controlling fee payer permissions */
@@ -235,7 +235,7 @@ export type PriceModel =
 export type PriceConfig = PriceModel;
 
 /**
- * Enabled status for methods for the Kora server.
+ * Enabled status for methods for the TrezoaKora server.
  */
 export interface EnabledMethods {
     /** Whether the liveness method is enabled */
@@ -257,7 +257,7 @@ export interface EnabledMethods {
 }
 
 /**
- * Kora server configuration.
+ * TrezoaKora server configuration.
  */
 export interface Config {
     /** Array of public keys of the fee payer accounts (signer pool) */
@@ -299,26 +299,26 @@ export interface SystemInstructionPolicy {
 }
 
 /**
- * SPL Token instruction policy
+ * TPL Token instruction policy
  */
-export interface SplTokenInstructionPolicy {
-    /** Allow fee payer to be source in SPL token transfers */
+export interface TplTokenInstructionPolicy {
+    /** Allow fee payer to be source in TPL token transfers */
     allow_transfer: boolean;
-    /** Allow fee payer to burn SPL tokens */
+    /** Allow fee payer to burn TPL tokens */
     allow_burn: boolean;
-    /** Allow fee payer to close SPL token accounts */
+    /** Allow fee payer to close TPL token accounts */
     allow_close_account: boolean;
-    /** Allow fee payer to approve SPL token delegates */
+    /** Allow fee payer to approve TPL token delegates */
     allow_approve: boolean;
-    /** Allow fee payer to revoke SPL token delegates */
+    /** Allow fee payer to revoke TPL token delegates */
     allow_revoke: boolean;
-    /** Allow fee payer to set authority on SPL token accounts */
+    /** Allow fee payer to set authority on TPL token accounts */
     allow_set_authority: boolean;
-    /** Allow fee payer to mint SPL tokens */
+    /** Allow fee payer to mint TPL tokens */
     allow_mint_to: boolean;
-    /** Allow fee payer to freeze SPL token accounts */
+    /** Allow fee payer to freeze TPL token accounts */
     allow_freeze_account: boolean;
-    /** Allow fee payer to thaw SPL token accounts */
+    /** Allow fee payer to thaw TPL token accounts */
     allow_thaw_account: boolean;
 }
 
@@ -352,8 +352,8 @@ export interface Token2022InstructionPolicy {
 export interface FeePayerPolicy {
     /** System program instruction policies */
     system: SystemInstructionPolicy;
-    /** SPL Token program instruction policies */
-    spl_token: SplTokenInstructionPolicy;
+    /** TPL Token program instruction policies */
+    tpl_token: TplTokenInstructionPolicy;
     /** Token2022 program instruction policies */
     token_2022: Token2022InstructionPolicy;
 }
@@ -399,10 +399,10 @@ export interface AuthenticationHeaders {
 }
 
 /**
- * Options for initializing a Kora client.
+ * Options for initializing a TrezoaKora client.
  */
-export interface KoraClientOptions {
-    /** URL of the Kora RPC server */
+export interface TrezoaKoraClientOptions {
+    /** URL of the TrezoaKora RPC server */
     rpcUrl: string;
     /** Optional API key for authentication */
     apiKey?: string;

@@ -66,12 +66,12 @@ pub async fn run_rpc_server(rpc: KoraRpc, port: u16) -> Result<ServerHandles, an
         run_metrics_server_if_required(port, rpc_client).await?;
 
     // Build whitelist of allowed methods from enabled_methods config
-    let allowed_methods = config.kora.enabled_methods.get_enabled_method_names();
+    let allowed_methods = config.trezoakora.enabled_methods.get_enabled_method_names();
 
     let middleware = tower::ServiceBuilder::new()
         // Add metrics handler first (before other layers) so it can intercept /metrics
         .layer(ProxyGetRequestLayer::new("/liveness", "liveness")?)
-        .layer(RateLimitLayer::new(config.kora.rate_limit, Duration::from_secs(1)))
+        .layer(RateLimitLayer::new(config.trezoakora.rate_limit, Duration::from_secs(1)))
         // Add metrics handler layer for Prometheus metrics
         .option_layer(
             metrics_layers.as_ref().and_then(|layers| layers.metrics_handler_layer.clone()),
@@ -83,18 +83,18 @@ pub async fn run_rpc_server(rpc: KoraRpc, port: u16) -> Result<ServerHandles, an
         .option_layer(metrics_layers.as_ref().and_then(|layers| layers.http_metrics_layer.clone()))
         // Add authentication layer for API key if configured
         .option_layer(
-            (get_value_by_priority("KORA_API_KEY", config.kora.auth.api_key.clone()))
+            (get_value_by_priority("TREZOAKORA_API_KEY", config.trezoakora.auth.api_key.clone()))
                 .map(ApiKeyAuthLayer::new),
         )
         // Add authentication layer for HMAC if configured
         .option_layer(
-            (get_value_by_priority("KORA_HMAC_SECRET", config.kora.auth.hmac_secret.clone()))
-                .map(|secret| HmacAuthLayer::new(secret, config.kora.auth.max_timestamp_age)),
+            (get_value_by_priority("TREZOAKORA_HMAC_SECRET", config.trezoakora.auth.hmac_secret.clone()))
+                .map(|secret| HmacAuthLayer::new(secret, config.trezoakora.auth.max_timestamp_age)),
         );
 
     // Configure and build the server with HTTP support
     let server = ServerBuilder::default()
-        .max_request_body_size(config.kora.max_request_body_size as u32)
+        .max_request_body_size(config.trezoakora.max_request_body_size as u32)
         .set_middleware(middleware)
         .http_only() // Explicitly enable HTTP
         .build(addr)
@@ -139,7 +139,7 @@ macro_rules! register_method_if_enabled {
 
 fn build_rpc_module(rpc: KoraRpc) -> Result<RpcModule<KoraRpc>, anyhow::Error> {
     let mut module = RpcModule::new(rpc.clone());
-    let enabled_methods = &get_config()?.kora.enabled_methods;
+    let enabled_methods = &get_config()?.trezoakora.enabled_methods;
 
     register_method_if_enabled!(module, enabled_methods, liveness, "liveness", liveness);
 
@@ -246,14 +246,14 @@ mod tests {
         // Default is all methods enabled
         let enabled_methods = EnabledMethods::default();
 
-        let kora_config = KoraConfigBuilder::new().with_enabled_methods(enabled_methods).build();
-        let _m = ConfigMockBuilder::new().with_kora(kora_config).build_and_setup();
+        let trezoakora_config = KoraConfigBuilder::new().with_enabled_methods(enabled_methods).build();
+        let _m = ConfigMockBuilder::new().with_trezoakora(trezoakora_config).build_and_setup();
         let _ = setup_or_get_test_signer();
 
         let rpc_client = RpcMockBuilder::new().build();
-        let kora_rpc = KoraRpc::new(rpc_client);
+        let trezoakora_rpc = KoraRpc::new(rpc_client);
 
-        let result = build_rpc_module(kora_rpc);
+        let result = build_rpc_module(trezoakora_rpc);
         assert!(result.is_ok(), "Failed to build RPC module with all methods enabled");
 
         // Verify that the module has the expected methods
@@ -286,16 +286,16 @@ mod tests {
             liveness: false,
         };
 
-        let kora_config = KoraConfigBuilder::new().with_enabled_methods(enabled_methods).build();
-        let _m = ConfigMockBuilder::new().with_kora(kora_config).build_and_setup();
+        let trezoakora_config = KoraConfigBuilder::new().with_enabled_methods(enabled_methods).build();
+        let _m = ConfigMockBuilder::new().with_trezoakora(trezoakora_config).build_and_setup();
         let _ = setup_or_get_test_signer();
 
         // Create RPC module
         let rpc_client = RpcMockBuilder::new().build();
-        let kora_rpc = KoraRpc::new(rpc_client);
+        let trezoakora_rpc = KoraRpc::new(rpc_client);
 
         // Build the module - should succeed even with no methods
-        let result = build_rpc_module(kora_rpc);
+        let result = build_rpc_module(trezoakora_rpc);
         assert!(result.is_ok(), "Failed to build RPC module with all methods disabled");
 
         assert_eq!(result.unwrap().method_names().count(), 0);
@@ -316,16 +316,16 @@ mod tests {
             get_blockhash: false,
         };
 
-        let kora_config = KoraConfigBuilder::new().with_enabled_methods(enabled_methods).build();
-        let _m = ConfigMockBuilder::new().with_kora(kora_config).build_and_setup();
+        let trezoakora_config = KoraConfigBuilder::new().with_enabled_methods(enabled_methods).build();
+        let _m = ConfigMockBuilder::new().with_trezoakora(trezoakora_config).build_and_setup();
         let _ = setup_or_get_test_signer();
 
         // Create RPC module
         let rpc_client = RpcMockBuilder::new().build();
-        let kora_rpc = KoraRpc::new(rpc_client);
+        let trezoakora_rpc = KoraRpc::new(rpc_client);
 
         // Build the module
-        let result = build_rpc_module(kora_rpc);
+        let result = build_rpc_module(trezoakora_rpc);
         assert!(result.is_ok(), "Failed to build RPC module with selective methods");
 
         // Verify that only the expected methods are registered

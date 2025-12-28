@@ -1,28 +1,28 @@
 use async_trait::async_trait;
 use base64::{engine::general_purpose::STANDARD, Engine as _};
-use solana_client::{nonblocking::rpc_client::RpcClient, rpc_config::RpcSimulateTransactionConfig};
-use solana_commitment_config::CommitmentConfig;
-use solana_keychain::{Signer, SolanaSigner};
-use solana_message::{
+use trezoa_client::{nonblocking::rpc_client::RpcClient, rpc_config::RpcSimulateTransactionConfig};
+use trezoa_commitment_config::CommitmentConfig;
+use trezoa_keychain::{Signer, TrezoaSigner};
+use trezoa_message::{
     compiled_instruction::CompiledInstruction, v0::MessageAddressTableLookup, VersionedMessage,
 };
-use solana_sdk::{instruction::Instruction, pubkey::Pubkey, transaction::VersionedTransaction};
+use trezoa_sdk::{instruction::Instruction, pubkey::Pubkey, transaction::VersionedTransaction};
 use std::{collections::HashMap, ops::Deref};
 
-use solana_transaction_status_client_types::{UiInstruction, UiTransactionEncoding};
+use trezoa_transaction_status_client_types::{UiInstruction, UiTransactionEncoding};
 
 use crate::{
     config::Config,
-    error::KoraError,
+    error::TrezoaKoraError,
     fee::fee::{FeeConfigUtil, TransactionFeeUtil},
     transaction::{
-        instruction_util::IxUtils, ParsedSPLInstructionData, ParsedSPLInstructionType,
+        instruction_util::IxUtils, ParsedTPLInstructionData, ParsedTPLInstructionType,
         ParsedSystemInstructionData, ParsedSystemInstructionType,
     },
     validator::transaction_validator::TransactionValidator,
     CacheUtil,
 };
-use solana_address_lookup_table_interface::state::AddressLookupTable;
+use trezoa_address_lookup_table_interface::state::AddressLookupTable;
 
 /// A fully resolved transaction with lookup tables and inner instructions resolved
 pub struct VersionedTransactionResolved {
@@ -38,9 +38,9 @@ pub struct VersionedTransactionResolved {
     parsed_system_instructions:
         Option<HashMap<ParsedSystemInstructionType, Vec<ParsedSystemInstructionData>>>,
 
-    // Parsed SPL instructions by type (None if not parsed yet)
-    parsed_spl_instructions:
-        Option<HashMap<ParsedSPLInstructionType, Vec<ParsedSPLInstructionData>>>,
+    // Parsed TPL instructions by type (None if not parsed yet)
+    parsed_tpl_instructions:
+        Option<HashMap<ParsedTPLInstructionType, Vec<ParsedTPLInstructionData>>>,
 }
 
 impl Deref for VersionedTransactionResolved {
@@ -53,21 +53,21 @@ impl Deref for VersionedTransactionResolved {
 
 #[async_trait]
 pub trait VersionedTransactionOps {
-    fn encode_b64_transaction(&self) -> Result<String, KoraError>;
-    fn find_signer_position(&self, signer_pubkey: &Pubkey) -> Result<usize, KoraError>;
+    fn encode_b64_transaction(&self) -> Result<String, TrezoaKoraError>;
+    fn find_signer_position(&self, signer_pubkey: &Pubkey) -> Result<usize, TrezoaKoraError>;
 
     async fn sign_transaction(
         &mut self,
         config: &Config,
         signer: &std::sync::Arc<Signer>,
         rpc_client: &RpcClient,
-    ) -> Result<(VersionedTransaction, String), KoraError>;
+    ) -> Result<(VersionedTransaction, String), TrezoaKoraError>;
     async fn sign_and_send_transaction(
         &mut self,
         config: &Config,
         signer: &std::sync::Arc<Signer>,
         rpc_client: &RpcClient,
-    ) -> Result<(String, String), KoraError>;
+    ) -> Result<(String, String), TrezoaKoraError>;
 }
 
 impl VersionedTransactionResolved {
@@ -76,13 +76,13 @@ impl VersionedTransactionResolved {
         config: &Config,
         rpc_client: &RpcClient,
         sig_verify: bool,
-    ) -> Result<Self, KoraError> {
+    ) -> Result<Self, TrezoaKoraError> {
         let mut resolved = Self {
             transaction: transaction.clone(),
             all_account_keys: vec![],
             all_instructions: vec![],
             parsed_system_instructions: None,
-            parsed_spl_instructions: None,
+            parsed_tpl_instructions: None,
         };
 
         // 1. Resolve lookup table addresses based on transaction type
@@ -120,9 +120,9 @@ impl VersionedTransactionResolved {
     }
 
     /// Only use this is we built the transaction ourselves, because it won't do any checks for resolving LUT, etc.
-    pub fn from_kora_built_transaction(
+    pub fn from_trezoakora_built_transaction(
         transaction: &VersionedTransaction,
-    ) -> Result<Self, KoraError> {
+    ) -> Result<Self, TrezoaKoraError> {
         Ok(Self {
             transaction: transaction.clone(),
             all_account_keys: transaction.message.static_account_keys().to_vec(),
@@ -131,7 +131,7 @@ impl VersionedTransactionResolved {
                 transaction.message.static_account_keys(),
             )?,
             parsed_system_instructions: None,
-            parsed_spl_instructions: None,
+            parsed_tpl_instructions: None,
         })
     }
 
@@ -140,7 +140,7 @@ impl VersionedTransactionResolved {
         &mut self,
         rpc_client: &RpcClient,
         sig_verify: bool,
-    ) -> Result<Vec<Instruction>, KoraError> {
+    ) -> Result<Vec<Instruction>, TrezoaKoraError> {
         let simulation_result = rpc_client
             .simulate_transaction_with_config(
                 &self.transaction,
@@ -155,10 +155,10 @@ impl VersionedTransactionResolved {
                 },
             )
             .await
-            .map_err(|e| KoraError::RpcError(format!("Failed to simulate transaction: {e}")))?;
+            .map_err(|e| TrezoaKoraError::RpcError(format!("Failed to simulate transaction: {e}")))?;
 
         if let Some(err) = simulation_result.value.err {
-            return Err(KoraError::InvalidTransaction(format!(
+            return Err(TrezoaKoraError::InvalidTransaction(format!(
                 "Transaction simulation failed: {err}"
             )));
         }
@@ -197,26 +197,26 @@ impl VersionedTransactionResolved {
 
     pub fn get_or_parse_system_instructions(
         &mut self,
-    ) -> Result<&HashMap<ParsedSystemInstructionType, Vec<ParsedSystemInstructionData>>, KoraError>
+    ) -> Result<&HashMap<ParsedSystemInstructionType, Vec<ParsedSystemInstructionData>>, TrezoaKoraError>
     {
         if self.parsed_system_instructions.is_none() {
             self.parsed_system_instructions = Some(IxUtils::parse_system_instructions(self)?);
         }
 
         self.parsed_system_instructions.as_ref().ok_or_else(|| {
-            KoraError::SerializationError("Parsed system instructions not found".to_string())
+            TrezoaKoraError::SerializationError("Parsed system instructions not found".to_string())
         })
     }
 
-    pub fn get_or_parse_spl_instructions(
+    pub fn get_or_parse_tpl_instructions(
         &mut self,
-    ) -> Result<&HashMap<ParsedSPLInstructionType, Vec<ParsedSPLInstructionData>>, KoraError> {
-        if self.parsed_spl_instructions.is_none() {
-            self.parsed_spl_instructions = Some(IxUtils::parse_token_instructions(self)?);
+    ) -> Result<&HashMap<ParsedTPLInstructionType, Vec<ParsedTPLInstructionData>>, TrezoaKoraError> {
+        if self.parsed_tpl_instructions.is_none() {
+            self.parsed_tpl_instructions = Some(IxUtils::parse_token_instructions(self)?);
         }
 
-        self.parsed_spl_instructions.as_ref().ok_or_else(|| {
-            KoraError::SerializationError("Parsed SPL instructions not found".to_string())
+        self.parsed_tpl_instructions.as_ref().ok_or_else(|| {
+            TrezoaKoraError::SerializationError("Parsed TPL instructions not found".to_string())
         })
     }
 }
@@ -224,21 +224,21 @@ impl VersionedTransactionResolved {
 // Implementation of the consolidated trait for VersionedTransactionResolved
 #[async_trait]
 impl VersionedTransactionOps for VersionedTransactionResolved {
-    fn encode_b64_transaction(&self) -> Result<String, KoraError> {
+    fn encode_b64_transaction(&self) -> Result<String, TrezoaKoraError> {
         let serialized = bincode::serialize(&self.transaction).map_err(|e| {
-            KoraError::SerializationError(format!("Base64 serialization failed: {e}"))
+            TrezoaKoraError::SerializationError(format!("Base64 serialization failed: {e}"))
         })?;
         Ok(STANDARD.encode(serialized))
     }
 
-    fn find_signer_position(&self, signer_pubkey: &Pubkey) -> Result<usize, KoraError> {
+    fn find_signer_position(&self, signer_pubkey: &Pubkey) -> Result<usize, TrezoaKoraError> {
         self.transaction
             .message
             .static_account_keys()
             .iter()
             .position(|key| key == signer_pubkey)
             .ok_or_else(|| {
-                KoraError::InvalidTransaction(format!(
+                TrezoaKoraError::InvalidTransaction(format!(
                     "Signer {signer_pubkey} not found in transaction account keys"
                 ))
             })
@@ -249,7 +249,7 @@ impl VersionedTransactionOps for VersionedTransactionResolved {
         config: &Config,
         signer: &std::sync::Arc<Signer>,
         rpc_client: &RpcClient,
-    ) -> Result<(VersionedTransaction, String), KoraError> {
+    ) -> Result<(VersionedTransaction, String), TrezoaKoraError> {
         let fee_payer = signer.pubkey();
         let validator = TransactionValidator::new(config, fee_payer)?;
 
@@ -257,7 +257,7 @@ impl VersionedTransactionOps for VersionedTransactionResolved {
         validator.validate_transaction(config, self, rpc_client).await?;
 
         // Calculate fee and validate payment if price model requires it
-        let fee_calculation = FeeConfigUtil::estimate_kora_fee(
+        let fee_calculation = FeeConfigUtil::estimate_trezoakora_fee(
             self,
             &fee_payer,
             config.validation.is_payment_required(),
@@ -272,7 +272,7 @@ impl VersionedTransactionOps for VersionedTransactionResolved {
         if required_lamports > 0 {
             log::info!("Payment validation: required_lamports={}", required_lamports);
             // Get the expected payment destination
-            let payment_destination = config.kora.get_payment_address(&fee_payer)?;
+            let payment_destination = config.trezoakora.get_payment_address(&fee_payer)?;
 
             // Validate token payment using the resolved transaction
             TransactionValidator::validate_token_payment(
@@ -307,7 +307,7 @@ impl VersionedTransactionOps for VersionedTransactionResolved {
         let signature = signer
             .sign_message(&message_bytes)
             .await
-            .map_err(|e| KoraError::SigningError(e.to_string()))?;
+            .map_err(|e| TrezoaKoraError::SigningError(e.to_string()))?;
 
         // Find the fee payer position - don't assume it's at position 0
         let fee_payer_position = self.find_signer_position(&fee_payer)?;
@@ -325,7 +325,7 @@ impl VersionedTransactionOps for VersionedTransactionResolved {
         config: &Config,
         signer: &std::sync::Arc<Signer>,
         rpc_client: &RpcClient,
-    ) -> Result<(String, String), KoraError> {
+    ) -> Result<(String, String), TrezoaKoraError> {
         // Payment validation is handled in sign_transaction
         let (transaction, encoded) = self.sign_transaction(config, signer, rpc_client).await?;
 
@@ -333,7 +333,7 @@ impl VersionedTransactionOps for VersionedTransactionResolved {
         let signature = rpc_client
             .send_and_confirm_transaction(&transaction)
             .await
-            .map_err(|e| KoraError::RpcError(e.to_string()))?;
+            .map_err(|e| TrezoaKoraError::RpcError(e.to_string()))?;
 
         Ok((signature.to_string(), encoded))
     }
@@ -347,7 +347,7 @@ impl LookupTableUtil {
         config: &Config,
         rpc_client: &RpcClient,
         lookup_table_lookups: &[MessageAddressTableLookup],
-    ) -> Result<Vec<Pubkey>, KoraError> {
+    ) -> Result<Vec<Pubkey>, TrezoaKoraError> {
         let mut resolved_addresses = Vec::new();
 
         // Maybe we can use caching here, there's a chance the lookup tables get updated though, so tbd
@@ -356,13 +356,13 @@ impl LookupTableUtil {
                 CacheUtil::get_account(config, rpc_client, &lookup.account_key, false)
                     .await
                     .map_err(|e| {
-                        KoraError::RpcError(format!("Failed to fetch lookup table: {e}"))
+                        TrezoaKoraError::RpcError(format!("Failed to fetch lookup table: {e}"))
                     })?;
 
             // Parse the lookup table account data to get the actual addresses
             let address_lookup_table = AddressLookupTable::deserialize(&lookup_table_account.data)
                 .map_err(|e| {
-                    KoraError::InvalidTransaction(format!(
+                    TrezoaKoraError::InvalidTransaction(format!(
                         "Failed to deserialize lookup table: {e}"
                     ))
                 })?;
@@ -372,7 +372,7 @@ impl LookupTableUtil {
                 if let Some(address) = address_lookup_table.addresses.get(index as usize) {
                     resolved_addresses.push(*address);
                 } else {
-                    return Err(KoraError::InvalidTransaction(format!(
+                    return Err(TrezoaKoraError::InvalidTransaction(format!(
                         "Lookup table index {index} out of bounds for writable addresses"
                     )));
                 }
@@ -383,7 +383,7 @@ impl LookupTableUtil {
                 if let Some(address) = address_lookup_table.addresses.get(index as usize) {
                     resolved_addresses.push(*address);
                 } else {
-                    return Err(KoraError::InvalidTransaction(format!(
+                    return Err(TrezoaKoraError::InvalidTransaction(format!(
                         "Lookup table index {index} out of bounds for readonly addresses"
                     )));
                 }
@@ -397,7 +397,7 @@ impl LookupTableUtil {
 #[cfg(test)]
 mod tests {
     use crate::{
-        config::SplTokenConfig,
+        config::TplTokenConfig,
         tests::{
             common::RpcMockBuilder, config_mock::mock_state::setup_config_mock,
             toml_mock::ConfigBuilder,
@@ -406,13 +406,13 @@ mod tests {
         Config,
     };
     use serde_json::json;
-    use solana_client::rpc_request::RpcRequest;
+    use trezoa_client::rpc_request::RpcRequest;
     use std::collections::HashMap;
 
     use super::*;
-    use solana_address_lookup_table_interface::state::LookupTableMeta;
-    use solana_message::{compiled_instruction::CompiledInstruction, v0, Message};
-    use solana_sdk::{
+    use trezoa_address_lookup_table_interface::state::LookupTableMeta;
+    use trezoa_message::{compiled_instruction::CompiledInstruction, v0, Message};
+    use trezoa_sdk::{
         account::Account,
         hash::Hash,
         instruction::{AccountMeta, Instruction},
@@ -424,7 +424,7 @@ mod tests {
         ConfigBuilder::new()
             .with_programs(vec![])
             .with_tokens(vec![])
-            .with_spl_paid_tokens(SplTokenConfig::Allowlist(vec![]))
+            .with_tpl_paid_tokens(TplTokenConfig::Allowlist(vec![]))
             .with_free_price()
             .with_cache_config(None, false, 60, 30) // Disable cache for tests
             .build_config()
@@ -443,7 +443,7 @@ mod tests {
             VersionedMessage::Legacy(Message::new(&[instruction], Some(&keypair.pubkey())));
         let tx = VersionedTransaction::try_new(message, &[&keypair]).unwrap();
 
-        let resolved = VersionedTransactionResolved::from_kora_built_transaction(&tx).unwrap();
+        let resolved = VersionedTransactionResolved::from_trezoakora_built_transaction(&tx).unwrap();
         let encoded = resolved.encode_b64_transaction().unwrap();
         assert!(!encoded.is_empty());
         assert!(encoded
@@ -463,7 +463,7 @@ mod tests {
             VersionedMessage::Legacy(Message::new(&[instruction], Some(&keypair.pubkey())));
         let tx = VersionedTransaction::try_new(message, &[&keypair]).unwrap();
 
-        let resolved = VersionedTransactionResolved::from_kora_built_transaction(&tx).unwrap();
+        let resolved = VersionedTransactionResolved::from_trezoakora_built_transaction(&tx).unwrap();
         let encoded = resolved.encode_b64_transaction().unwrap();
         let decoded = TransactionUtil::decode_b64_transaction(&encoded).unwrap();
 
@@ -495,7 +495,7 @@ mod tests {
         let other_account = Pubkey::new_unique();
 
         let v0_message = v0::Message {
-            header: solana_message::MessageHeader {
+            header: trezoa_message::MessageHeader {
                 num_required_signatures: 1,
                 num_readonly_signed_accounts: 0,
                 num_readonly_unsigned_accounts: 2,
@@ -528,7 +528,7 @@ mod tests {
         let program_id = Pubkey::new_unique();
 
         let v0_message = v0::Message {
-            header: solana_message::MessageHeader {
+            header: trezoa_message::MessageHeader {
                 num_required_signatures: 3,
                 num_readonly_signed_accounts: 0,
                 num_readonly_unsigned_accounts: 1,
@@ -566,9 +566,9 @@ mod tests {
             TransactionUtil::new_unsigned_versioned_transaction_resolved(message).unwrap();
 
         let result = transaction.find_signer_position(&missing_keypair.pubkey());
-        assert!(matches!(result, Err(KoraError::InvalidTransaction(_))));
+        assert!(matches!(result, Err(TrezoaKoraError::InvalidTransaction(_))));
 
-        if let Err(KoraError::InvalidTransaction(msg)) = result {
+        if let Err(TrezoaKoraError::InvalidTransaction(msg)) = result {
             assert!(msg.contains(&missing_keypair.pubkey().to_string()));
             assert!(msg.contains("not found in transaction account keys"));
         }
@@ -578,7 +578,7 @@ mod tests {
     fn test_find_signer_position_empty_account_keys() {
         // Create a transaction with minimal account keys
         let v0_message = v0::Message {
-            header: solana_message::MessageHeader {
+            header: trezoa_message::MessageHeader {
                 num_required_signatures: 0,
                 num_readonly_signed_accounts: 0,
                 num_readonly_unsigned_accounts: 0,
@@ -594,11 +594,11 @@ mod tests {
         let search_key = Pubkey::new_unique();
 
         let result = transaction.find_signer_position(&search_key);
-        assert!(matches!(result, Err(KoraError::InvalidTransaction(_))));
+        assert!(matches!(result, Err(TrezoaKoraError::InvalidTransaction(_))));
     }
 
     #[test]
-    fn test_from_kora_built_transaction() {
+    fn test_from_trezoakora_built_transaction() {
         let keypair = Keypair::new();
         let program_id = Pubkey::new_unique();
         let instruction = Instruction::new_with_bytes(
@@ -616,7 +616,7 @@ mod tests {
         let transaction = VersionedTransaction::try_new(message.clone(), &[&keypair]).unwrap();
 
         let resolved =
-            VersionedTransactionResolved::from_kora_built_transaction(&transaction).unwrap();
+            VersionedTransactionResolved::from_trezoakora_built_transaction(&transaction).unwrap();
 
         assert_eq!(resolved.transaction, transaction);
         assert_eq!(resolved.all_account_keys, transaction.message.static_account_keys());
@@ -630,17 +630,17 @@ mod tests {
         assert_eq!(resolved_instruction.accounts.len(), instruction.accounts.len());
 
         assert!(resolved.parsed_system_instructions.is_none());
-        assert!(resolved.parsed_spl_instructions.is_none());
+        assert!(resolved.parsed_tpl_instructions.is_none());
     }
 
     #[test]
-    fn test_from_kora_built_transaction_v0() {
+    fn test_from_trezoakora_built_transaction_v0() {
         let keypair = Keypair::new();
         let program_id = Pubkey::new_unique();
         let other_account = Pubkey::new_unique();
 
         let v0_message = v0::Message {
-            header: solana_message::MessageHeader {
+            header: trezoa_message::MessageHeader {
                 num_required_signatures: 1,
                 num_readonly_signed_accounts: 0,
                 num_readonly_unsigned_accounts: 2,
@@ -658,7 +658,7 @@ mod tests {
         let transaction = VersionedTransaction::try_new(message.clone(), &[&keypair]).unwrap();
 
         let resolved =
-            VersionedTransactionResolved::from_kora_built_transaction(&transaction).unwrap();
+            VersionedTransactionResolved::from_trezoakora_built_transaction(&transaction).unwrap();
 
         assert_eq!(resolved.transaction, transaction);
         assert_eq!(resolved.all_account_keys, vec![keypair.pubkey(), other_account, program_id]);
@@ -751,7 +751,7 @@ mod tests {
         };
 
         let v0_message = v0::Message {
-            header: solana_message::MessageHeader {
+            header: trezoa_message::MessageHeader {
                 num_required_signatures: 1,
                 num_readonly_signed_accounts: 0,
                 num_readonly_unsigned_accounts: 1,
@@ -763,7 +763,7 @@ mod tests {
                 accounts: vec![0, 2], // Index 2 comes from lookup table
                 data: vec![42],
             }],
-            address_table_lookups: vec![solana_message::v0::MessageAddressTableLookup {
+            address_table_lookups: vec![trezoa_message::v0::MessageAddressTableLookup {
                 account_key: lookup_table_account,
                 writable_indexes: vec![0],
                 readonly_indexes: vec![],
@@ -870,10 +870,10 @@ mod tests {
         assert!(result.is_err());
 
         match result {
-            Err(KoraError::RpcError(msg)) => {
+            Err(TrezoaKoraError::RpcError(msg)) => {
                 assert!(msg.contains("Failed to simulate transaction"));
             }
-            Err(KoraError::InvalidTransaction(msg)) => {
+            Err(TrezoaKoraError::InvalidTransaction(msg)) => {
                 assert!(msg.contains("inner instructions fetching failed"));
             }
             _ => panic!("Expected RpcError or InvalidTransaction"),
@@ -925,7 +925,7 @@ mod tests {
         let rpc_client = RpcMockBuilder::new().with_custom_mocks(mocks).build();
 
         let mut resolved =
-            VersionedTransactionResolved::from_kora_built_transaction(&transaction).unwrap();
+            VersionedTransactionResolved::from_trezoakora_built_transaction(&transaction).unwrap();
         let inner_instructions =
             resolved.fetch_inner_instructions(&rpc_client, true).await.unwrap();
 
@@ -978,7 +978,7 @@ mod tests {
         let rpc_client = RpcMockBuilder::new().with_custom_mocks(mocks).build();
 
         let mut resolved =
-            VersionedTransactionResolved::from_kora_built_transaction(&transaction).unwrap();
+            VersionedTransactionResolved::from_trezoakora_built_transaction(&transaction).unwrap();
         let inner_instructions =
             resolved.fetch_inner_instructions(&rpc_client, false).await.unwrap();
 
@@ -996,13 +996,13 @@ mod tests {
 
         // Create a system transfer instruction
         let instruction =
-            solana_system_interface::instruction::transfer(&keypair.pubkey(), &recipient, 1000000);
+            trezoa_system_interface::instruction::transfer(&keypair.pubkey(), &recipient, 1000000);
         let message =
             VersionedMessage::Legacy(Message::new(&[instruction], Some(&keypair.pubkey())));
         let transaction = VersionedTransaction::try_new(message, &[&keypair]).unwrap();
 
         let mut resolved =
-            VersionedTransactionResolved::from_kora_built_transaction(&transaction).unwrap();
+            VersionedTransactionResolved::from_trezoakora_built_transaction(&transaction).unwrap();
 
         // First call should parse and cache
         let parsed1_len = {
@@ -1054,7 +1054,7 @@ mod tests {
             })
             .build();
 
-        let lookups = vec![solana_message::v0::MessageAddressTableLookup {
+        let lookups = vec![trezoa_message::v0::MessageAddressTableLookup {
             account_key: lookup_account_key,
             writable_indexes: vec![0, 2], // address1, address3
             readonly_indexes: vec![1],    // address2
@@ -1093,7 +1093,7 @@ mod tests {
         let _m = setup_config_mock(config.clone());
 
         let rpc_client = RpcMockBuilder::new().with_account_not_found().build();
-        let lookups = vec![solana_message::v0::MessageAddressTableLookup {
+        let lookups = vec![trezoa_message::v0::MessageAddressTableLookup {
             account_key: Pubkey::new_unique(),
             writable_indexes: vec![0],
             readonly_indexes: vec![],
@@ -1101,9 +1101,9 @@ mod tests {
 
         let result =
             LookupTableUtil::resolve_lookup_table_addresses(&config, &rpc_client, &lookups).await;
-        assert!(matches!(result, Err(KoraError::RpcError(_))));
+        assert!(matches!(result, Err(TrezoaKoraError::RpcError(_))));
 
-        if let Err(KoraError::RpcError(msg)) = result {
+        if let Err(TrezoaKoraError::RpcError(msg)) = result {
             assert!(msg.contains("Failed to fetch lookup table"));
         }
     }
@@ -1139,7 +1139,7 @@ mod tests {
             .build();
 
         // Try to access index 1 which doesn't exist
-        let lookups = vec![solana_message::v0::MessageAddressTableLookup {
+        let lookups = vec![trezoa_message::v0::MessageAddressTableLookup {
             account_key: lookup_account_key,
             writable_indexes: vec![1], // Invalid index
             readonly_indexes: vec![],
@@ -1147,9 +1147,9 @@ mod tests {
 
         let result =
             LookupTableUtil::resolve_lookup_table_addresses(&config, &rpc_client, &lookups).await;
-        assert!(matches!(result, Err(KoraError::InvalidTransaction(_))));
+        assert!(matches!(result, Err(TrezoaKoraError::InvalidTransaction(_))));
 
-        if let Err(KoraError::InvalidTransaction(msg)) = result {
+        if let Err(TrezoaKoraError::InvalidTransaction(msg)) = result {
             assert!(msg.contains("index 1 out of bounds"));
             assert!(msg.contains("writable addresses"));
         }
@@ -1185,7 +1185,7 @@ mod tests {
             })
             .build();
 
-        let lookups = vec![solana_message::v0::MessageAddressTableLookup {
+        let lookups = vec![trezoa_message::v0::MessageAddressTableLookup {
             account_key: lookup_account_key,
             writable_indexes: vec![],
             readonly_indexes: vec![5], // Invalid index
@@ -1193,9 +1193,9 @@ mod tests {
 
         let result =
             LookupTableUtil::resolve_lookup_table_addresses(&config, &rpc_client, &lookups).await;
-        assert!(matches!(result, Err(KoraError::InvalidTransaction(_))));
+        assert!(matches!(result, Err(TrezoaKoraError::InvalidTransaction(_))));
 
-        if let Err(KoraError::InvalidTransaction(msg)) = result {
+        if let Err(TrezoaKoraError::InvalidTransaction(msg)) = result {
             assert!(msg.contains("index 5 out of bounds"));
             assert!(msg.contains("readonly addresses"));
         }

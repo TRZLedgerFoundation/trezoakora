@@ -1,26 +1,26 @@
 use anyhow::Result;
 use base64::{engine::general_purpose::STANDARD, Engine as _};
-use kora_lib::{
-    token::{spl_token::TokenProgram, spl_token_2022::Token2022Program, TokenInterface},
+use trezoakora_lib::{
+    token::{tpl_token::TokenProgram, tpl_token_2022::Token2022Program, TokenInterface},
     transaction::TransactionUtil,
 };
-use solana_address_lookup_table_interface::state::AddressLookupTable;
-use solana_client::nonblocking::rpc_client::RpcClient;
-use solana_commitment_config::CommitmentConfig;
-use solana_compute_budget_interface::ComputeBudgetInstruction;
-use solana_message::{
+use trezoa_address_lookup_table_interface::state::AddressLookupTable;
+use trezoa_client::nonblocking::rpc_client::RpcClient;
+use trezoa_commitment_config::CommitmentConfig;
+use trezoa_compute_budget_interface::ComputeBudgetInstruction;
+use trezoa_message::{
     v0::Message as V0Message, AddressLookupTableAccount, Message, VersionedMessage,
 };
-use solana_program_pack::Pack;
-use solana_sdk::{
+use trezoa_program_pack::Pack;
+use trezoa_sdk::{
     instruction::Instruction,
     pubkey::Pubkey,
     signature::{Keypair, Signature},
     signer::Signer,
     transaction::VersionedTransaction,
 };
-use solana_system_interface::instruction::{create_account, transfer};
-use spl_associated_token_account_interface::address::{
+use trezoa_system_interface::instruction::{create_account, transfer};
+use tpl_associated_token_account_interface::address::{
     get_associated_token_address, get_associated_token_address_with_program_id,
 };
 use std::sync::Arc;
@@ -94,7 +94,7 @@ impl TransactionBuilder {
         self
     }
 
-    /// Add a simple SOL transfer instruction
+    /// Add a simple TRZ transfer instruction
     pub fn with_transfer(mut self, from: &Pubkey, to: &Pubkey, lamports: u64) -> Self {
         self.instructions.push(transfer(from, to, lamports));
         self
@@ -102,7 +102,7 @@ impl TransactionBuilder {
 
     /// Add a system assign instruction
     pub fn with_system_assign(mut self, account: &Pubkey, owner: &Pubkey) -> Self {
-        let instruction = solana_system_interface::instruction::assign(account, owner);
+        let instruction = trezoa_system_interface::instruction::assign(account, owner);
         self.instructions.push(instruction);
         self
     }
@@ -117,20 +117,20 @@ impl TransactionBuilder {
         owner: &Pubkey,
     ) -> Self {
         let instruction =
-            solana_system_interface::instruction::create_account(from, to, lamports, space, owner);
+            trezoa_system_interface::instruction::create_account(from, to, lamports, space, owner);
         self.instructions.push(instruction);
         self
     }
 
     /// Add a system allocate instruction
     pub fn with_system_allocate(mut self, account: &Pubkey, space: u64) -> Self {
-        let instruction = solana_system_interface::instruction::allocate(account, space);
+        let instruction = trezoa_system_interface::instruction::allocate(account, space);
         self.instructions.push(instruction);
         self
     }
 
-    /// Add an SPL token transfer instruction
-    pub fn with_spl_transfer(
+    /// Add an TPL token transfer instruction
+    pub fn with_tpl_transfer(
         mut self,
         token_mint: &Pubkey,
         from_authority: &Pubkey,
@@ -148,14 +148,14 @@ impl TransactionBuilder {
                 from_authority,
                 amount,
             )
-            .expect("Failed to create SPL transfer instruction");
+            .expect("Failed to create TPL transfer instruction");
 
         self.instructions.push(instruction);
         self
     }
 
-    /// Add an SPL payment instruction (direct token transfer using spl_token)
-    pub fn with_spl_payment(
+    /// Add an TPL payment instruction (direct token transfer using tpl_token)
+    pub fn with_tpl_payment(
         mut self,
         token_mint: &Pubkey,
         from_authority: &Pubkey,
@@ -165,44 +165,44 @@ impl TransactionBuilder {
         let from_ata = get_associated_token_address(from_authority, token_mint);
         let to_ata = get_associated_token_address(to_pubkey, token_mint);
 
-        let instruction = spl_token_interface::instruction::transfer(
-            &spl_token_interface::ID,
+        let instruction = tpl_token_interface::instruction::transfer(
+            &tpl_token_interface::ID,
             &from_ata,
             &to_ata,
             from_authority,
             &[],
             amount,
         )
-        .expect("Failed to create SPL payment instruction");
+        .expect("Failed to create TPL payment instruction");
 
         self.instructions.push(instruction);
         self
     }
 
-    /// Add an SPL payment instruction with specified token accounts
-    pub fn with_spl_payment_with_accounts(
+    /// Add an TPL payment instruction with specified token accounts
+    pub fn with_tpl_payment_with_accounts(
         mut self,
         from_token_account: &Pubkey,
         to_token_account: &Pubkey,
         from_authority: &Pubkey,
         amount: u64,
     ) -> Self {
-        let instruction = spl_token_interface::instruction::transfer(
-            &spl_token_interface::ID,
+        let instruction = tpl_token_interface::instruction::transfer(
+            &tpl_token_interface::ID,
             from_token_account,
             to_token_account,
             from_authority,
             &[],
             amount,
         )
-        .expect("Failed to create SPL payment instruction");
+        .expect("Failed to create TPL payment instruction");
 
         self.instructions.push(instruction);
         self
     }
 
-    /// Add an SPL token transfer_checked instruction (includes mint address for lookup table testing)
-    pub fn with_spl_transfer_checked(
+    /// Add an TPL token transfer_checked instruction (includes mint address for lookup table testing)
+    pub fn with_tpl_transfer_checked(
         mut self,
         token_mint: &Pubkey,
         from_authority: &Pubkey,
@@ -213,8 +213,8 @@ impl TransactionBuilder {
         let from_ata = get_associated_token_address(from_authority, token_mint);
         let to_ata = get_associated_token_address(to_pubkey, token_mint);
 
-        let instruction = spl_token_interface::instruction::transfer_checked(
-            &spl_token_interface::ID,
+        let instruction = tpl_token_interface::instruction::transfer_checked(
+            &tpl_token_interface::ID,
             &from_ata,
             token_mint,
             &to_ata,
@@ -223,7 +223,7 @@ impl TransactionBuilder {
             amount,
             decimals,
         )
-        .expect("Failed to create SPL transfer_checked instruction");
+        .expect("Failed to create TPL transfer_checked instruction");
 
         self.instructions.push(instruction);
         self
@@ -243,7 +243,7 @@ impl TransactionBuilder {
     }
 
     /// Add a Token 2022 transfer_checked instruction
-    pub fn with_spl_token_2022_transfer_checked(
+    pub fn with_tpl_token_2022_transfer_checked(
         mut self,
         token_mint: &Pubkey,
         from_authority: &Pubkey,
@@ -254,12 +254,12 @@ impl TransactionBuilder {
         let from_ata = get_associated_token_address_with_program_id(
             from_authority,
             token_mint,
-            &spl_token_2022_interface::id(),
+            &tpl_token_2022_interface::id(),
         );
         let to_ata = get_associated_token_address_with_program_id(
             to_pubkey,
             token_mint,
-            &spl_token_2022_interface::id(),
+            &tpl_token_2022_interface::id(),
         );
 
         let token_interface = Token2022Program::new();
@@ -279,7 +279,7 @@ impl TransactionBuilder {
     }
 
     /// Add Token 2022 transfer checked instruction with specific token accounts
-    pub fn with_spl_token_2022_transfer_checked_with_accounts(
+    pub fn with_tpl_token_2022_transfer_checked_with_accounts(
         mut self,
         token_mint: &Pubkey,
         from_token_account: &Pubkey,
@@ -304,14 +304,14 @@ impl TransactionBuilder {
         self
     }
 
-    /// Add ATA creation instruction for SPL Token
+    /// Add ATA creation instruction for TPL Token
     pub fn with_create_ata(mut self, mint: &Pubkey, owner: &Pubkey) -> Self {
         let instruction =
-            spl_associated_token_account_interface::instruction::create_associated_token_account(
+            tpl_associated_token_account_interface::instruction::create_associated_token_account(
                 &self.fee_payer.expect("Fee payer must be set before creating ATA"),
                 owner,
                 mint,
-                &spl_token_interface::id(),
+                &tpl_token_interface::id(),
             );
         self.instructions.push(instruction);
         self
@@ -320,17 +320,17 @@ impl TransactionBuilder {
     /// Add ATA creation instruction for Token2022
     pub fn with_create_token2022_ata(mut self, mint: &Pubkey, owner: &Pubkey) -> Self {
         let instruction =
-            spl_associated_token_account_interface::instruction::create_associated_token_account(
+            tpl_associated_token_account_interface::instruction::create_associated_token_account(
                 &self.fee_payer.expect("Fee payer must be set before creating ATA"),
                 owner,
                 mint,
-                &spl_token_2022_interface::id(),
+                &tpl_token_2022_interface::id(),
             );
         self.instructions.push(instruction);
         self
     }
 
-    /// Add manual token account creation and initialization for SPL Token
+    /// Add manual token account creation and initialization for TPL Token
     pub fn with_create_and_init_token_account(
         mut self,
         account: &Keypair,
@@ -343,13 +343,13 @@ impl TransactionBuilder {
             &self.fee_payer.expect("Fee payer must be set"),
             &account.pubkey(),
             rent_lamports,
-            spl_token_interface::state::Account::LEN as u64,
-            &spl_token_interface::id(),
+            tpl_token_interface::state::Account::LEN as u64,
+            &tpl_token_interface::id(),
         );
 
         // Initialize account instruction
-        let init_instruction = spl_token_interface::instruction::initialize_account3(
-            &spl_token_interface::id(),
+        let init_instruction = tpl_token_interface::instruction::initialize_account3(
+            &tpl_token_interface::id(),
             &account.pubkey(),
             mint,
             owner,
@@ -362,10 +362,10 @@ impl TransactionBuilder {
         self
     }
 
-    /// Add SPL token revoke instruction
-    pub fn with_spl_revoke(mut self, token_account: &Pubkey, owner: &Pubkey) -> Self {
-        let instruction = spl_token_interface::instruction::revoke(
-            &spl_token_interface::id(),
+    /// Add TPL token revoke instruction
+    pub fn with_tpl_revoke(mut self, token_account: &Pubkey, owner: &Pubkey) -> Self {
+        let instruction = tpl_token_interface::instruction::revoke(
+            &tpl_token_interface::id(),
             token_account,
             owner,
             &[],
@@ -377,8 +377,8 @@ impl TransactionBuilder {
 
     /// Add Token2022 revoke instruction
     pub fn with_token2022_revoke(mut self, token_account: &Pubkey, owner: &Pubkey) -> Self {
-        let instruction = spl_token_2022_interface::instruction::revoke(
-            &spl_token_2022_interface::id(),
+        let instruction = tpl_token_2022_interface::instruction::revoke(
+            &tpl_token_2022_interface::id(),
             token_account,
             owner,
             &[],
@@ -388,16 +388,16 @@ impl TransactionBuilder {
         self
     }
 
-    /// Add SPL token set_authority instruction
-    pub fn with_spl_set_authority(
+    /// Add TPL token set_authority instruction
+    pub fn with_tpl_set_authority(
         mut self,
         account: &Pubkey,
         new_authority: Option<&Pubkey>,
-        authority_type: spl_token_interface::instruction::AuthorityType,
+        authority_type: tpl_token_interface::instruction::AuthorityType,
         current_authority: &Pubkey,
     ) -> Self {
-        let instruction = spl_token_interface::instruction::set_authority(
-            &spl_token_interface::id(),
+        let instruction = tpl_token_interface::instruction::set_authority(
+            &tpl_token_interface::id(),
             account,
             new_authority,
             authority_type,
@@ -414,11 +414,11 @@ impl TransactionBuilder {
         mut self,
         account: &Pubkey,
         new_authority: Option<&Pubkey>,
-        authority_type: spl_token_2022_interface::instruction::AuthorityType,
+        authority_type: tpl_token_2022_interface::instruction::AuthorityType,
         current_authority: &Pubkey,
     ) -> Self {
-        let instruction = spl_token_2022_interface::instruction::set_authority(
-            &spl_token_2022_interface::id(),
+        let instruction = tpl_token_2022_interface::instruction::set_authority(
+            &tpl_token_2022_interface::id(),
             account,
             new_authority,
             authority_type,
@@ -430,16 +430,16 @@ impl TransactionBuilder {
         self
     }
 
-    /// Add SPL token mint_to instruction
-    pub fn with_spl_mint_to(
+    /// Add TPL token mint_to instruction
+    pub fn with_tpl_mint_to(
         mut self,
         mint: &Pubkey,
         destination: &Pubkey,
         mint_authority: &Pubkey,
         amount: u64,
     ) -> Self {
-        let instruction = spl_token_interface::instruction::mint_to(
-            &spl_token_interface::id(),
+        let instruction = tpl_token_interface::instruction::mint_to(
+            &tpl_token_interface::id(),
             mint,
             destination,
             mint_authority,
@@ -459,8 +459,8 @@ impl TransactionBuilder {
         mint_authority: &Pubkey,
         amount: u64,
     ) -> Self {
-        let instruction = spl_token_2022_interface::instruction::mint_to(
-            &spl_token_2022_interface::id(),
+        let instruction = tpl_token_2022_interface::instruction::mint_to(
+            &tpl_token_2022_interface::id(),
             mint,
             destination,
             mint_authority,
@@ -472,15 +472,15 @@ impl TransactionBuilder {
         self
     }
 
-    /// Add SPL token freeze_account instruction
-    pub fn with_spl_freeze_account(
+    /// Add TPL token freeze_account instruction
+    pub fn with_tpl_freeze_account(
         mut self,
         token_account: &Pubkey,
         mint: &Pubkey,
         freeze_authority: &Pubkey,
     ) -> Self {
-        let instruction = spl_token_interface::instruction::freeze_account(
-            &spl_token_interface::id(),
+        let instruction = tpl_token_interface::instruction::freeze_account(
+            &tpl_token_interface::id(),
             token_account,
             mint,
             freeze_authority,
@@ -498,8 +498,8 @@ impl TransactionBuilder {
         mint: &Pubkey,
         freeze_authority: &Pubkey,
     ) -> Self {
-        let instruction = spl_token_2022_interface::instruction::freeze_account(
-            &spl_token_2022_interface::id(),
+        let instruction = tpl_token_2022_interface::instruction::freeze_account(
+            &tpl_token_2022_interface::id(),
             token_account,
             mint,
             freeze_authority,
@@ -510,15 +510,15 @@ impl TransactionBuilder {
         self
     }
 
-    /// Add SPL token thaw_account instruction
-    pub fn with_spl_thaw_account(
+    /// Add TPL token thaw_account instruction
+    pub fn with_tpl_thaw_account(
         mut self,
         token_account: &Pubkey,
         mint: &Pubkey,
         freeze_authority: &Pubkey,
     ) -> Self {
-        let instruction = spl_token_interface::instruction::thaw_account(
-            &spl_token_interface::id(),
+        let instruction = tpl_token_interface::instruction::thaw_account(
+            &tpl_token_interface::id(),
             token_account,
             mint,
             freeze_authority,
@@ -536,8 +536,8 @@ impl TransactionBuilder {
         mint: &Pubkey,
         freeze_authority: &Pubkey,
     ) -> Self {
-        let instruction = spl_token_2022_interface::instruction::thaw_account(
-            &spl_token_2022_interface::id(),
+        let instruction = tpl_token_2022_interface::instruction::thaw_account(
+            &tpl_token_2022_interface::id(),
             token_account,
             mint,
             freeze_authority,

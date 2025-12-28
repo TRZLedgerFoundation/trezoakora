@@ -1,11 +1,11 @@
 // NOTE: Lookup table is tested via mint address (not in transaction accounts, only ATAs)
 use crate::common::*;
 use jsonrpsee::rpc_params;
-use solana_sdk::{
+use trezoa_sdk::{
     pubkey::Pubkey,
     signature::{Keypair, Signer},
 };
-use spl_associated_token_account_interface::instruction::create_associated_token_account_idempotent;
+use tpl_associated_token_account_interface::instruction::create_associated_token_account_idempotent;
 use std::str::FromStr;
 
 #[tokio::test]
@@ -24,7 +24,7 @@ async fn test_sign_transaction_if_paid_with_payment_address_v0_with_lookup() {
         .v0_transaction_builder_with_lookup(vec![transaction_lookup_table])
         .with_fee_payer(fee_payer)
         .with_signer(&sender)
-        .with_spl_transfer_checked(
+        .with_tpl_transfer_checked(
             &test_mint,
             &sender.pubkey(),
             &payment_address,
@@ -61,7 +61,7 @@ async fn test_sign_transaction_if_paid_with_wrong_destination_v0_with_lookup() {
         &fee_payer_keypair.pubkey(),
         &wrong_destination.pubkey(),
         &test_mint,
-        &spl_token_interface::id(),
+        &tpl_token_interface::id(),
     );
 
     let fee_payer = FeePayerTestHelper::get_fee_payer_pubkey();
@@ -71,7 +71,7 @@ async fn test_sign_transaction_if_paid_with_wrong_destination_v0_with_lookup() {
         .with_fee_payer(fee_payer)
         .with_signer(&sender)
         .with_instruction(create_wrong_ata_idempotent_ix)
-        .with_spl_transfer_checked(
+        .with_tpl_transfer_checked(
             &test_mint,
             &sender.pubkey(),
             &wrong_destination.pubkey(),

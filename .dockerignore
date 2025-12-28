@@ -40,7 +40,7 @@ sdks/
 # Environment and config
 .env
 .env.*
-kora.toml
+trezoakora.toml
 prometheus.yml
 
 # Docker

@@ -1,4 +1,4 @@
-# Example multi-signer configuration for Kora
+# Example multi-signer configuration for TrezoaKora
 # Copy this file to signers.toml and configure environment variables
 
 [signer_pool]
@@ -74,4 +74,4 @@ weight = 1
 # export VAULT_PUBKEY_1="your_vault_public_key_base58"
 
 # Usage:
-# kora rpc start --signers-config signers.toml
+# trezoakora rpc start --signers-config signers.toml

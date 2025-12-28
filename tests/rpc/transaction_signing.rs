@@ -1,7 +1,7 @@
 use crate::common::*;
 use jsonrpsee::rpc_params;
-use kora_lib::transaction::TransactionUtil;
-use solana_sdk::signature::Signer;
+use trezoakora_lib::transaction::TransactionUtil;
+use trezoa_sdk::signature::Signer;
 use std::str::FromStr;
 
 // **************************************************************************************
@@ -26,7 +26,7 @@ async fn test_sign_transaction_v0_with_valid_lookup_table() {
     let v0_transaction = ctx
         .v0_transaction_builder_with_lookup(vec![allowed_lookup_table_address])
         .with_fee_payer(FeePayerTestHelper::get_fee_payer_pubkey())
-        .with_spl_transfer(
+        .with_tpl_transfer(
             &token_mint,
             &sender.pubkey(),
             &fee_payer,
@@ -41,7 +41,7 @@ async fn test_sign_transaction_v0_with_valid_lookup_table() {
         .await
         .expect("Failed to create V0 transaction with allowed lookup table");
 
-    // Test signing the V0 transaction through Kora RPC - this should succeed
+    // Test signing the V0 transaction through TrezoaKora RPC - this should succeed
     let response: serde_json::Value = ctx
         .rpc_call("signTransaction", rpc_params![v0_transaction])
         .await
@@ -89,7 +89,7 @@ async fn test_sign_transaction_v0_with_invalid_lookup_table() {
         .await
         .expect("Failed to create V0 transaction with disallowed lookup table");
 
-    // Test signing the V0 transaction through Kora RPC - this should fail due to disallowed addresses
+    // Test signing the V0 transaction through TrezoaKora RPC - this should fail due to disallowed addresses
     let result =
         ctx.rpc_call::<serde_json::Value, _>("signTransaction", rpc_params![v0_transaction]).await;
 
@@ -124,7 +124,7 @@ async fn test_sign_and_send_transaction_legacy() {
         .transaction_builder()
         .with_fee_payer(fee_payer)
         .with_signer(&sender)
-        .with_spl_transfer(
+        .with_tpl_transfer(
             &token_mint,
             &sender.pubkey(),
             &fee_payer,
@@ -160,14 +160,14 @@ async fn test_sign_and_send_transaction_v0() {
         .v0_transaction_builder()
         .with_fee_payer(fee_payer)
         .with_signer(&sender)
-        .with_spl_transfer_checked(
+        .with_tpl_transfer_checked(
             &token_mint,
             &sender.pubkey(),
             &fee_payer,
             tests::common::helpers::get_fee_for_default_transaction_in_usdc(),
             TEST_USDC_MINT_DECIMALS,
         )
-        .with_spl_transfer_checked(
+        .with_tpl_transfer_checked(
             &token_mint,
             &sender.pubkey(),
             &recipient,
@@ -206,14 +206,14 @@ async fn test_sign_and_send_transaction_v0_with_lookup() {
         .v0_transaction_builder_with_lookup(vec![transaction_lookup_table])
         .with_fee_payer(fee_payer)
         .with_signer(&sender)
-        .with_spl_transfer_checked(
+        .with_tpl_transfer_checked(
             &token_mint,
             &sender.pubkey(),
             &fee_payer,
             tests::common::helpers::get_fee_for_default_transaction_in_usdc(),
             TEST_USDC_MINT_DECIMALS,
         )
-        .with_spl_transfer_checked(
+        .with_tpl_transfer_checked(
             &token_mint,
             &sender.pubkey(),
             &recipient,
@@ -250,7 +250,7 @@ async fn test_sign_transaction_with_payment_legacy() {
 
     response.assert_success();
     let fee_payers = response["fee_payers"].as_array().unwrap();
-    let fee_payer = solana_sdk::pubkey::Pubkey::from_str(fee_payers[0].as_str().unwrap()).unwrap();
+    let fee_payer = trezoa_sdk::pubkey::Pubkey::from_str(fee_payers[0].as_str().unwrap()).unwrap();
 
     let sender = SenderTestHelper::get_test_sender_keypair();
     let recipient = RecipientTestHelper::get_recipient_pubkey();
@@ -260,13 +260,13 @@ async fn test_sign_transaction_with_payment_legacy() {
         .transaction_builder()
         .with_fee_payer(fee_payer)
         .with_signer(&sender)
-        .with_spl_transfer(
+        .with_tpl_transfer(
             &token_mint,
             &sender.pubkey(),
             &fee_payer,
             tests::common::helpers::get_fee_for_default_transaction_in_usdc(),
         )
-        .with_spl_transfer(&token_mint, &sender.pubkey(), &recipient, 1)
+        .with_tpl_transfer(&token_mint, &sender.pubkey(), &recipient, 1)
         .build()
         .await
         .expect("Failed to create signed transaction");
@@ -304,7 +304,7 @@ async fn test_sign_transaction_with_payment_v0() {
 
     response.assert_success();
     let fee_payers = response["fee_payers"].as_array().unwrap();
-    let fee_payer = solana_sdk::pubkey::Pubkey::from_str(fee_payers[0].as_str().unwrap()).unwrap();
+    let fee_payer = trezoa_sdk::pubkey::Pubkey::from_str(fee_payers[0].as_str().unwrap()).unwrap();
 
     let sender = SenderTestHelper::get_test_sender_keypair();
     let recipient = RecipientTestHelper::get_recipient_pubkey();
@@ -314,14 +314,14 @@ async fn test_sign_transaction_with_payment_v0() {
         .v0_transaction_builder()
         .with_fee_payer(fee_payer)
         .with_signer(&sender)
-        .with_spl_transfer_checked(
+        .with_tpl_transfer_checked(
             &token_mint,
             &sender.pubkey(),
             &fee_payer,
             tests::common::helpers::get_fee_for_default_transaction_in_usdc(),
             TEST_USDC_MINT_DECIMALS,
         )
-        .with_spl_transfer_checked(
+        .with_tpl_transfer_checked(
             &token_mint,
             &sender.pubkey(),
             &recipient,
@@ -365,7 +365,7 @@ async fn test_sign_transaction_with_payment_v0_with_lookup() {
 
     response.assert_success();
     let fee_payers = response["fee_payers"].as_array().unwrap();
-    let fee_payer = solana_sdk::pubkey::Pubkey::from_str(fee_payers[0].as_str().unwrap()).unwrap();
+    let fee_payer = trezoa_sdk::pubkey::Pubkey::from_str(fee_payers[0].as_str().unwrap()).unwrap();
 
     let sender = SenderTestHelper::get_test_sender_keypair();
     let recipient = RecipientTestHelper::get_recipient_pubkey();
@@ -378,14 +378,14 @@ async fn test_sign_transaction_with_payment_v0_with_lookup() {
         .v0_transaction_builder_with_lookup(vec![transaction_lookup_table])
         .with_fee_payer(fee_payer)
         .with_signer(&sender)
-        .with_spl_transfer_checked(
+        .with_tpl_transfer_checked(
             &token_mint,
             &sender.pubkey(),
             &fee_payer,
             tests::common::helpers::get_fee_for_default_transaction_in_usdc(),
             TEST_USDC_MINT_DECIMALS,
         )
-        .with_spl_transfer_checked(
+        .with_tpl_transfer_checked(
             &token_mint,
             &sender.pubkey(),
             &recipient,

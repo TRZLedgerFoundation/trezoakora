@@ -2,28 +2,28 @@ use std::{path::Path, str::FromStr};
 
 use crate::{
     admin::token_util::find_missing_atas,
-    config::{FeePayerPolicy, SplTokenConfig, Token2022Config},
+    config::{FeePayerPolicy, TplTokenConfig, Token2022Config},
     fee::price::PriceModel,
     oracle::PriceSource,
     signer::SignerPoolConfig,
     state::get_config,
-    token::{spl_token_2022_util, token::TokenUtil},
+    token::{tpl_token_2022_util, token::TokenUtil},
     validator::{
         account_validator::{validate_account, AccountType},
         cache_validator::CacheValidator,
         signer_validator::SignerValidator,
     },
-    KoraError,
+    TrezoaKoraError,
 };
-use solana_client::nonblocking::rpc_client::RpcClient;
-use solana_sdk::{account::Account, pubkey::Pubkey};
-use solana_system_interface::program::ID as SYSTEM_PROGRAM_ID;
-use spl_token_2022_interface::{
+use trezoa_client::nonblocking::rpc_client::RpcClient;
+use trezoa_sdk::{account::Account, pubkey::Pubkey};
+use trezoa_system_interface::program::ID as SYSTEM_PROGRAM_ID;
+use tpl_token_2022_interface::{
     extension::{BaseStateWithExtensions, ExtensionType, StateWithExtensions},
     state::Mint as Token2022MintState,
     ID as TOKEN_2022_PROGRAM_ID,
 };
-use spl_token_interface::ID as SPL_TOKEN_PROGRAM_ID;
+use tpl_token_interface::ID as TPL_TOKEN_PROGRAM_ID;
 
 pub struct ConfigValidator {}
 
@@ -56,7 +56,7 @@ impl ConfigValidator {
                 };
 
             if mint_with_extensions
-                .get_extension::<spl_token_2022_interface::extension::permanent_delegate::PermanentDelegate>()
+                .get_extension::<tpl_token_2022_interface::extension::permanent_delegate::PermanentDelegate>()
                 .is_ok()
             {
                 warnings.push(format!(
@@ -69,7 +69,7 @@ impl ConfigValidator {
             }
 
             if mint_with_extensions
-                .get_extension::<spl_token_2022_interface::extension::transfer_hook::TransferHook>()
+                .get_extension::<tpl_token_2022_interface::extension::transfer_hook::TransferHook>()
                 .is_ok()
             {
                 warnings.push(format!(
@@ -106,7 +106,7 @@ impl ConfigValidator {
 
         check_fee_payer_policy! {
             system, allow_transfer, "System transfers",
-                "Users can make the fee payer transfer arbitrary SOL amounts. This can drain your fee payer account";
+                "Users can make the fee payer transfer arbitrary TRZ amounts. This can drain your fee payer account";
 
             system, allow_assign, "System Assign instructions",
                 "Users can make the fee payer reassign ownership of its accounts. This can compromise account control";
@@ -117,40 +117,40 @@ impl ConfigValidator {
             system, allow_allocate, "System Allocate instructions",
                 "Users can make the fee payer allocate space for accounts. This can be used to waste resources";
 
-            spl_token, allow_transfer, "SPL Token transfers",
+            tpl_token, allow_transfer, "TPL Token transfers",
                 "Users can make the fee payer transfer arbitrary token amounts. This can drain your fee payer token accounts";
 
-            spl_token, allow_burn, "SPL Token burn operations",
+            tpl_token, allow_burn, "TPL Token burn operations",
                 "Users can make the fee payer burn tokens from its accounts. This causes permanent loss of assets";
 
-            spl_token, allow_close_account, "SPL Token CloseAccount instructions",
+            tpl_token, allow_close_account, "TPL Token CloseAccount instructions",
                 "Users can make the fee payer close token accounts. This can disrupt operations and drain fee payer";
 
-            spl_token, allow_approve, "SPL Token approve operations",
+            tpl_token, allow_approve, "TPL Token approve operations",
                 "Users can make the fee payer approve delegates. This can lead to unauthorized token transfers";
 
-            spl_token, allow_revoke, "SPL Token revoke operations",
+            tpl_token, allow_revoke, "TPL Token revoke operations",
                 "Users can make the fee payer revoke delegates. This can disrupt authorized operations";
 
-            spl_token, allow_set_authority, "SPL Token SetAuthority instructions",
+            tpl_token, allow_set_authority, "TPL Token SetAuthority instructions",
                 "Users can make the fee payer transfer authority. This can lead to complete loss of control";
 
-            spl_token, allow_mint_to, "SPL Token MintTo operations",
+            tpl_token, allow_mint_to, "TPL Token MintTo operations",
                 "Users can make the fee payer mint tokens. This can inflate token supply";
 
-            spl_token, allow_initialize_mint, "SPL Token InitializeMint instructions",
+            tpl_token, allow_initialize_mint, "TPL Token InitializeMint instructions",
                 "Users can make the fee payer initialize mints with itself as authority. This can lead to unexpected responsibilities";
 
-            spl_token, allow_initialize_account, "SPL Token InitializeAccount instructions",
+            tpl_token, allow_initialize_account, "TPL Token InitializeAccount instructions",
                 "Users can make the fee payer the owner of new token accounts. This can clutter or exploit the fee payer";
 
-            spl_token, allow_initialize_multisig, "SPL Token InitializeMultisig instructions",
+            tpl_token, allow_initialize_multisig, "TPL Token InitializeMultisig instructions",
                 "Users can make the fee payer part of multisig accounts. This can create unwanted signing obligations";
 
-            spl_token, allow_freeze_account, "SPL Token FreezeAccount instructions",
+            tpl_token, allow_freeze_account, "TPL Token FreezeAccount instructions",
                 "Users can make the fee payer freeze token accounts. This can disrupt token operations";
 
-            spl_token, allow_thaw_account, "SPL Token ThawAccount instructions",
+            tpl_token, allow_thaw_account, "TPL Token ThawAccount instructions",
                 "Users can make the fee payer unfreeze token accounts. This can undermine freeze policies";
 
             token_2022, allow_transfer, "Token2022 transfers",
@@ -224,18 +224,18 @@ impl ConfigValidator {
         }
     }
 
-    pub async fn validate(_rpc_client: &RpcClient) -> Result<(), KoraError> {
+    pub async fn validate(_rpc_client: &RpcClient) -> Result<(), TrezoaKoraError> {
         let config = &get_config()?;
 
         if config.validation.allowed_tokens.is_empty() {
-            return Err(KoraError::InternalServerError("No tokens enabled".to_string()));
+            return Err(TrezoaKoraError::InternalServerError("No tokens enabled".to_string()));
         }
 
         TokenUtil::check_valid_tokens(&config.validation.allowed_tokens)?;
 
-        if let Some(payment_address) = &config.kora.payment_address {
+        if let Some(payment_address) = &config.trezoakora.payment_address {
             if let Err(e) = Pubkey::from_str(payment_address) {
-                return Err(KoraError::InternalServerError(format!(
+                return Err(TrezoaKoraError::InternalServerError(format!(
                     "Invalid payment address: {e}"
                 )));
             }
@@ -270,19 +270,19 @@ impl ConfigValidator {
         };
 
         // Validate rate limit (warn if 0)
-        if config.kora.rate_limit == 0 {
+        if config.trezoakora.rate_limit == 0 {
             warnings.push("Rate limit is set to 0 - this will block all requests".to_string());
         }
 
         // Validate payment address
-        if let Some(payment_address) = &config.kora.payment_address {
+        if let Some(payment_address) = &config.trezoakora.payment_address {
             if let Err(e) = Pubkey::from_str(payment_address) {
                 errors.push(format!("Invalid payment address: {e}"));
             }
         }
 
         // Validate enabled methods (warn if all false)
-        let methods = &config.kora.enabled_methods;
+        let methods = &config.trezoakora.enabled_methods;
         if !methods.iter().any(|enabled| enabled) {
             warnings.push(
                 "All rpc methods are disabled - this will block all functionality".to_string(),
@@ -292,7 +292,7 @@ impl ConfigValidator {
         // Validate max allowed lamports (warn if 0)
         if config.validation.max_allowed_lamports == 0 {
             warnings
-                .push("Max allowed lamports is 0 - this will block all SOL transfers".to_string());
+                .push("Max allowed lamports is 0 - this will block all TRZ transfers".to_string());
         }
 
         // Validate max signatures (warn if 0)
@@ -312,12 +312,12 @@ impl ConfigValidator {
             );
         } else {
             if !config.validation.allowed_programs.contains(&SYSTEM_PROGRAM_ID.to_string()) {
-                warnings.push("Missing System Program in allowed programs - SOL transfers and account operations will be blocked".to_string());
+                warnings.push("Missing System Program in allowed programs - TRZ transfers and account operations will be blocked".to_string());
             }
-            if !config.validation.allowed_programs.contains(&SPL_TOKEN_PROGRAM_ID.to_string())
+            if !config.validation.allowed_programs.contains(&TPL_TOKEN_PROGRAM_ID.to_string())
                 && !config.validation.allowed_programs.contains(&TOKEN_2022_PROGRAM_ID.to_string())
             {
-                warnings.push("Missing Token Program in allowed programs - SPL token operations will be blocked".to_string());
+                warnings.push("Missing Token Program in allowed programs - TPL token operations will be blocked".to_string());
             }
         }
 
@@ -328,17 +328,17 @@ impl ConfigValidator {
             errors.push(format!("Invalid token address: {e}"));
         }
 
-        // Validate allowed spl paid tokens
+        // Validate allowed tpl paid tokens
         if let Err(e) =
-            TokenUtil::check_valid_tokens(config.validation.allowed_spl_paid_tokens.as_slice())
+            TokenUtil::check_valid_tokens(config.validation.allowed_tpl_paid_tokens.as_slice())
         {
-            errors.push(format!("Invalid spl paid token address: {e}"));
+            errors.push(format!("Invalid tpl paid token address: {e}"));
         }
 
-        // Warn if using "All" for allowed_spl_paid_tokens
-        if matches!(config.validation.allowed_spl_paid_tokens, SplTokenConfig::All) {
+        // Warn if using "All" for allowed_tpl_paid_tokens
+        if matches!(config.validation.allowed_tpl_paid_tokens, TplTokenConfig::All) {
             warnings.push(
-                "⚠️  Using 'All' for allowed_spl_paid_tokens - this accepts ANY SPL token for payment. \
+                "⚠️  Using 'All' for allowed_tpl_paid_tokens - this accepts ANY TPL token for payment. \
                 Consider using an explicit allowlist to reduce volatility risk and protect against \
                 potentially malicious or worthless tokens being used for fees.".to_string()
             );
@@ -373,18 +373,18 @@ impl ConfigValidator {
         if fees_enabled {
             // If fees enabled, token or token22 must be enabled in allowed_programs
             let has_token_program =
-                config.validation.allowed_programs.contains(&SPL_TOKEN_PROGRAM_ID.to_string());
+                config.validation.allowed_programs.contains(&TPL_TOKEN_PROGRAM_ID.to_string());
             let has_token22_program =
                 config.validation.allowed_programs.contains(&TOKEN_2022_PROGRAM_ID.to_string());
 
             if !has_token_program && !has_token22_program {
-                errors.push("When fees are enabled, at least one token program (SPL Token or Token2022) must be in allowed_programs".to_string());
+                errors.push("When fees are enabled, at least one token program (TPL Token or Token2022) must be in allowed_programs".to_string());
             }
 
-            // If fees enabled, allowed_spl_paid_tokens can't be empty
-            if !config.validation.allowed_spl_paid_tokens.has_tokens() {
+            // If fees enabled, allowed_tpl_paid_tokens can't be empty
+            if !config.validation.allowed_tpl_paid_tokens.has_tokens() {
                 errors.push(
-                    "When fees are enabled, allowed_spl_paid_tokens cannot be empty".to_string(),
+                    "When fees are enabled, allowed_tpl_paid_tokens cannot be empty".to_string(),
                 );
             }
         } else {
@@ -395,11 +395,11 @@ impl ConfigValidator {
             );
         }
 
-        // Validate that all tokens in allowed_spl_paid_tokens are also in allowed_tokens
-        for paid_token in &config.validation.allowed_spl_paid_tokens {
+        // Validate that all tokens in allowed_tpl_paid_tokens are also in allowed_tokens
+        for paid_token in &config.validation.allowed_tpl_paid_tokens {
             if !config.validation.allowed_tokens.contains(paid_token) {
                 errors.push(format!(
-                    "Token {paid_token} in allowed_spl_paid_tokens must also be in allowed_tokens"
+                    "Token {paid_token} in allowed_tpl_paid_tokens must also be in allowed_tokens"
                 ));
             }
         }
@@ -419,18 +419,18 @@ impl ConfigValidator {
                 }
                 if !config.validation.supports_token(token) {
                     errors.push(format!(
-                        "Token address for fixed price is not in allowed spl paid tokens: {token}"
+                        "Token address for fixed price is not in allowed tpl paid tokens: {token}"
                     ));
                 }
 
                 // Warn about dangerous configurations with fixed pricing
                 let has_auth =
-                    config.kora.auth.api_key.is_some() || config.kora.auth.hmac_secret.is_some();
+                    config.trezoakora.auth.api_key.is_some() || config.trezoakora.auth.hmac_secret.is_some();
                 if !has_auth {
                     warnings.push(
                         "⚠️  SECURITY: Fixed pricing with NO authentication enabled. \
                         Without authentication, anyone can spam transactions at your expense. \
-                        Consider enabling api_key or hmac_secret in [kora.auth]."
+                        Consider enabling api_key or hmac_secret in [trezoakora.auth]."
                             .to_string(),
                     );
                 }
@@ -455,18 +455,18 @@ impl ConfigValidator {
         };
 
         // General authentication warning
-        let has_auth = config.kora.auth.api_key.is_some() || config.kora.auth.hmac_secret.is_some();
+        let has_auth = config.trezoakora.auth.api_key.is_some() || config.trezoakora.auth.hmac_secret.is_some();
         if !has_auth {
             warnings.push(
                 "⚠️  SECURITY: No authentication configured (neither api_key nor hmac_secret). \
                 Authentication is strongly recommended for production deployments. \
-                Consider enabling api_key or hmac_secret in [kora.auth]."
+                Consider enabling api_key or hmac_secret in [trezoakora.auth]."
                     .to_string(),
             );
         }
 
         // Validate usage limit configuration
-        let usage_config = &config.kora.usage_limit;
+        let usage_config = &config.trezoakora.usage_limit;
         if usage_config.enabled {
             let (usage_errors, usage_warnings) = CacheValidator::validate(usage_config).await;
             errors.extend(usage_errors);
@@ -503,14 +503,14 @@ impl ConfigValidator {
                 }
             }
 
-            // Validate allowed spl paid tokens - should be non-executable token mints
-            for token_str in &config.validation.allowed_spl_paid_tokens {
+            // Validate allowed tpl paid tokens - should be non-executable token mints
+            for token_str in &config.validation.allowed_tpl_paid_tokens {
                 if let Ok(token_pubkey) = Pubkey::from_str(token_str) {
                     if let Err(e) =
                         validate_account(config, rpc_client, &token_pubkey, Some(AccountType::Mint))
                             .await
                     {
-                        errors.push(format!("SPL paid token {token_str} validation failed: {e}"));
+                        errors.push(format!("TPL paid token {token_str} validation failed: {e}"));
                     }
                 }
             }
@@ -524,7 +524,7 @@ impl ConfigValidator {
             .await;
 
             // Validate missing ATAs for payment address
-            if let Some(payment_address) = &config.kora.payment_address {
+            if let Some(payment_address) = &config.trezoakora.payment_address {
                 if let Ok(payment_address) = Pubkey::from_str(payment_address) {
                     match find_missing_atas(config, rpc_client, &payment_address).await {
                         Ok(atas_to_create) => {
@@ -591,20 +591,20 @@ impl ConfigValidator {
 fn validate_token2022_extensions(config: &Token2022Config) -> Result<(), String> {
     // Validate blocked mint extensions
     for ext_name in &config.blocked_mint_extensions {
-        if spl_token_2022_util::parse_mint_extension_string(ext_name).is_none() {
+        if tpl_token_2022_util::parse_mint_extension_string(ext_name).is_none() {
             return Err(format!(
                 "Invalid mint extension name: '{ext_name}'. Valid names are: {:?}",
-                spl_token_2022_util::get_all_mint_extension_names()
+                tpl_token_2022_util::get_all_mint_extension_names()
             ));
         }
     }
 
     // Validate blocked account extensions
     for ext_name in &config.blocked_account_extensions {
-        if spl_token_2022_util::parse_account_extension_string(ext_name).is_none() {
+        if tpl_token_2022_util::parse_account_extension_string(ext_name).is_none() {
             return Err(format!(
                 "Invalid account extension name: '{ext_name}'. Valid names are: {:?}",
-                spl_token_2022_util::get_all_account_extension_names()
+                tpl_token_2022_util::get_all_account_extension_names()
             ));
         }
     }
@@ -617,7 +617,7 @@ mod tests {
     use crate::{
         config::{
             AuthConfig, CacheConfig, Config, EnabledMethods, FeePayerPolicy, KoraConfig,
-            MetricsConfig, NonceInstructionPolicy, SplTokenConfig, SplTokenInstructionPolicy,
+            MetricsConfig, NonceInstructionPolicy, TplTokenConfig, TplTokenInstructionPolicy,
             SystemInstructionPolicy, Token2022InstructionPolicy, UsageLimitConfig,
             ValidationConfig,
         },
@@ -635,8 +635,8 @@ mod tests {
         },
     };
     use serial_test::serial;
-    use solana_commitment_config::CommitmentConfig;
-    use spl_token_2022_interface::extension::ExtensionType;
+    use trezoa_commitment_config::CommitmentConfig;
+    use tpl_token_2022_interface::extension::ExtensionType;
 
     use super::*;
 
@@ -649,14 +649,14 @@ mod tests {
                 max_signatures: 10,
                 allowed_programs: vec!["program1".to_string()],
                 allowed_tokens: vec!["token1".to_string()],
-                allowed_spl_paid_tokens: SplTokenConfig::Allowlist(vec!["token3".to_string()]),
+                allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec!["token3".to_string()]),
                 disallowed_accounts: vec!["account1".to_string()],
                 price_source: PriceSource::Jupiter,
                 fee_payer_policy: FeePayerPolicy::default(),
                 price: PriceConfig::default(),
                 token_2022: Token2022Config::default(),
             },
-            kora: KoraConfig::default(),
+            trezoakora: KoraConfig::default(),
             metrics: MetricsConfig::default(),
         };
 
@@ -673,7 +673,7 @@ mod tests {
         );
         let result = ConfigValidator::validate(&rpc_client).await;
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), KoraError::InternalServerError(_)));
+        assert!(matches!(result.unwrap_err(), TrezoaKoraError::InternalServerError(_)));
     }
 
     #[tokio::test]
@@ -685,10 +685,10 @@ mod tests {
                 max_signatures: 10,
                 allowed_programs: vec![
                     SYSTEM_PROGRAM_ID.to_string(),
-                    SPL_TOKEN_PROGRAM_ID.to_string(),
+                    TPL_TOKEN_PROGRAM_ID.to_string(),
                 ],
                 allowed_tokens: vec!["4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()],
-                allowed_spl_paid_tokens: SplTokenConfig::Allowlist(vec![
+                allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![
                     "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string(),
                 ]),
                 disallowed_accounts: vec![],
@@ -697,7 +697,7 @@ mod tests {
                 price: PriceConfig::default(),
                 token_2022: Token2022Config::default(),
             },
-            kora: KoraConfig::default(),
+            trezoakora: KoraConfig::default(),
             metrics: MetricsConfig::default(),
         };
 
@@ -726,14 +726,14 @@ mod tests {
                 max_signatures: 0,        // Should warn
                 allowed_programs: vec![], // Should warn
                 allowed_tokens: vec!["4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()],
-                allowed_spl_paid_tokens: SplTokenConfig::Allowlist(vec![]),
+                allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![]),
                 disallowed_accounts: vec![],
                 price_source: PriceSource::Mock, // Should warn
                 fee_payer_policy: FeePayerPolicy::default(),
                 price: PriceConfig { model: PriceModel::Free },
                 token_2022: Token2022Config::default(),
             },
-            kora: KoraConfig {
+            trezoakora: KoraConfig {
                 rate_limit: 0, // Should warn
                 max_request_body_size: DEFAULT_MAX_REQUEST_BODY_SIZE,
                 enabled_methods: EnabledMethods {
@@ -784,14 +784,14 @@ mod tests {
                 max_signatures: 10,
                 allowed_programs: vec!["SomeOtherProgram".to_string()], // Missing system program
                 allowed_tokens: vec!["4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()],
-                allowed_spl_paid_tokens: SplTokenConfig::Allowlist(vec![]),
+                allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![]),
                 disallowed_accounts: vec![],
                 price_source: PriceSource::Jupiter,
                 fee_payer_policy: FeePayerPolicy::default(),
                 price: PriceConfig { model: PriceModel::Free },
                 token_2022: Token2022Config::default(),
             },
-            kora: KoraConfig::default(),
+            trezoakora: KoraConfig::default(),
             metrics: MetricsConfig::default(),
         };
 
@@ -819,7 +819,7 @@ mod tests {
                 max_signatures: 10,
                 allowed_programs: vec![SYSTEM_PROGRAM_ID.to_string()],
                 allowed_tokens: vec![], // Error - no tokens
-                allowed_spl_paid_tokens: SplTokenConfig::Allowlist(vec![
+                allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![
                     "invalid_token_address".to_string()
                 ]), // Error - invalid token
                 disallowed_accounts: vec!["invalid_account_address".to_string()], // Error - invalid account
@@ -831,7 +831,7 @@ mod tests {
                 token_2022: Token2022Config::default(),
             },
             metrics: MetricsConfig::default(),
-            kora: KoraConfig::default(),
+            trezoakora: KoraConfig::default(),
         };
 
         let _ = update_config(config);
@@ -845,7 +845,7 @@ mod tests {
         let errors = result.unwrap_err();
 
         assert!(errors.iter().any(|e| e.contains("No allowed tokens configured")));
-        assert!(errors.iter().any(|e| e.contains("Invalid spl paid token address")));
+        assert!(errors.iter().any(|e| e.contains("Invalid tpl paid token address")));
         assert!(errors.iter().any(|e| e.contains("Invalid disallowed account address")));
         assert!(errors.iter().any(|e| e.contains("Margin cannot be negative")));
     }
@@ -859,7 +859,7 @@ mod tests {
                 max_signatures: 10,
                 allowed_programs: vec![SYSTEM_PROGRAM_ID.to_string()],
                 allowed_tokens: vec!["4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()],
-                allowed_spl_paid_tokens: SplTokenConfig::Allowlist(vec![
+                allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![
                     "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string(),
                 ]),
                 disallowed_accounts: vec![],
@@ -875,7 +875,7 @@ mod tests {
                 token_2022: Token2022Config::default(),
             },
             metrics: MetricsConfig::default(),
-            kora: KoraConfig::default(),
+            trezoakora: KoraConfig::default(),
         };
 
         let _ = update_config(config);
@@ -900,7 +900,7 @@ mod tests {
                 max_signatures: 10,
                 allowed_programs: vec![SYSTEM_PROGRAM_ID.to_string()],
                 allowed_tokens: vec!["4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()],
-                allowed_spl_paid_tokens: SplTokenConfig::Allowlist(vec![
+                allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![
                     "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string(),
                 ]),
                 disallowed_accounts: vec![],
@@ -916,7 +916,7 @@ mod tests {
                 token_2022: Token2022Config::default(),
             },
             metrics: MetricsConfig::default(),
-            kora: KoraConfig::default(),
+            trezoakora: KoraConfig::default(),
         };
 
         let _ = update_config(config);
@@ -933,7 +933,7 @@ mod tests {
             errors
                 .iter()
                 .any(|e| e
-                    .contains("Token address for fixed price is not in allowed spl paid tokens"))
+                    .contains("Token address for fixed price is not in allowed tpl paid tokens"))
         );
     }
 
@@ -946,10 +946,10 @@ mod tests {
                 max_signatures: 10,
                 allowed_programs: vec![
                     SYSTEM_PROGRAM_ID.to_string(),
-                    SPL_TOKEN_PROGRAM_ID.to_string(),
+                    TPL_TOKEN_PROGRAM_ID.to_string(),
                 ],
                 allowed_tokens: vec!["4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()],
-                allowed_spl_paid_tokens: SplTokenConfig::Allowlist(vec![
+                allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![
                     "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string(),
                 ]),
                 disallowed_accounts: vec![],
@@ -965,7 +965,7 @@ mod tests {
                 token_2022: Token2022Config::default(),
             },
             metrics: MetricsConfig::default(),
-            kora: KoraConfig::default(),
+            trezoakora: KoraConfig::default(),
         };
 
         let _ = update_config(config);
@@ -992,7 +992,7 @@ mod tests {
                 max_signatures: 10,
                 allowed_programs: vec![SYSTEM_PROGRAM_ID.to_string()], // Missing token programs
                 allowed_tokens: vec!["4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()],
-                allowed_spl_paid_tokens: SplTokenConfig::Allowlist(vec![]), // Empty when fees enabled - should error
+                allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![]), // Empty when fees enabled - should error
                 disallowed_accounts: vec![],
                 price_source: PriceSource::Jupiter,
                 fee_payer_policy: FeePayerPolicy::default(),
@@ -1000,7 +1000,7 @@ mod tests {
                 token_2022: Token2022Config::default(),
             },
             metrics: MetricsConfig::default(),
-            kora: KoraConfig::default(),
+            trezoakora: KoraConfig::default(),
         };
 
         let _ = update_config(config);
@@ -1013,25 +1013,25 @@ mod tests {
         assert!(result.is_err());
         let errors = result.unwrap_err();
 
-        assert!(errors.iter().any(|e| e.contains("When fees are enabled, at least one token program (SPL Token or Token2022) must be in allowed_programs")));
+        assert!(errors.iter().any(|e| e.contains("When fees are enabled, at least one token program (TPL Token or Token2022) must be in allowed_programs")));
         assert!(errors
             .iter()
-            .any(|e| e.contains("When fees are enabled, allowed_spl_paid_tokens cannot be empty")));
+            .any(|e| e.contains("When fees are enabled, allowed_tpl_paid_tokens cannot be empty")));
     }
 
     #[tokio::test]
     #[serial]
-    async fn test_validate_with_result_fee_and_any_spl_token_allowed() {
+    async fn test_validate_with_result_fee_and_any_tpl_token_allowed() {
         let config = Config {
             validation: ValidationConfig {
                 max_allowed_lamports: 1_000_000,
                 max_signatures: 10,
                 allowed_programs: vec![
                     SYSTEM_PROGRAM_ID.to_string(),
-                    SPL_TOKEN_PROGRAM_ID.to_string(),
+                    TPL_TOKEN_PROGRAM_ID.to_string(),
                 ],
                 allowed_tokens: vec!["4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()],
-                allowed_spl_paid_tokens: SplTokenConfig::All, // All tokens are allowed
+                allowed_tpl_paid_tokens: TplTokenConfig::All, // All tokens are allowed
                 disallowed_accounts: vec![],
                 price_source: PriceSource::Jupiter,
                 fee_payer_policy: FeePayerPolicy::default(),
@@ -1039,7 +1039,7 @@ mod tests {
                 token_2022: Token2022Config::default(),
             },
             metrics: MetricsConfig::default(),
-            kora: KoraConfig::default(),
+            trezoakora: KoraConfig::default(),
         };
 
         let _ = update_config(config);
@@ -1049,9 +1049,9 @@ mod tests {
         let result = ConfigValidator::validate_with_result(&rpc_client, true).await;
         assert!(result.is_ok());
 
-        // Check that it warns about using "All" for allowed_spl_paid_tokens
+        // Check that it warns about using "All" for allowed_tpl_paid_tokens
         let warnings = result.unwrap();
-        assert!(warnings.iter().any(|w| w.contains("Using 'All' for allowed_spl_paid_tokens")));
+        assert!(warnings.iter().any(|w| w.contains("Using 'All' for allowed_tpl_paid_tokens")));
         assert!(warnings.iter().any(|w| w.contains("volatility risk")));
     }
 
@@ -1064,10 +1064,10 @@ mod tests {
                 max_signatures: 10,
                 allowed_programs: vec![
                     SYSTEM_PROGRAM_ID.to_string(),
-                    SPL_TOKEN_PROGRAM_ID.to_string(),
+                    TPL_TOKEN_PROGRAM_ID.to_string(),
                 ],
                 allowed_tokens: vec!["4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()],
-                allowed_spl_paid_tokens: SplTokenConfig::Allowlist(vec![
+                allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![
                     "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v".to_string(), // Not in allowed_tokens
                 ]),
                 disallowed_accounts: vec![],
@@ -1077,7 +1077,7 @@ mod tests {
                 token_2022: Token2022Config::default(),
             },
             metrics: MetricsConfig::default(),
-            kora: KoraConfig::default(),
+            trezoakora: KoraConfig::default(),
         };
 
         let _ = update_config(config);
@@ -1087,7 +1087,7 @@ mod tests {
         assert!(result.is_err());
         let errors = result.unwrap_err();
 
-        assert!(errors.iter().any(|e| e.contains("Token EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v in allowed_spl_paid_tokens must also be in allowed_tokens")));
+        assert!(errors.iter().any(|e| e.contains("Token EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v in allowed_tpl_paid_tokens must also be in allowed_tokens")));
     }
 
     // Helper to create a simple test that only validates programs (no tokens)
@@ -1098,7 +1098,7 @@ mod tests {
                 max_signatures: 10,
                 allowed_programs: vec![SYSTEM_PROGRAM_ID.to_string()],
                 allowed_tokens: vec!["4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()], // Required to pass basic validation
-                allowed_spl_paid_tokens: SplTokenConfig::Allowlist(vec![
+                allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![
                     "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string(),
                 ]),
                 disallowed_accounts: vec![],
@@ -1108,7 +1108,7 @@ mod tests {
                 token_2022: Token2022Config::default(),
             },
             metrics: MetricsConfig::default(),
-            kora: KoraConfig::default(),
+            trezoakora: KoraConfig::default(),
         }
     }
 
@@ -1120,7 +1120,7 @@ mod tests {
                 max_signatures: 10,
                 allowed_programs: vec![], // No programs
                 allowed_tokens: vec!["4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()],
-                allowed_spl_paid_tokens: SplTokenConfig::Allowlist(vec![]), // Empty to avoid duplicate validation
+                allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![]), // Empty to avoid duplicate validation
                 disallowed_accounts: vec![],
                 price_source: PriceSource::Jupiter,
                 fee_payer_policy: FeePayerPolicy::default(),
@@ -1128,7 +1128,7 @@ mod tests {
                 token_2022: Token2022Config::default(),
             },
             metrics: MetricsConfig::default(),
-            kora: KoraConfig::default(),
+            trezoakora: KoraConfig::default(),
         }
     }
 
@@ -1182,7 +1182,7 @@ mod tests {
                 max_signatures: 10,
                 allowed_programs: vec![SYSTEM_PROGRAM_ID.to_string()],
                 allowed_tokens: vec!["4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()],
-                allowed_spl_paid_tokens: SplTokenConfig::Allowlist(vec![]),
+                allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![]),
                 disallowed_accounts: vec![],
                 price_source: PriceSource::Jupiter,
                 fee_payer_policy: FeePayerPolicy::default(),
@@ -1190,7 +1190,7 @@ mod tests {
                 token_2022: Token2022Config::default(),
             },
             metrics: MetricsConfig::default(),
-            kora: KoraConfig::default(),
+            trezoakora: KoraConfig::default(),
         };
 
         // Initialize global config
@@ -1214,7 +1214,7 @@ mod tests {
                 max_signatures: 10,
                 allowed_programs: vec![SYSTEM_PROGRAM_ID.to_string()],
                 allowed_tokens: vec!["4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()],
-                allowed_spl_paid_tokens: SplTokenConfig::Allowlist(vec![]),
+                allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![]),
                 disallowed_accounts: vec![],
                 price_source: PriceSource::Jupiter,
                 fee_payer_policy: FeePayerPolicy::default(),
@@ -1222,7 +1222,7 @@ mod tests {
                 token_2022: Token2022Config::default(),
             },
             metrics: MetricsConfig::default(),
-            kora: KoraConfig::default(),
+            trezoakora: KoraConfig::default(),
         };
 
         let _ = update_config(config);
@@ -1245,7 +1245,7 @@ mod tests {
                 max_signatures: 10,
                 allowed_programs: vec![SYSTEM_PROGRAM_ID.to_string()],
                 allowed_tokens: vec!["4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()],
-                allowed_spl_paid_tokens: SplTokenConfig::Allowlist(vec![]),
+                allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![]),
                 disallowed_accounts: vec![],
                 price_source: PriceSource::Jupiter,
                 fee_payer_policy: FeePayerPolicy::default(),
@@ -1253,7 +1253,7 @@ mod tests {
                 token_2022: Token2022Config::default(),
             },
             metrics: MetricsConfig::default(),
-            kora: KoraConfig::default(),
+            trezoakora: KoraConfig::default(),
         };
 
         let _ = update_config(config);
@@ -1275,7 +1275,7 @@ mod tests {
                 max_signatures: 10,
                 allowed_programs: vec![SYSTEM_PROGRAM_ID.to_string()],
                 allowed_tokens: vec!["4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()],
-                allowed_spl_paid_tokens: SplTokenConfig::Allowlist(vec![]),
+                allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![]),
                 disallowed_accounts: vec![],
                 price_source: PriceSource::Jupiter,
                 fee_payer_policy: FeePayerPolicy::default(),
@@ -1290,7 +1290,7 @@ mod tests {
                 },
             },
             metrics: MetricsConfig::default(),
-            kora: KoraConfig::default(),
+            trezoakora: KoraConfig::default(),
         };
 
         let _ = update_config(config);
@@ -1312,7 +1312,7 @@ mod tests {
                 max_signatures: 10,
                 allowed_programs: vec![SYSTEM_PROGRAM_ID.to_string()],
                 allowed_tokens: vec!["4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()],
-                allowed_spl_paid_tokens: SplTokenConfig::Allowlist(vec![]),
+                allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![]),
                 disallowed_accounts: vec![],
                 price_source: PriceSource::Jupiter,
                 fee_payer_policy: FeePayerPolicy::default(),
@@ -1324,7 +1324,7 @@ mod tests {
                 },
             },
             metrics: MetricsConfig::default(),
-            kora: KoraConfig::default(),
+            trezoakora: KoraConfig::default(),
         };
 
         let _ = update_config(config);
@@ -1349,7 +1349,7 @@ mod tests {
                 max_signatures: 10,
                 allowed_programs: vec![SYSTEM_PROGRAM_ID.to_string()],
                 allowed_tokens: vec!["4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()],
-                allowed_spl_paid_tokens: SplTokenConfig::Allowlist(vec![]),
+                allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![]),
                 disallowed_accounts: vec![],
                 price_source: PriceSource::Jupiter,
                 fee_payer_policy: FeePayerPolicy::default(),
@@ -1362,7 +1362,7 @@ mod tests {
                 },
             },
             metrics: MetricsConfig::default(),
-            kora: KoraConfig::default(),
+            trezoakora: KoraConfig::default(),
         };
 
         let _ = update_config(config);
@@ -1429,11 +1429,11 @@ mod tests {
                 max_signatures: 10,
                 allowed_programs: vec![
                     SYSTEM_PROGRAM_ID.to_string(),
-                    SPL_TOKEN_PROGRAM_ID.to_string(),
+                    TPL_TOKEN_PROGRAM_ID.to_string(),
                     TOKEN_2022_PROGRAM_ID.to_string(),
                 ],
                 allowed_tokens: vec!["4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string()],
-                allowed_spl_paid_tokens: SplTokenConfig::Allowlist(vec![
+                allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![
                     "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".to_string(),
                 ]),
                 disallowed_accounts: vec![],
@@ -1451,7 +1451,7 @@ mod tests {
                             allow_authorize: true,
                         },
                     },
-                    spl_token: SplTokenInstructionPolicy {
+                    tpl_token: TplTokenInstructionPolicy {
                         allow_transfer: true,
                         allow_burn: true,
                         allow_close_account: true,
@@ -1484,7 +1484,7 @@ mod tests {
                 token_2022: Token2022Config::default(),
             },
             metrics: MetricsConfig::default(),
-            kora: KoraConfig::default(),
+            trezoakora: KoraConfig::default(),
         };
 
         let _ = update_config(config.clone());
@@ -1525,46 +1525,46 @@ mod tests {
             .iter()
             .any(|w| w.contains("nonce authority changes") && w.contains("allow_authorize")));
 
-        // SPL Token policies
+        // TPL Token policies
         assert!(warnings
             .iter()
-            .any(|w| w.contains("SPL Token transfers") && w.contains("allow_transfer")));
+            .any(|w| w.contains("TPL Token transfers") && w.contains("allow_transfer")));
         assert!(warnings
             .iter()
-            .any(|w| w.contains("SPL Token burn operations") && w.contains("allow_burn")));
+            .any(|w| w.contains("TPL Token burn operations") && w.contains("allow_burn")));
         assert!(warnings
             .iter()
-            .any(|w| w.contains("SPL Token CloseAccount") && w.contains("allow_close_account")));
+            .any(|w| w.contains("TPL Token CloseAccount") && w.contains("allow_close_account")));
         assert!(warnings
             .iter()
-            .any(|w| w.contains("SPL Token approve") && w.contains("allow_approve")));
+            .any(|w| w.contains("TPL Token approve") && w.contains("allow_approve")));
         assert!(warnings
             .iter()
-            .any(|w| w.contains("SPL Token revoke") && w.contains("allow_revoke")));
+            .any(|w| w.contains("TPL Token revoke") && w.contains("allow_revoke")));
         assert!(warnings
             .iter()
-            .any(|w| w.contains("SPL Token SetAuthority") && w.contains("allow_set_authority")));
+            .any(|w| w.contains("TPL Token SetAuthority") && w.contains("allow_set_authority")));
         assert!(warnings
             .iter()
-            .any(|w| w.contains("SPL Token MintTo") && w.contains("allow_mint_to")));
+            .any(|w| w.contains("TPL Token MintTo") && w.contains("allow_mint_to")));
         assert!(
             warnings
                 .iter()
-                .any(|w| w.contains("SPL Token InitializeMint")
+                .any(|w| w.contains("TPL Token InitializeMint")
                     && w.contains("allow_initialize_mint"))
         );
         assert!(warnings
             .iter()
-            .any(|w| w.contains("SPL Token InitializeAccount")
+            .any(|w| w.contains("TPL Token InitializeAccount")
                 && w.contains("allow_initialize_account")));
-        assert!(warnings.iter().any(|w| w.contains("SPL Token InitializeMultisig")
+        assert!(warnings.iter().any(|w| w.contains("TPL Token InitializeMultisig")
             && w.contains("allow_initialize_multisig")));
         assert!(warnings
             .iter()
-            .any(|w| w.contains("SPL Token FreezeAccount") && w.contains("allow_freeze_account")));
+            .any(|w| w.contains("TPL Token FreezeAccount") && w.contains("allow_freeze_account")));
         assert!(warnings
             .iter()
-            .any(|w| w.contains("SPL Token ThawAccount") && w.contains("allow_thaw_account")));
+            .any(|w| w.contains("TPL Token ThawAccount") && w.contains("allow_thaw_account")));
 
         // Token2022 policies
         assert!(warnings

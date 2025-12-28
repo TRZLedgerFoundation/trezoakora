@@ -1,7 +1,7 @@
 use super::{PriceOracle, PriceSource, TokenPrice};
 use crate::{
-    constant::{JUPITER_API_LITE_URL, JUPITER_API_PRO_URL, SOL_MINT},
-    error::KoraError,
+    constant::{JUPITER_API_LITE_URL, JUPITER_API_PRO_URL, TRZ_MINT},
+    error::TrezoaKoraError,
     sanitize_error,
     validator::math_validator,
 };
@@ -87,11 +87,11 @@ impl PriceOracle for JupiterPriceOracle {
         &self,
         client: &Client,
         mint_address: &str,
-    ) -> Result<TokenPrice, KoraError> {
+    ) -> Result<TokenPrice, TrezoaKoraError> {
         let prices = self.get_prices(client, &[mint_address.to_string()]).await?;
 
         prices.get(mint_address).cloned().ok_or_else(|| {
-            KoraError::RpcError(format!("No price data from Jupiter for mint {mint_address}"))
+            TrezoaKoraError::RpcError(format!("No price data from Jupiter for mint {mint_address}"))
         })
     }
 
@@ -99,7 +99,7 @@ impl PriceOracle for JupiterPriceOracle {
         &self,
         client: &Client,
         mint_addresses: &[String],
-    ) -> Result<HashMap<String, TokenPrice>, KoraError> {
+    ) -> Result<HashMap<String, TokenPrice>, TrezoaKoraError> {
         if mint_addresses.is_empty() {
             return Ok(HashMap::new());
         }
@@ -112,7 +112,7 @@ impl PriceOracle for JupiterPriceOracle {
             {
                 Ok(prices) => return Ok(prices),
                 Err(e) => {
-                    if e == KoraError::RateLimitExceeded {
+                    if e == TrezoaKoraError::RateLimitExceeded {
                         log::warn!("Pro Jupiter API rate limit exceeded, falling back to free API");
                     } else {
                         return Err(e);
@@ -127,7 +127,7 @@ impl PriceOracle for JupiterPriceOracle {
 }
 
 impl JupiterPriceOracle {
-    fn validate_price_data(price_data: &JupiterPriceData, mint: &str) -> Result<(), KoraError> {
+    fn validate_price_data(price_data: &JupiterPriceData, mint: &str) -> Result<(), TrezoaKoraError> {
         let price = price_data.usd_price;
 
         math_validator::validate_division(price)?;
@@ -140,7 +140,7 @@ impl JupiterPriceOracle {
                 price,
                 MAX_REASONABLE_PRICE
             );
-            return Err(KoraError::RpcError(format!(
+            return Err(TrezoaKoraError::RpcError(format!(
                 "Price data for mint {} exceeds reasonable bounds",
                 mint
             )));
@@ -153,7 +153,7 @@ impl JupiterPriceOracle {
                 price,
                 MIN_REASONABLE_PRICE
             );
-            return Err(KoraError::RpcError(format!(
+            return Err(TrezoaKoraError::RpcError(format!(
                 "Price data for mint {} below reasonable bounds",
                 mint
             )));
@@ -168,12 +168,12 @@ impl JupiterPriceOracle {
         api_url: &str,
         mint_addresses: &[String],
         api_key: Option<&String>,
-    ) -> Result<HashMap<String, TokenPrice>, KoraError> {
+    ) -> Result<HashMap<String, TokenPrice>, TrezoaKoraError> {
         if mint_addresses.is_empty() {
             return Ok(HashMap::new());
         }
 
-        let mut all_mints = vec![SOL_MINT.to_string()];
+        let mut all_mints = vec![TRZ_MINT.to_string()];
         all_mints.extend_from_slice(mint_addresses);
         let ids = all_mints.join(",");
 
@@ -187,16 +187,16 @@ impl JupiterPriceOracle {
         }
 
         let response = request.send().await.map_err(|e| {
-            KoraError::RpcError(format!("Jupiter API request failed: {}", sanitize_error!(e)))
+            TrezoaKoraError::RpcError(format!("Jupiter API request failed: {}", sanitize_error!(e)))
         })?;
 
         if !response.status().is_success() {
             match response.status() {
                 StatusCode::TOO_MANY_REQUESTS => {
-                    return Err(KoraError::RateLimitExceeded);
+                    return Err(TrezoaKoraError::RateLimitExceeded);
                 }
                 _ => {
-                    return Err(KoraError::RpcError(format!(
+                    return Err(TrezoaKoraError::RpcError(format!(
                         "Jupiter API error: {}",
                         response.status()
                     )));
@@ -205,17 +205,17 @@ impl JupiterPriceOracle {
         }
 
         let jupiter_response: JupiterResponse = response.json().await.map_err(|e| {
-            KoraError::RpcError(format!("Failed to parse Jupiter response: {}", sanitize_error!(e)))
+            TrezoaKoraError::RpcError(format!("Failed to parse Jupiter response: {}", sanitize_error!(e)))
         })?;
 
-        // Get SOL price for conversion
-        let sol_price = jupiter_response
-            .get(SOL_MINT)
-            .ok_or_else(|| KoraError::RpcError("No SOL price data from Jupiter".to_string()))?;
+        // Get TRZ price for conversion
+        let trz_price = jupiter_response
+            .get(TRZ_MINT)
+            .ok_or_else(|| TrezoaKoraError::RpcError("No TRZ price data from Jupiter".to_string()))?;
 
-        Self::validate_price_data(sol_price, SOL_MINT)?;
+        Self::validate_price_data(trz_price, TRZ_MINT)?;
 
-        // Convert all prices to SOL-denominated
+        // Convert all prices to TRZ-denominated
         let mut result = HashMap::new();
         for mint_address in mint_addresses {
             if let Some(price_data) = jupiter_response.get(mint_address.as_str()) {
@@ -224,32 +224,32 @@ impl JupiterPriceOracle {
                 // Convert f64 USD prices to Decimal at API boundary
                 let token_usd =
                     Decimal::from_f64_retain(price_data.usd_price).ok_or_else(|| {
-                        KoraError::RpcError(format!("Invalid token price for mint {mint_address}"))
+                        TrezoaKoraError::RpcError(format!("Invalid token price for mint {mint_address}"))
                     })?;
-                let sol_usd = Decimal::from_f64_retain(sol_price.usd_price).ok_or_else(|| {
-                    KoraError::RpcError("Invalid SOL price from Jupiter".to_string())
+                let trz_usd = Decimal::from_f64_retain(trz_price.usd_price).ok_or_else(|| {
+                    TrezoaKoraError::RpcError("Invalid TRZ price from Jupiter".to_string())
                 })?;
 
-                let price_in_sol = token_usd / sol_usd;
+                let price_in_trz = token_usd / trz_usd;
 
                 result.insert(
                     mint_address.clone(),
                     TokenPrice {
-                        price: price_in_sol,
+                        price: price_in_trz,
                         confidence: JUPITER_DEFAULT_CONFIDENCE,
                         source: PriceSource::Jupiter,
                     },
                 );
             } else {
                 log::error!("No price data for mint {mint_address} from Jupiter");
-                return Err(KoraError::RpcError(format!(
+                return Err(TrezoaKoraError::RpcError(format!(
                     "No price data from Jupiter for mint {mint_address}"
                 )));
             }
         }
 
         if result.is_empty() {
-            return Err(KoraError::RpcError("No price data from Jupiter".to_string()));
+            return Err(TrezoaKoraError::RpcError("No price data from Jupiter".to_string()));
         }
 
         Ok(result)
@@ -360,7 +360,7 @@ mod tests {
         assert!(result.is_err());
         assert_eq!(
             result.err(),
-            Some(KoraError::RpcError(
+            Some(TrezoaKoraError::RpcError(
                 "No price data from Jupiter for mint JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN"
                     .to_string()
             ))

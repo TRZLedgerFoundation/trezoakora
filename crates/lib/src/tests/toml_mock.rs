@@ -2,8 +2,8 @@ use std::fs;
 use tempfile::NamedTempFile;
 
 use crate::{
-    config::{Config, SplTokenConfig},
-    error::KoraError,
+    config::{Config, TplTokenConfig},
+    error::TrezoaKoraError,
 };
 
 /// TOML-specific configuration builder for testing TOML parsing and serialization
@@ -18,7 +18,7 @@ use crate::{
 #[derive(Default)]
 pub struct ConfigBuilder {
     validation: ValidationSection,
-    kora: KoraSection,
+    trezoakora: KoraSection,
     custom_sections: Vec<String>,
 }
 
@@ -27,7 +27,7 @@ struct ValidationSection {
     max_signatures: u64,
     allowed_programs: Vec<String>,
     allowed_tokens: Vec<String>,
-    allowed_spl_paid_tokens: SplTokenConfig,
+    allowed_tpl_paid_tokens: TplTokenConfig,
     disallowed_accounts: Vec<String>,
     price_source: String,
     price_config: Option<String>,
@@ -49,7 +49,7 @@ impl Default for ValidationSection {
             max_signatures: 10,
             allowed_programs: vec!["program1".to_string()],
             allowed_tokens: vec!["token1".to_string()],
-            allowed_spl_paid_tokens: SplTokenConfig::Allowlist(vec!["token2".to_string()]),
+            allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec!["token2".to_string()]),
             disallowed_accounts: vec![],
             price_source: "Jupiter".to_string(),
             price_config: None,
@@ -85,8 +85,8 @@ impl ConfigBuilder {
         self
     }
 
-    pub fn with_spl_paid_tokens(mut self, spl_payment_config: SplTokenConfig) -> Self {
-        self.validation.allowed_spl_paid_tokens = spl_payment_config;
+    pub fn with_tpl_paid_tokens(mut self, tpl_payment_config: TplTokenConfig) -> Self {
+        self.validation.allowed_tpl_paid_tokens = tpl_payment_config;
         self
     }
 
@@ -142,7 +142,7 @@ impl ConfigBuilder {
             .collect::<Vec<_>>()
             .join("\n");
 
-        self.kora.enabled_methods = Some(format!("[kora.enabled_methods]\n{method_config}\n"));
+        self.trezoakora.enabled_methods = Some(format!("[trezoakora.enabled_methods]\n{method_config}\n"));
         self
     }
 
@@ -158,8 +158,8 @@ impl ConfigBuilder {
             None => String::new(),
         };
 
-        self.kora.cache_config = Some(format!(
-            "[kora.cache]\n{url_line}enabled = {enabled}\ndefault_ttl = {default_ttl}\naccount_ttl = {account_ttl}\n"
+        self.trezoakora.cache_config = Some(format!(
+            "[trezoakora.cache]\n{url_line}enabled = {enabled}\ndefault_ttl = {default_ttl}\naccount_ttl = {account_ttl}\n"
         ));
         self
     }
@@ -176,14 +176,14 @@ impl ConfigBuilder {
             None => String::new(),
         };
 
-        self.kora.usage_limit_config = Some(format!(
-            "[kora.usage_limit]\nenabled = {enabled}\n{cache_url_line}max_transactions = {max_transactions}\nfallback_if_unavailable = {fallback_if_unavailable}\n"
+        self.trezoakora.usage_limit_config = Some(format!(
+            "[trezoakora.usage_limit]\nenabled = {enabled}\n{cache_url_line}max_transactions = {max_transactions}\nfallback_if_unavailable = {fallback_if_unavailable}\n"
         ));
         self
     }
 
     pub fn with_max_request_body_size(mut self, size: usize) -> Self {
-        self.kora.max_request_body_size = Some(size);
+        self.trezoakora.max_request_body_size = Some(size);
         self
     }
 
@@ -204,12 +204,12 @@ impl ConfigBuilder {
             .collect::<Vec<_>>()
             .join(", ");
 
-        let spl_tokens_config = match self.validation.allowed_spl_paid_tokens {
-            SplTokenConfig::Allowlist(ref tokens) => format!(
+        let tpl_tokens_config = match self.validation.allowed_tpl_paid_tokens {
+            TplTokenConfig::Allowlist(ref tokens) => format!(
                 "[{}]",
                 tokens.iter().map(|t| format!("\"{t}\"")).collect::<Vec<_>>().join(", ")
             ),
-            SplTokenConfig::All => format!("\"{}\"", "All"),
+            TplTokenConfig::All => format!("\"{}\"", "All"),
         };
 
         let disallowed_list = if self.validation.disallowed_accounts.is_empty() {
@@ -232,14 +232,14 @@ impl ConfigBuilder {
             max_signatures = {}\n\
             allowed_programs = [{}]\n\
             allowed_tokens = [{}]\n\
-            allowed_spl_paid_tokens = {}\n\
+            allowed_tpl_paid_tokens = {}\n\
             disallowed_accounts = {}\n\
             price_source = \"{}\"\n\n",
             self.validation.max_allowed_lamports,
             self.validation.max_signatures,
             programs_list,
             tokens_list,
-            spl_tokens_config,
+            tpl_tokens_config,
             disallowed_list,
             self.validation.price_source
         );
@@ -252,21 +252,21 @@ impl ConfigBuilder {
             toml.push_str(&format!("{token_config}\n"));
         }
 
-        toml.push_str(&format!("[kora]\nrate_limit = {}\n", self.kora.rate_limit));
+        toml.push_str(&format!("[trezoakora]\nrate_limit = {}\n", self.trezoakora.rate_limit));
 
-        if let Some(size) = self.kora.max_request_body_size {
+        if let Some(size) = self.trezoakora.max_request_body_size {
             toml.push_str(&format!("max_request_body_size = {size}\n"));
         }
 
-        if let Some(ref methods_config) = self.kora.enabled_methods {
+        if let Some(ref methods_config) = self.trezoakora.enabled_methods {
             toml.push_str(&format!("{methods_config}\n"));
         }
 
-        if let Some(ref cache_config) = self.kora.cache_config {
+        if let Some(ref cache_config) = self.trezoakora.cache_config {
             toml.push_str(&format!("{cache_config}\n"));
         }
 
-        if let Some(ref usage_limit_config) = self.kora.usage_limit_config {
+        if let Some(ref usage_limit_config) = self.trezoakora.usage_limit_config {
             toml.push_str(&format!("{usage_limit_config}\n"));
         }
 
@@ -277,7 +277,7 @@ impl ConfigBuilder {
         toml
     }
 
-    pub fn build_config(&self) -> Result<Config, KoraError> {
+    pub fn build_config(&self) -> Result<Config, TrezoaKoraError> {
         let toml_content = self.build_toml();
         let temp_file = NamedTempFile::new().unwrap();
         fs::write(&temp_file, toml_content).unwrap();
@@ -287,7 +287,7 @@ impl ConfigBuilder {
 
 /// Create an invalid config for testing error handling
 /// Used specifically for testing TOML parsing error scenarios
-pub fn create_invalid_config(content: &str) -> Result<Config, KoraError> {
+pub fn create_invalid_config(content: &str) -> Result<Config, TrezoaKoraError> {
     let temp_file = NamedTempFile::new().unwrap();
     fs::write(&temp_file, content).unwrap();
     Config::load_config(temp_file.path())

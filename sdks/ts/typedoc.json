@@ -2,7 +2,7 @@
   "$schema": "https://typedoc.org/schema.json",
   "entryPoints": ["./src/index.ts"],
   "out": "./docs",
-  "name": "Kora TypeScript SDK",
+  "name": "TrezoaKora TypeScript SDK",
   "includeVersion": true,
   "hideGenerator": true,
   "plugin": ["typedoc-plugin-markdown"],

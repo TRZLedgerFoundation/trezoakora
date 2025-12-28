@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 
-use solana_program::program_pack::Pack;
-use solana_sdk::{account::Account, program_option::COption, pubkey::Pubkey};
-use spl_pod::{
+use trezoa_program::program_pack::Pack;
+use trezoa_sdk::{account::Account, program_option::COption, pubkey::Pubkey};
+use tpl_pod::{
     optional_keys::OptionalNonZeroPubkey,
     primitives::{PodU16, PodU64},
 };
-use spl_token_2022_interface::{
+use tpl_token_2022_interface::{
     extension::{
         self,
         transfer_fee::{TransferFee, TransferFeeConfig},
@@ -17,11 +17,11 @@ use spl_token_2022_interface::{
         Account as Token2022AccountState, AccountState as Token2022AccountState_, Mint as Mint2022,
     },
 };
-use spl_token_interface::state::{Account as TokenAccount, AccountState as SplAccountState, Mint};
+use tpl_token_interface::state::{Account as TokenAccount, AccountState as TplAccountState, Mint};
 
 use crate::token::{
-    spl_token_2022::{Token2022Account, Token2022Mint},
-    spl_token_2022_util::ParsedExtension,
+    tpl_token_2022::{Token2022Account, Token2022Mint},
+    tpl_token_2022_util::ParsedExtension,
 };
 
 // Common default values used across mock builders
@@ -98,9 +98,9 @@ impl AccountMockBuilder {
     }
 }
 
-/// Unified token account builder supporting both SPL Token and Token2022
+/// Unified token account builder supporting both TPL Token and Token2022
 ///
-/// Use `build()` for SPL Token accounts or `build_token2022()` for Token2022 accounts
+/// Use `build()` for TPL Token accounts or `build_token2022()` for Token2022 accounts
 pub struct TokenAccountMockBuilder {
     mint: Pubkey,
     owner: Pubkey,
@@ -113,7 +113,7 @@ pub struct TokenAccountMockBuilder {
     // Token2022-specific fields
     extensions: Vec<ExtensionType>,
     // Configuration for different token types
-    is_native_spl: COption<u64>,
+    is_native_tpl: COption<u64>,
     is_native_token2022: COption<u64>,
 }
 
@@ -135,7 +135,7 @@ impl TokenAccountMockBuilder {
             lamports: DEFAULT_LAMPORTS,
             rent_epoch: DEFAULT_RENT_EPOCH,
             extensions: Vec::new(),
-            is_native_spl: COption::Some(0),
+            is_native_tpl: COption::Some(0),
             is_native_token2022: COption::None,
         }
     }
@@ -163,9 +163,9 @@ impl TokenAccountMockBuilder {
         self
     }
 
-    /// Set native amount for SPL Token
-    pub fn with_native_spl(mut self, native_amount: Option<u64>) -> Self {
-        self.is_native_spl = match native_amount {
+    /// Set native amount for TPL Token
+    pub fn with_native_tpl(mut self, native_amount: Option<u64>) -> Self {
+        self.is_native_tpl = match native_amount {
             Some(amount) => COption::Some(amount),
             None => COption::None,
         };
@@ -195,15 +195,15 @@ impl TokenAccountMockBuilder {
         self
     }
 
-    /// Set account state (for SPL Token compatibility)
-    pub fn with_state(self, _state: SplAccountState) -> Self {
+    /// Set account state (for TPL Token compatibility)
+    pub fn with_state(self, _state: TplAccountState) -> Self {
         // State is handled automatically in build methods, this is for compatibility
         self
     }
 
-    /// Legacy method for backward compatibility (defaults to SPL Token behavior)
+    /// Legacy method for backward compatibility (defaults to TPL Token behavior)
     pub fn with_native(self, native_amount: Option<u64>) -> Self {
-        self.with_native_spl(native_amount)
+        self.with_native_tpl(native_amount)
     }
 
     pub fn with_delegated_amount(mut self, amount: u64) -> Self {
@@ -224,15 +224,15 @@ impl TokenAccountMockBuilder {
         self
     }
 
-    /// Build SPL Token account
+    /// Build TPL Token account
     pub fn build(self) -> Account {
         let token_account = TokenAccount {
             mint: self.mint,
             owner: self.owner,
             amount: self.amount,
             delegate: self.delegate,
-            state: SplAccountState::Initialized,
-            is_native: self.is_native_spl,
+            state: TplAccountState::Initialized,
+            is_native: self.is_native_tpl,
             delegated_amount: self.delegated_amount,
             close_authority: self.close_authority,
         };
@@ -243,7 +243,7 @@ impl TokenAccountMockBuilder {
         Account {
             lamports: self.lamports,
             data,
-            owner: spl_token_interface::id(),
+            owner: tpl_token_interface::id(),
             executable: false,
             rent_epoch: self.rent_epoch,
         }
@@ -268,7 +268,7 @@ impl TokenAccountMockBuilder {
         Account {
             lamports: self.lamports,
             data,
-            owner: spl_token_2022_interface::id(),
+            owner: tpl_token_2022_interface::id(),
             executable: false,
             rent_epoch: self.rent_epoch,
         }
@@ -294,9 +294,9 @@ impl TokenAccountMockBuilder {
     }
 }
 
-/// Unified mint account builder supporting both SPL Token and Token2022
+/// Unified mint account builder supporting both TPL Token and Token2022
 ///
-/// Use `build()` for SPL Token mints or `build_token2022()` for Token2022 mints
+/// Use `build()` for TPL Token mints or `build_token2022()` for Token2022 mints
 pub struct MintAccountMockBuilder {
     mint_authority: COption<Pubkey>,
     supply: u64,
@@ -398,7 +398,7 @@ impl MintAccountMockBuilder {
         Account {
             lamports: self.lamports,
             data,
-            owner: spl_token_interface::id(),
+            owner: tpl_token_interface::id(),
             executable: false,
             rent_epoch: self.rent_epoch,
         }
@@ -422,7 +422,7 @@ impl MintAccountMockBuilder {
             Account {
                 lamports: self.lamports,
                 data,
-                owner: spl_token_2022_interface::id(),
+                owner: tpl_token_2022_interface::id(),
                 executable: false,
                 rent_epoch: self.rent_epoch,
             }
@@ -493,7 +493,7 @@ impl MintAccountMockBuilder {
         Ok(Account {
             lamports: self.lamports,
             data,
-            owner: spl_token_2022_interface::id(),
+            owner: tpl_token_2022_interface::id(),
             executable: false,
             rent_epoch: self.rent_epoch,
         })
@@ -540,7 +540,7 @@ pub fn create_mock_token_account(owner: &Pubkey, mint: &Pubkey) -> Account {
     TokenAccountMockBuilder::new().with_owner(owner).with_mint(mint).build()
 }
 
-pub fn create_mock_spl_mint_account(decimals: u8) -> Account {
+pub fn create_mock_tpl_mint_account(decimals: u8) -> Account {
     MintAccountMockBuilder::new().with_decimals(decimals).build()
 }
 
@@ -563,8 +563,8 @@ pub fn create_mock_usdc_mint_account() -> Account {
         .build()
 }
 
-/// Create mock SOL wrapped token mint (9 decimals)
-pub fn create_mock_wsol_mint_account() -> Account {
+/// Create mock TRZ wrapped token mint (9 decimals)
+pub fn create_mock_wtrz_mint_account() -> Account {
     MintAccountMockBuilder::new().with_decimals(9).build()
 }
 
@@ -598,11 +598,11 @@ pub fn create_mock_token2022_mint_with_extensions(
 pub fn create_transfer_fee_config(basis_points: u16, max_fee: u64) -> TransferFeeConfig {
     TransferFeeConfig {
         transfer_fee_config_authority: OptionalNonZeroPubkey::try_from(Some(
-            spl_pod::solana_pubkey::Pubkey::new_unique(),
+            tpl_pod::trezoa_pubkey::Pubkey::new_unique(),
         ))
         .unwrap(),
         withdraw_withheld_authority: OptionalNonZeroPubkey::try_from(Some(
-            spl_pod::solana_pubkey::Pubkey::new_unique(),
+            tpl_pod::trezoa_pubkey::Pubkey::new_unique(),
         ))
         .unwrap(),
         withheld_amount: PodU64::from(0),

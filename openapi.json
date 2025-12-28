@@ -1,8 +1,8 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "kora-rpc",
-    "description": "RPC server for Kora gasless relayer",
+    "title": "trezoakora-rpc",
+    "description": "RPC server for TrezoaKora gasless relayer",
     "license": {
       "name": "MIT"
     },
@@ -53,8 +53,8 @@
       "FeePayerPolicy": {
         "type": "object",
         "required": [
-          "allow_sol_transfers",
-          "allow_spl_transfers",
+          "allow_trz_transfers",
+          "allow_tpl_transfers",
           "allow_token2022_transfers",
           "allow_assign",
           "allow_burn",
@@ -74,10 +74,10 @@
           "allow_close_account": {
             "type": "boolean"
           },
-          "allow_sol_transfers": {
+          "allow_trz_transfers": {
             "type": "boolean"
           },
-          "allow_spl_transfers": {
+          "allow_tpl_transfers": {
             "type": "boolean"
           },
           "allow_token2022_transfers": {
@@ -334,7 +334,7 @@
           "max_signatures",
           "allowed_programs",
           "allowed_tokens",
-          "allowed_spl_paid_tokens",
+          "allowed_tpl_paid_tokens",
           "disallowed_accounts",
           "price_source"
         ],
@@ -345,7 +345,7 @@
               "type": "string"
             }
           },
-          "allowed_spl_paid_tokens": {
+          "allowed_tpl_paid_tokens": {
             "type": "array",
             "items": {
               "type": "string"

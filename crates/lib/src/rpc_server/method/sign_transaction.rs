@@ -3,11 +3,11 @@ use crate::{
     state::{get_config, get_request_signer_with_signer_key},
     transaction::{TransactionUtil, VersionedTransactionOps, VersionedTransactionResolved},
     usage_limit::UsageTracker,
-    KoraError,
+    TrezoaKoraError,
 };
 use serde::{Deserialize, Serialize};
-use solana_client::nonblocking::rpc_client::RpcClient;
-use solana_keychain::SolanaSigner;
+use trezoa_client::nonblocking::rpc_client::RpcClient;
+use trezoa_keychain::TrezoaSigner;
 use std::sync::Arc;
 use utoipa::ToSchema;
 
@@ -32,7 +32,7 @@ pub struct SignTransactionResponse {
 pub async fn sign_transaction(
     rpc_client: &Arc<RpcClient>,
     request: SignTransactionRequest,
-) -> Result<SignTransactionResponse, KoraError> {
+) -> Result<SignTransactionResponse, TrezoaKoraError> {
     let transaction = TransactionUtil::decode_b64_transaction(&request.transaction)?;
 
     let config = get_config()?;
@@ -109,6 +109,6 @@ mod tests {
 
         assert!(result.is_err(), "Should fail with invalid signer key");
         let error = result.unwrap_err();
-        assert!(matches!(error, KoraError::ValidationError(_)), "Should return ValidationError");
+        assert!(matches!(error, TrezoaKoraError::ValidationError(_)), "Should return ValidationError");
     }
 }

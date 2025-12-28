@@ -1,7 +1,7 @@
 use base64::{self, engine::general_purpose::STANDARD, Engine};
 use serde_json::{json, Value};
-use solana_client::{nonblocking::rpc_client::RpcClient, rpc_request::RpcRequest};
-use solana_sdk::{account::Account, pubkey::Pubkey};
+use trezoa_client::{nonblocking::rpc_client::RpcClient, rpc_request::RpcRequest};
+use trezoa_sdk::{account::Account, pubkey::Pubkey};
 use std::{collections::HashMap, sync::Arc};
 
 use crate::tests::account_mock::MintAccountMockBuilder;

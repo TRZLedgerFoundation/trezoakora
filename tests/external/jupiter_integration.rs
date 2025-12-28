@@ -1,4 +1,4 @@
-use kora_lib::oracle::{get_price_oracle, PriceSource, RetryingPriceOracle};
+use trezoakora_lib::oracle::{get_price_oracle, PriceSource, RetryingPriceOracle};
 use rust_decimal_macros::dec;
 use std::time::Duration;
 
@@ -15,12 +15,12 @@ async fn test_jupiter_integration_usdc() {
         Ok(token_price) => {
             assert!(
                 token_price.price > dec!(0.001),
-                "USDC price too low: {} SOL",
+                "USDC price too low: {} TRZ",
                 token_price.price
             );
             assert!(
                 token_price.price < dec!(0.01),
-                "USDC price too high: {} SOL",
+                "USDC price too high: {} TRZ",
                 token_price.price
             );
             assert_eq!(token_price.source, PriceSource::Jupiter);
@@ -47,12 +47,12 @@ async fn test_jupiter_integration_cbtc() {
         Ok(token_price) => {
             assert!(
                 token_price.price > dec!(200.0),
-                "cBTC price too low: {} SOL",
+                "cBTC price too low: {} TRZ",
                 token_price.price
             );
             assert!(
                 token_price.price < dec!(1_000.0),
-                "cBTC price too high: {} SOL",
+                "cBTC price too high: {} TRZ",
                 token_price.price
             );
             assert_eq!(token_price.source, PriceSource::Jupiter);
@@ -67,28 +67,28 @@ async fn test_jupiter_integration_cbtc() {
 }
 
 #[tokio::test]
-async fn test_jupiter_integration_sol() {
-    const SOL_MINT: &str = "So11111111111111111111111111111111111111112";
+async fn test_jupiter_integration_trz() {
+    const TRZ_MINT: &str = "tr11111111111111111111111111111111111111112";
 
     let oracle = get_price_oracle(PriceSource::Jupiter);
     let retrying_oracle = RetryingPriceOracle::new(3, Duration::from_millis(500), oracle);
 
-    let result = retrying_oracle.get_token_price(SOL_MINT).await;
+    let result = retrying_oracle.get_token_price(TRZ_MINT).await;
 
     match result {
         Ok(token_price) => {
             assert!(
                 (token_price.price - dec!(1.0)).abs() < dec!(0.001),
-                "SOL price should be ~1.0, got: {}",
+                "TRZ price should be ~1.0, got: {}",
                 token_price.price
             );
-            assert!(token_price.confidence > 0.9, "SOL confidence should be high");
+            assert!(token_price.confidence > 0.9, "TRZ confidence should be high");
             assert_eq!(token_price.source, PriceSource::Jupiter);
         }
         Err(e) => {
-            println!("Warning: Jupiter SOL integration test failed (may be expected in some environments): {e:?}");
+            println!("Warning: Jupiter TRZ integration test failed (may be expected in some environments): {e:?}");
             if e.to_string().contains("Invalid") || e.to_string().contains("parse") {
-                panic!("Jupiter SOL integration test failed with code error: {e:?}");
+                panic!("Jupiter TRZ integration test failed with code error: {e:?}");
             }
         }
     }
@@ -96,7 +96,7 @@ async fn test_jupiter_integration_sol() {
 
 #[tokio::test]
 async fn test_jupiter_integration_unknown_token() {
-    const SOL_MINT: &str = "So11111111111111111111111111111111111111112";
+    const TRZ_MINT: &str = "tr11111111111111111111111111111111111111112";
     // Invalid token mint
     const UNKNOWN_TOKEN_MINT: &str = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1w";
 
@@ -104,7 +104,7 @@ async fn test_jupiter_integration_unknown_token() {
     let retrying_oracle = RetryingPriceOracle::new(3, Duration::from_millis(500), oracle);
 
     let result = retrying_oracle
-        .get_token_prices(&[SOL_MINT.to_string(), UNKNOWN_TOKEN_MINT.to_string()])
+        .get_token_prices(&[TRZ_MINT.to_string(), UNKNOWN_TOKEN_MINT.to_string()])
         .await;
 
     assert!(result.is_err(), "Expected error for unknown token");

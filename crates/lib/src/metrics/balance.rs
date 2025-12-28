@@ -2,10 +2,10 @@
 use crate::state::get_config;
 #[cfg(test)]
 use crate::tests::config_mock::mock_state::get_config;
-use crate::{cache::CacheUtil, config::Config, error::KoraError, state::get_signers_info};
+use crate::{cache::CacheUtil, config::Config, error::TrezoaKoraError, state::get_signers_info};
 use prometheus::{register_gauge_vec, GaugeVec};
-use solana_client::nonblocking::rpc_client::RpcClient;
-use solana_sdk::pubkey::Pubkey;
+use trezoa_client::nonblocking::rpc_client::RpcClient;
+use trezoa_sdk::pubkey::Pubkey;
 use std::{str::FromStr, sync::Arc};
 use tokio::{
     sync::OnceCell,
@@ -16,27 +16,27 @@ use tokio::{
 /// Global Prometheus gauge vector for tracking all signer balances
 static SIGNER_BALANCE_GAUGES: OnceCell<GaugeVec> = OnceCell::const_new();
 
-/// Balance tracker for monitoring signer SOL balance
+/// Balance tracker for monitoring signer TRZ balance
 pub struct BalanceTracker;
 
 impl BalanceTracker {
     /// Initialize the Prometheus gauge vector for multi-signer balance tracking
-    pub async fn init() -> Result<(), KoraError> {
+    pub async fn init() -> Result<(), TrezoaKoraError> {
         if !BalanceTracker::is_enabled() {
             return Ok(());
         }
 
         let gauge_vec = register_gauge_vec!(
             "signer_balance_lamports",
-            "Current SOL balance of each signer in lamports",
+            "Current TRZ balance of each signer in lamports",
             &["signer_name", "signer_pubkey"]
         )
         .map_err(|e| {
-            KoraError::InternalServerError(format!("Failed to register balance gauge vector: {e}"))
+            TrezoaKoraError::InternalServerError(format!("Failed to register balance gauge vector: {e}"))
         })?;
 
         SIGNER_BALANCE_GAUGES.set(gauge_vec).map_err(|_| {
-            KoraError::InternalServerError("Balance gauge vector already initialized".to_string())
+            TrezoaKoraError::InternalServerError("Balance gauge vector already initialized".to_string())
         })?;
 
         log::info!("Multi-signer balance tracking metrics initialized");
@@ -47,7 +47,7 @@ impl BalanceTracker {
     pub async fn track_all_signer_balances(
         config: &Config,
         rpc_client: &Arc<RpcClient>,
-    ) -> Result<(), KoraError> {
+    ) -> Result<(), TrezoaKoraError> {
         if !BalanceTracker::is_enabled() {
             return Ok(());
         }
@@ -61,7 +61,7 @@ impl BalanceTracker {
             // Batch fetch all signer balances
             for signer_info in &signers_info {
                 let pubkey = Pubkey::from_str(&signer_info.public_key).map_err(|e| {
-                    KoraError::InternalServerError(format!(
+                    TrezoaKoraError::InternalServerError(format!(
                         "Invalid signer pubkey {}: {e}",
                         signer_info.public_key
                     ))
@@ -166,8 +166,8 @@ mod tests {
             config_mock::{ConfigMockBuilder, MetricsConfigBuilder},
         },
     };
-    use solana_keychain::Signer;
-    use solana_sdk::signature::Keypair;
+    use trezoa_keychain::Signer;
+    use trezoa_sdk::signature::Keypair;
 
     fn setup_test_signer_pool() {
         let keypair1 = Keypair::new();
@@ -327,7 +327,7 @@ mod tests {
         let _ = BalanceTracker::init().await;
 
         let config = get_config().unwrap();
-        let account = create_mock_account_with_balance(1_000_000_000); // 1 SOL
+        let account = create_mock_account_with_balance(1_000_000_000); // 1 TRZ
         let mock_rpc = RpcMockBuilder::new().with_account_info(&account).build();
 
         let result = BalanceTracker::track_all_signer_balances(&config, &mock_rpc).await;

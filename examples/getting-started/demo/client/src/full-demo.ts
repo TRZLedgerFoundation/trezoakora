@@ -1,4 +1,4 @@
-import { KoraClient } from "@solana/kora";
+import { TrezoaKoraClient } from "@trezoa/trezoakora";
 import {
   createKeyPairSignerFromBytes,
   getBase58Encoder,
@@ -13,19 +13,19 @@ import {
   Instruction,
   KeyPairSigner,
   Rpc,
-  SolanaRpcApi,
-  createSolanaRpc,
-  createSolanaRpcSubscriptions,
+  TrezoaRpcApi,
+  createTrezoaRpc,
+  createTrezoaRpcSubscriptions,
   pipe,
   createTransactionMessage,
   setTransactionMessageFeePayerSigner,
   setTransactionMessageLifetimeUsingBlockhash,
   MicroLamports,
   appendTransactionMessageInstructions,
-} from "@solana/kit";
-import { getAddMemoInstruction } from "@solana-program/memo";
-import { createRecentSignatureConfirmationPromiseFactory } from "@solana/transaction-confirmation";
-import { updateOrAppendSetComputeUnitLimitInstruction, updateOrAppendSetComputeUnitPriceInstruction } from "@solana-program/compute-budget";
+} from "@trezoa/kit";
+import { getAddMemoInstruction } from "@trezoa-program/memo";
+import { createRecentSignatureConfirmationPromiseFactory } from "@trezoa/transaction-confirmation";
+import { updateOrAppendSetComputeUnitLimitInstruction, updateOrAppendSetComputeUnitPriceInstruction } from "@trezoa-program/compute-budget";
 import dotenv from "dotenv";
 import path from "path";
 
@@ -35,9 +35,9 @@ const CONFIG = {
   computeUnitLimit: 200_000,
   computeUnitPrice: 1_000_000n as MicroLamports,
   transactionVersion: 0,
-  solanaRpcUrl: "http://127.0.0.1:8899",
-  solanaWsUrl: "ws://127.0.0.1:8900",
-  koraRpcUrl: "http://localhost:8080/",
+  trezoaRpcUrl: "http://127.0.0.1:8899",
+  trezoaWsUrl: "ws://127.0.0.1:8900",
+  trezoakoraRpcUrl: "http://localhost:8080/",
 };
 
 async function getEnvKeyPair(envKey: string) {
@@ -51,17 +51,17 @@ async function getEnvKeyPair(envKey: string) {
 
 async function initializeClients() {
   console.log("\n[1/6] Initializing clients");
-  console.log("  → Kora RPC:", CONFIG.koraRpcUrl);
-  console.log("  → Solana RPC:", CONFIG.solanaRpcUrl);
+  console.log("  → TrezoaKora RPC:", CONFIG.trezoakoraRpcUrl);
+  console.log("  → Trezoa RPC:", CONFIG.trezoaRpcUrl);
 
-  const client = new KoraClient({
-    rpcUrl: CONFIG.koraRpcUrl,
-    // apiKey: process.env.KORA_API_KEY, // Uncomment if you have authentication enabled in your kora.toml
-    // hmacSecret: process.env.KORA_HMAC_SECRET, // Uncomment if you have authentication enabled in your kora.toml
+  const client = new TrezoaKoraClient({
+    rpcUrl: CONFIG.trezoakoraRpcUrl,
+    // apiKey: process.env.TREZOAKORA_API_KEY, // Uncomment if you have authentication enabled in your trezoakora.toml
+    // hmacSecret: process.env.TREZOAKORA_HMAC_SECRET, // Uncomment if you have authentication enabled in your trezoakora.toml
   });
 
-  const rpc = createSolanaRpc(CONFIG.solanaRpcUrl);
-  const rpcSubscriptions = createSolanaRpcSubscriptions(CONFIG.solanaWsUrl);
+  const rpc = createTrezoaRpc(CONFIG.trezoaRpcUrl);
+  const rpcSubscriptions = createTrezoaRpcSubscriptions(CONFIG.trezoaWsUrl);
 
   const confirmTransaction = createRecentSignatureConfirmationPromiseFactory({
     rpc,
@@ -71,7 +71,7 @@ async function initializeClients() {
   return { client, rpc, confirmTransaction };
 }
 
-async function setupKeys(client: KoraClient) {
+async function setupKeys(client: TrezoaKoraClient) {
   console.log("\n[2/6] Setting up keypairs");
 
   const testSenderKeypair = await getEnvKeyPair("TEST_SENDER_KEYPAIR");
@@ -80,13 +80,13 @@ async function setupKeys(client: KoraClient) {
 
   console.log("  → Sender:", testSenderKeypair.address);
   console.log("  → Destination:", destinationKeypair.address);
-  console.log("  → Kora signer address:", signer_address);
+  console.log("  → TrezoaKora signer address:", signer_address);
 
   return { testSenderKeypair, destinationKeypair, signer_address };
 }
 
 async function createInstructions(
-  client: KoraClient,
+  client: TrezoaKoraClient,
   testSenderKeypair: KeyPairSigner,
   destinationKeypair: KeyPairSigner
 ) {
@@ -94,7 +94,7 @@ async function createInstructions(
 
   const paymentToken = await client
     .getConfig()
-    .then((config) => config.validation_config.allowed_spl_paid_tokens[0]);
+    .then((config) => config.validation_config.allowed_tpl_paid_tokens[0]);
   console.log("  → Payment token:", paymentToken);
 
   // Create token transfer (will initialize ATA if needed)
@@ -106,24 +106,24 @@ async function createInstructions(
   });
   console.log("  ✓ Token transfer instruction created");
 
-  // Create SOL transfer
-  const transferSol = await client.transferTransaction({
-    amount: 10_000_000, // 0.01 SOL (9 decimals)
-    token: "11111111111111111111111111111111", // SOL mint address
+  // Create TRZ transfer
+  const transferTrz = await client.transferTransaction({
+    amount: 10_000_000, // 0.01 TRZ (9 decimals)
+    token: "11111111111111111111111111111111", // TRZ mint address
     source: testSenderKeypair.address,
     destination: destinationKeypair.address,
   });
-  console.log("  ✓ SOL transfer instruction created");
+  console.log("  ✓ TRZ transfer instruction created");
 
   // Add memo instruction
   const memoInstruction = getAddMemoInstruction({
-    memo: "Hello, Kora!",
+    memo: "Hello, TrezoaKora!",
   });
   console.log("  ✓ Memo instruction created");
 
   const instructions = [
     ...transferTokens.instructions,
-    ...transferSol.instructions,
+    ...transferTrz.instructions,
     memoInstruction,
   ];
 
@@ -132,12 +132,12 @@ async function createInstructions(
 }
 
 async function getPaymentInstruction(
-  client: KoraClient,
+  client: TrezoaKoraClient,
   instructions: Instruction[],
   testSenderKeypair: KeyPairSigner,
   paymentToken: string
 ): Promise<{ paymentInstruction: Instruction }> {
-  console.log("\n[4/6] Estimating Kora fee and assembling payment instruction");
+  console.log("\n[4/6] Estimating TrezoaKora fee and assembling payment instruction");
 
   const { signer_address } = await client.getPayerSigner();
   const noopSigner = createNoopSigner(address(signer_address));
@@ -167,19 +167,19 @@ async function getPaymentInstruction(
   );
   console.log("  ✓ Estimate transaction built");
 
-  // Get payment instruction from Kora
+  // Get payment instruction from TrezoaKora
   const paymentInstruction = await client.getPaymentInstruction({
     transaction: base64EncodedWireTransaction,
     fee_token: paymentToken,
     source_wallet: testSenderKeypair.address,
   });
-  console.log("  ✓ Payment instruction received from Kora");
+  console.log("  ✓ Payment instruction received from TrezoaKora");
 
   return { paymentInstruction: paymentInstruction.payment_instruction };
 }
 
 async function getFinalTransaction(
-  client: KoraClient,
+  client: TrezoaKoraClient,
   paymentInstruction: Instruction,
   testSenderKeypair: KeyPairSigner,
   instructions: Instruction[],
@@ -221,8 +221,8 @@ async function getFinalTransaction(
 }
 
 async function submitTransaction(
-  client: KoraClient,
-  rpc: Rpc<SolanaRpcApi>,
+  client: TrezoaKoraClient,
+  rpc: Rpc<TrezoaRpcApi>,
   confirmTransaction: ReturnType<
     typeof createRecentSignatureConfirmationPromiseFactory
   >,
@@ -230,17 +230,17 @@ async function submitTransaction(
   signer_address: string
 ) {
   console.log(
-    "\n[6/6] Signing transaction with Kora and sending to Solana cluster"
+    "\n[6/6] Signing transaction with TrezoaKora and sending to Trezoa cluster"
   );
 
-  // Get Kora's signature
+  // Get TrezoaKora's signature
   const { signed_transaction } = await client.signTransaction({
     transaction: signedTransaction,
     signer_key: signer_address,
   });
-  console.log("  ✓ Transaction co-signed by Kora");
+  console.log("  ✓ Transaction co-signed by TrezoaKora");
 
-  // Submit to Solana network
+  // Submit to Trezoa network
   const signature = await rpc
     .sendTransaction(signed_transaction as Base64EncodedWireTransaction, {
       encoding: "base64",
@@ -256,7 +256,7 @@ async function submitTransaction(
   });
 
   console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  console.log("SUCCESS: Transaction confirmed on Solana");
+  console.log("SUCCESS: Transaction confirmed on Trezoa");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
   console.log("\nTransaction signature:");
   console.log(signature);
@@ -266,7 +266,7 @@ async function submitTransaction(
 
 async function main() {
   console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  console.log("KORA GASLESS TRANSACTION DEMO");
+  console.log("TREZOAKORA GASLESS TRANSACTION DEMO");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
   try {
@@ -284,7 +284,7 @@ async function main() {
       destinationKeypair
     );
 
-    // Step 4: Get payment instruction from Kora
+    // Step 4: Get payment instruction from TrezoaKora
     const { paymentInstruction } = await getPaymentInstruction(
       client,
       instructions,
@@ -301,7 +301,7 @@ async function main() {
       signer_address
     );
 
-    // Step 6: Get Kora's signature and submit to Solana cluster
+    // Step 6: Get TrezoaKora's signature and submit to Trezoa cluster
     await submitTransaction(
       client,
       rpc,

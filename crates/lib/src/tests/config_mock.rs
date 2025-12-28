@@ -1,8 +1,8 @@
 use crate::{
     config::{
         AuthConfig, CacheConfig, Config, EnabledMethods, FeePayerBalanceMetricsConfig,
-        FeePayerPolicy, KoraConfig, MetricsConfig, NonceInstructionPolicy, SplTokenConfig,
-        SplTokenInstructionPolicy, SystemInstructionPolicy, Token2022Config,
+        FeePayerPolicy, KoraConfig, MetricsConfig, NonceInstructionPolicy, TplTokenConfig,
+        TplTokenInstructionPolicy, SystemInstructionPolicy, Token2022Config,
         Token2022InstructionPolicy, UsageLimitConfig, ValidationConfig,
     },
     constant::DEFAULT_MAX_REQUEST_BODY_SIZE,
@@ -13,7 +13,7 @@ use crate::{
         SignerPoolSettings, SignerTypeConfig, TurnkeySignerConfig, VaultSignerConfig,
     },
 };
-use solana_sdk::pubkey::Pubkey;
+use trezoa_sdk::pubkey::Pubkey;
 
 /// Mock state management for test isolation
 ///
@@ -43,11 +43,11 @@ pub mod mock_state {
         lock
     }
 
-    pub fn get_config() -> Result<Config, crate::KoraError> {
+    pub fn get_config() -> Result<Config, crate::TrezoaKoraError> {
         let mock_config = MOCK_CONFIG.read().unwrap();
         match &*mock_config {
             Some(config) => Ok(config.clone()),
-            None => Err(crate::KoraError::InternalServerError(
+            None => Err(crate::TrezoaKoraError::InternalServerError(
                 "Mock config not initialized".to_string(),
             )),
         }
@@ -83,7 +83,7 @@ impl ConfigMockBuilder {
                     allowed_tokens: vec![
                         "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".parse().unwrap(), // USDC devnet
                     ],
-                    allowed_spl_paid_tokens: SplTokenConfig::Allowlist(vec![
+                    allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![
                         "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU".parse().unwrap(), // USDC devnet
                     ]),
                     disallowed_accounts: vec![],
@@ -92,7 +92,7 @@ impl ConfigMockBuilder {
                     price: PriceConfig::default(),
                     token_2022: Token2022Config::default(),
                 },
-                kora: KoraConfig {
+                trezoakora: KoraConfig {
                     rate_limit: 100,
                     max_request_body_size: DEFAULT_MAX_REQUEST_BODY_SIZE,
                     enabled_methods: EnabledMethods::default(),
@@ -120,8 +120,8 @@ impl ConfigMockBuilder {
         self
     }
 
-    pub fn with_kora(mut self, kora: KoraConfig) -> Self {
-        self.config.kora = kora;
+    pub fn with_trezoakora(mut self, trezoakora: KoraConfig) -> Self {
+        self.config.trezoakora = trezoakora;
         self
     }
 
@@ -131,17 +131,17 @@ impl ConfigMockBuilder {
     }
 
     pub fn with_cache_enabled(mut self, enabled: bool) -> Self {
-        self.config.kora.cache.enabled = enabled;
+        self.config.trezoakora.cache.enabled = enabled;
         self
     }
 
     pub fn with_cache_url(mut self, url: Option<String>) -> Self {
-        self.config.kora.cache.url = url;
+        self.config.trezoakora.cache.url = url;
         self
     }
 
     pub fn with_rate_limit(mut self, rate_limit: u64) -> Self {
-        self.config.kora.rate_limit = rate_limit;
+        self.config.trezoakora.rate_limit = rate_limit;
         self
     }
 
@@ -160,23 +160,23 @@ impl ConfigMockBuilder {
         self
     }
 
-    pub fn with_allowed_spl_paid_tokens(mut self, spl_payment_config: SplTokenConfig) -> Self {
-        self.config.validation.allowed_spl_paid_tokens = spl_payment_config;
+    pub fn with_allowed_tpl_paid_tokens(mut self, tpl_payment_config: TplTokenConfig) -> Self {
+        self.config.validation.allowed_tpl_paid_tokens = tpl_payment_config;
         self
     }
 
     pub fn with_payment_address(mut self, payment_address: Option<String>) -> Self {
-        self.config.kora.payment_address = payment_address;
+        self.config.trezoakora.payment_address = payment_address;
         self
     }
 
     pub fn with_api_key_auth(mut self, api_key: String) -> Self {
-        self.config.kora.auth.api_key = Some(api_key);
+        self.config.trezoakora.auth.api_key = Some(api_key);
         self
     }
 
     pub fn with_hmac_auth(mut self, hmac_secret: String) -> Self {
-        self.config.kora.auth.hmac_secret = Some(hmac_secret);
+        self.config.trezoakora.auth.hmac_secret = Some(hmac_secret);
         self
     }
 
@@ -196,22 +196,22 @@ impl ConfigMockBuilder {
     }
 
     pub fn with_usage_limit_enabled(mut self, enabled: bool) -> Self {
-        self.config.kora.usage_limit.enabled = enabled;
+        self.config.trezoakora.usage_limit.enabled = enabled;
         self
     }
 
     pub fn with_usage_limit_cache_url(mut self, cache_url: Option<String>) -> Self {
-        self.config.kora.usage_limit.cache_url = cache_url;
+        self.config.trezoakora.usage_limit.cache_url = cache_url;
         self
     }
 
     pub fn with_usage_limit_fallback(mut self, fallback_if_unavailable: bool) -> Self {
-        self.config.kora.usage_limit.fallback_if_unavailable = fallback_if_unavailable;
+        self.config.trezoakora.usage_limit.fallback_if_unavailable = fallback_if_unavailable;
         self
     }
 
     pub fn with_usage_limit_max_transactions(mut self, max_transactions: u64) -> Self {
-        self.config.kora.usage_limit.max_transactions = max_transactions;
+        self.config.trezoakora.usage_limit.max_transactions = max_transactions;
         self
     }
 
@@ -257,7 +257,7 @@ impl ValidationConfigBuilder {
                 max_signatures: 10,
                 allowed_programs: vec![],
                 allowed_tokens: vec![],
-                allowed_spl_paid_tokens: SplTokenConfig::Allowlist(vec![]),
+                allowed_tpl_paid_tokens: TplTokenConfig::Allowlist(vec![]),
                 disallowed_accounts: vec![],
                 price_source: PriceSource::Mock,
                 fee_payer_policy: FeePayerPolicy::default(),
@@ -286,8 +286,8 @@ impl ValidationConfigBuilder {
         self
     }
 
-    pub fn with_allowed_spl_paid_tokens(mut self, spl_payment_config: SplTokenConfig) -> Self {
-        self.config.allowed_spl_paid_tokens = spl_payment_config;
+    pub fn with_allowed_tpl_paid_tokens(mut self, tpl_payment_config: TplTokenConfig) -> Self {
+        self.config.allowed_tpl_paid_tokens = tpl_payment_config;
         self
     }
 
@@ -473,13 +473,13 @@ impl FeePayerPolicyBuilder {
         self.config
     }
 
-    pub fn with_sol_transfers(mut self, allow: bool) -> Self {
+    pub fn with_trz_transfers(mut self, allow: bool) -> Self {
         self.config.system.allow_transfer = allow;
         self
     }
 
-    pub fn with_spl_transfers(mut self, allow: bool) -> Self {
-        self.config.spl_token.allow_transfer = allow;
+    pub fn with_tpl_transfers(mut self, allow: bool) -> Self {
+        self.config.tpl_token.allow_transfer = allow;
         self
     }
 
@@ -523,50 +523,50 @@ impl FeePayerPolicyBuilder {
         self
     }
 
-    pub fn with_spl_burn(mut self, allow: bool) -> Self {
-        self.config.spl_token.allow_burn = allow;
+    pub fn with_tpl_burn(mut self, allow: bool) -> Self {
+        self.config.tpl_token.allow_burn = allow;
         self.config.token_2022.allow_burn = allow;
         self
     }
 
-    pub fn with_spl_close_account(mut self, allow: bool) -> Self {
-        self.config.spl_token.allow_close_account = allow;
+    pub fn with_tpl_close_account(mut self, allow: bool) -> Self {
+        self.config.tpl_token.allow_close_account = allow;
         self.config.token_2022.allow_close_account = allow;
         self
     }
 
-    pub fn with_spl_approve(mut self, allow: bool) -> Self {
-        self.config.spl_token.allow_approve = allow;
+    pub fn with_tpl_approve(mut self, allow: bool) -> Self {
+        self.config.tpl_token.allow_approve = allow;
         self.config.token_2022.allow_approve = allow;
         self
     }
 
-    pub fn with_spl_revoke(mut self, allow: bool) -> Self {
-        self.config.spl_token.allow_revoke = allow;
+    pub fn with_tpl_revoke(mut self, allow: bool) -> Self {
+        self.config.tpl_token.allow_revoke = allow;
         self.config.token_2022.allow_revoke = allow;
         self
     }
 
-    pub fn with_spl_set_authority(mut self, allow: bool) -> Self {
-        self.config.spl_token.allow_set_authority = allow;
+    pub fn with_tpl_set_authority(mut self, allow: bool) -> Self {
+        self.config.tpl_token.allow_set_authority = allow;
         self.config.token_2022.allow_set_authority = allow;
         self
     }
 
-    pub fn with_spl_mint_to(mut self, allow: bool) -> Self {
-        self.config.spl_token.allow_mint_to = allow;
+    pub fn with_tpl_mint_to(mut self, allow: bool) -> Self {
+        self.config.tpl_token.allow_mint_to = allow;
         self.config.token_2022.allow_mint_to = allow;
         self
     }
 
-    pub fn with_spl_freeze_account(mut self, allow: bool) -> Self {
-        self.config.spl_token.allow_freeze_account = allow;
+    pub fn with_tpl_freeze_account(mut self, allow: bool) -> Self {
+        self.config.tpl_token.allow_freeze_account = allow;
         self.config.token_2022.allow_freeze_account = allow;
         self
     }
 
-    pub fn with_spl_thaw_account(mut self, allow: bool) -> Self {
-        self.config.spl_token.allow_thaw_account = allow;
+    pub fn with_tpl_thaw_account(mut self, allow: bool) -> Self {
+        self.config.tpl_token.allow_thaw_account = allow;
         self.config.token_2022.allow_thaw_account = allow;
         self
     }
@@ -586,7 +586,7 @@ impl FeePayerPolicyBuilder {
                         allow_authorize: false,
                     },
                 },
-                spl_token: SplTokenInstructionPolicy {
+                tpl_token: TplTokenInstructionPolicy {
                     allow_transfer: false,
                     allow_burn: false,
                     allow_close_account: false,

@@ -1,29 +1,23 @@
-<div align="center">
-  <br />
-  <img src="./kora.svg" alt="Kora" width="140" />
-  <br />
-  <br />
-  
-  <h3>Kora: Solana Signing Infrastructure</h3>
+<h3>TrezoaKora: Trezoa Signing Infrastructure</h3>
     
   <br />
   
-[![Rust Tests](https://github.com/solana-foundation/kora/actions/workflows/rust.yml/badge.svg)](https://github.com/solana-foundation/kora/actions/workflows/rust.yml)
-![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/solana-foundation/kora/main/.github/badges/coverage.json)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/solana-foundation/kora)
-[![Crates.io](https://img.shields.io/crates/v/kora-cli.svg)](https://crates.io/crates/kora-cli)
-[![npm](https://img.shields.io/npm/v/@solana/kora)](https://www.npmjs.com/package/@solana/kora)
+[![Rust Tests](https://github.com/trzledgerfoundation/trezoakora/actions/workflows/rust.yml/badge.svg)](https://github.com/trzledgerfoundation/trezoakora/actions/workflows/rust.yml)
+![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/trzledgerfoundation/trezoakora/main/.github/badges/coverage.json)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/trzledgerfoundation/trezoakora)
+[![Crates.io](https://img.shields.io/crates/v/trezoakora-cli.svg)](https://crates.io/crates/trezoakora-cli)
+[![npm](https://img.shields.io/npm/v/@trezoa/trezoakora)](https://www.npmjs.com/package/@trezoa/trezoakora)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
   <br />
   <br />
 </div>
 
-**Kora is your Solana signing infrastructure.** Enable gasless transactions where users pay fees in any token—USDC, BONK, or your app's native token—or handle any transaction signing that requires a trusted signer.
+**TrezoaKora is your Trezoa signing infrastructure.** Enable gasless transactions where users pay fees in any token—USDC, BONK, or your app's native token—or handle any transaction signing that requires a trusted signer.
 
-### Why Kora?
+### Why TrezoaKora?
 
-- **Better UX**: Users never need SOL  
+- **Better UX**: Users never need TRZ  
 - **Revenue Control**: Collect fees in USDC, your token, or anything else  
 - **Production Ready**: Secure validation, rate limiting, monitoring built-in  
 - **Easy Integration**: JSON-RPC API + TypeScript SDK  
@@ -33,7 +27,7 @@
 
 - **Language**: Rust with TypeScript SDK
 - **Protocol**: JSON-RPC 2.0  
-- **Signers**: Solana Private Key, Turnkey, Privy
+- **Signers**: Trezoa Private Key, Turnkey, Privy
 - **Authentication**: API Key, HMAC, or none
 - **Deployment**: Flexible deployment options (Docker, Railway, etc.) 
 
@@ -50,39 +44,39 @@
 
 ## Quick Start
 
-Install Kora: 
+Install TrezoaKora: 
 
 ```bash
-cargo install kora-cli
+cargo install TrezoaKora-cli
 ```
 
 Basic usage:
 
 ```bash
-kora rpc [OPTIONS] # --help for full list of options
+trezoakora rpc [OPTIONS] # --help for full list of options
 ```
 
-**[→ Full Documentation](https://launch.solana.com/docs/kora/getting-started)** - Learn how Kora works
+**[→ Full Documentation](https://launch.trezoa.com/docs/trezoakora/getting-started)** - Learn how TrezoaKora works
 
-**[→ Quick Start Guide](https://launch.solana.com/docs/kora/getting-started/quick-start)** - Get Kora running locally minutes
+**[→ Quick Start Guide](https://launch.trezoa.com/docs/trezoakora/getting-started/quick-start)** - Get TrezoaKora running locally minutes
 
-**[→ Node Operator Guide](https://launch.solana.com/docs/kora/operators)** - Run a paymaster
+**[→ Node Operator Guide](https://launch.trezoa.com/docs/trezoakora/operators)** - Run a paymaster
 
 
 ## TypeScript SDK
 
-Kora provides a simple JSON-RPC interface:
+TrezoaKora provides a simple JSON-RPC interface:
 
 ```typescript
-// Initialize Kora client
-import { KoraClient } from '@solana/kora';
-const kora = new KoraClient({ rpcUrl: 'http://localhost:8080' });
+// Initialize TrezoaKora client
+import { TrezoaKoraClient } from '@trezoa/trezoakora';
+const client = new TrezoaKoraClient({ rpcUrl: 'http://localhost:8080' });
 
 // Sign transaction as paymaster
-const signed = await kora.signTransaction({ transaction });
+const signed = await TrezoaKora.signTransaction({ transaction });
 ```
 
-**[→ API Reference](https://launch.solana.com/docs/kora/json-rpc-api)**
+**[→ API Reference](https://launch.trezoa.com/docs/trezoakora/json-rpc-api)**
 
 ## Local Development
 
@@ -90,14 +84,14 @@ const signed = await kora.signTransaction({ transaction });
 
 - [Just](https://github.com/casey/just) (command runner)
 - Rust 1.86+
-- Solana CLI 2.2+
+- Trezoa CLI 2.2+
 - Node.js 20+ and pnpm (for SDK)
 
 ### Installation
 
 ```bash
-git clone https://github.com/solana-foundation/kora.git
-cd kora
+git clone https://github.com/trzledgerfoundation/trezoakora.git
+cd TrezoaKora
 just install
 ```
 
@@ -112,7 +106,7 @@ just build
 Basic usage:
 
 ```bash
-kora rpc [OPTIONS]
+TrezoaKora rpc [OPTIONS]
 ```
 
 Or for running with a test configuration, run:
@@ -132,10 +126,10 @@ just test-all
 ## Repository Structure
 
 ```
-kora/
+TrezoaKora/
 ├── crates/                   # Rust workspace
-│   ├── kora-lib/             # Core library with RPC server (signers, validation, transactions)
-│   └── kora-cli/             # Command-line interface and RPC server
+│   ├── trezoakora-lib/             # Core library with RPC server (signers, validation, transactions)
+│   └── trezoakora-cli/             # Command-line interface and RPC server
 ├── sdks/                     # Client SDKs
 │   └── ts/                   # TypeScript SDK
 ├── tests/                    # Integration tests
@@ -143,30 +137,30 @@ kora/
 │   ├── getting-started/      # Quick start guides
 │   └── operators/            # Node operator documentation
 ├── justfile                  # Build and development commands
-└── kora.toml                 # Example configuration
+└── trezoakora.toml                 # Example configuration
 ```
 
 ## Security Audit
 
-Kora has been audited by [Runtime Verification](https://runtimeverification.com/). View the [audit report](audits/20251119_runtime-verification.pdf). (Audited up to commit [8c592591](https://github.com/solana-foundation/kora/commit/8c592591debd08424a65cc471ce0403578fd5d5d))
+TrezoaKora has been audited by [Runtime Verification](https://runtimeverification.com/). View the [audit report](audits/20251119_runtime-verification.pdf). (Audited up to commit [8c592591](https://github.com/trezledgerfoundation/trezoakora/commit/8c592591debd08424a65cc471ce0403578fd5d5d))
 
-**Note:** Kora uses the `solana-keychain` package which has not been audited. Use at your own risk.
+**Note:** TrezoaKora uses the `trezoa-keychain` package which has not been audited. Use at your own risk.
 
 
 
 ## Community & Support
 
-- **Questions?** Ask on [Solana Stack Exchange](https://solana.stackexchange.com/) (use the `kora` tag)
-- **Issues?** Report on [GitHub Issues](https://github.com/solana-foundation/kora/issues)
+- **Questions?** Ask on [Trezoa Stack Exchange](https://trezoa.stackexchange.com/) (use the `trezoakora` tag)
+- **Issues?** Report on [GitHub Issues](https://github.com/trzledgerfoundation/trezoakora/issues)
 
 ## Other Resources
 
-- [Kora CLI Crates.io](https://crates.io/crates/kora-cli) - Rust crate for running a Kora node
-- [Kora Lib Crates.io](https://crates.io/crates/kora-lib) - Rust crate for the Kora library
-- [@solana/kora](https://www.npmjs.com/package/@solana/kora) - TypeScript SDK for Kora
+- [TrezoaKora CLI Crates.io](https://crates.io/crates/trezoakora-cli) - Rust crate for running a TrezoaKora node
+- [TrezoaKora Lib Crates.io](https://crates.io/crates/trezoakora-lib) - Rust crate for the TrezoaKora library
+- [@trezoa/trezoakora](https://www.npmjs.com/package/@trezoa/trezoakora) - TypeScript SDK for TrezoaKora
 
 ---
 
-Built and maintained by the [Solana Foundation](https://solana.org).
+Built and maintained by the [TRZ Ledger Foundation](https://trzledger.org).
 
 Licensed under MIT. See [LICENSE](LICENSE) for details.

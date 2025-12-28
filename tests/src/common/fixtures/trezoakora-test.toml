@@ -1,16 +1,16 @@
-# This file is used for free pricing tests (no payment validation)
-[kora]
+# This file is used for integration testing
+[trezoakora]
 rate_limit = 100
 
-[kora.auth]
+[trezoakora.auth]
 
 # Cache configuration - disabled for testing
-[kora.cache]
+[trezoakora.cache]
 enabled = false
 default_ttl = 300
 account_ttl = 60
 
-[kora.enabled_methods]
+[trezoakora.enabled_methods]
 liveness = false                 # Just to be able to test the false flag
 estimate_transaction_fee = true
 get_supported_tokens = true
@@ -38,7 +38,7 @@ allowed_tokens = [
     "95kSi2m5MDiKAs8bucgzengMTP5M5FiQnJps9duYcmfG", # Test USDC mint 2022 for local testing
     "AtCGtK6HPgdpk2c2LcpZimbH8dtHXYmJdoKsawWNCh2m", # Test Interest Bearing mint 2022 for local testing
 ]
-allowed_spl_paid_tokens = [
+allowed_tpl_paid_tokens = [
     "9BgeTKqmFsPVnfYscfM6NvsgmZxei7XfdciShQ6D3bxJ", # Test USDC mint for local testing
     "95kSi2m5MDiKAs8bucgzengMTP5M5FiQnJps9duYcmfG", # Test USDC mint 2022 for local testing
     "AtCGtK6HPgdpk2c2LcpZimbH8dtHXYmJdoKsawWNCh2m", # Test Interest Bearing mint 2022 for local testing
@@ -49,7 +49,8 @@ disallowed_accounts = [
 ]
 
 [validation.price]
-type = "free"
+type = "margin"
+margin = 0.0
 
 # Block specific extensions for testing (only affects extension test accounts)
 [validation.token_2022]
@@ -74,7 +75,7 @@ allow_advance = true
 allow_authorize = true
 allow_withdraw = true
 
-[validation.fee_payer_policy.spl_token]
+[validation.fee_payer_policy.tpl_token]
 allow_transfer = true
 allow_burn = true
 allow_close_account = true
@@ -102,7 +103,7 @@ allow_initialize_multisig = true
 allow_freeze_account = true
 allow_thaw_account = true
 
-[kora.usage_limit]
+[trezoakora.usage_limit]
 enabled = false
 cache_url = "redis://redis:6379"
 max_transactions = 2

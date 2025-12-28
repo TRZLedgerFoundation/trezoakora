@@ -3,7 +3,7 @@ import {
     getBase64Codec,
     getCompiledTransactionMessageCodec,
     Instruction,
-} from '@solana/kit';
+} from '@trezoa/kit';
 
 /**
  * Deserializes a base64-encoded transaction message.

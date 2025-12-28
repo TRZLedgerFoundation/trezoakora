@@ -1,6 +1,6 @@
 // External Integration Tests
 //
-// CONFIG: Uses tests/src/common/fixtures/kora-test.toml (no auth enabled)
+// CONFIG: Uses tests/src/common/fixtures/trezoakora-test.toml (no auth enabled)
 // TESTS: External system integrations and dependencies
 //        - Oracle price feed integration
 //        - Address lookup table resolution

@@ -1,15 +1,15 @@
-[kora]
+[trezoakora]
 rate_limit = 100
 # Optional: Payment address to receive payment tokens (defaults to signer address)
 # payment_address = "YourPaymentAddressPubkey11111111111111111111"
 
-[kora.auth]
+[trezoakora.auth]
 # Optional: API key for simple authentication
 # api_key = "your-api-key-here"
 # Optional: HMAC secret for signed requests
 # hmac_secret = "your-hmac-secret-here"
 
-[kora.cache]
+[trezoakora.cache]
 enabled = false
 default_ttl = 300
 account_ttl = 60
@@ -27,10 +27,10 @@ allowed_programs = [
 ]
 allowed_tokens = [
     "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", # mainnet USDC
-    "So11111111111111111111111111111111111111112",  # SOL
+    "So11111111111111111111111111111111111111112",  # TRZ
     "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU", # devnet USDC
 ]
-allowed_spl_paid_tokens = [
+allowed_tpl_paid_tokens = [
     "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", # mainnet USDC
     "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU", # devnet USDC
 ]
@@ -52,11 +52,11 @@ allow_advance = true            # Allow fee payer to advance nonce accounts
 allow_authorize = true          # Allow fee payer to authorize nonce accounts
 allow_withdraw = true           # Allow fee payer to withdraw from nonce accounts
 
-[validation.fee_payer_policy.spl_token]
-allow_transfer = true           # Allow fee payer to be source in SPL token transfers
-allow_burn = true               # Allow fee payer to burn SPL tokens from their accounts
-allow_close_account = true      # Allow fee payer to close their SPL token accounts
-allow_approve = true            # Allow fee payer to approve SPL tokens from their accounts
+[validation.fee_payer_policy.tpl_token]
+allow_transfer = true           # Allow fee payer to be source in TPL token transfers
+allow_burn = true               # Allow fee payer to burn TPL tokens from their accounts
+allow_close_account = true      # Allow fee payer to close their TPL token accounts
+allow_approve = true            # Allow fee payer to approve TPL tokens from their accounts
 allow_revoke = true
 allow_set_authority = true
 allow_mint_to = true
@@ -80,7 +80,7 @@ allow_initialize_multisig = true
 allow_freeze_account = true
 allow_thaw_account = true
 
-[kora.enabled_methods]
+[trezoakora.enabled_methods]
 liveness = false
 estimate_transaction_fee = true
 get_supported_tokens = true
@@ -128,7 +128,7 @@ scrape_interval = 60
 enabled = true
 expiry_seconds = 30
 
-[kora.usage_limit]
+[trezoakora.usage_limit]
 enabled = false
 cache_url = "redis://redis:6379"
 max_transactions = 2

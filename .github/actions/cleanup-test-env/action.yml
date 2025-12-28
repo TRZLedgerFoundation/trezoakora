@@ -9,7 +9,7 @@ runs:
       if: always()
       run: |
         echo "🧹 Safety cleanup of any remaining processes..."
-        pkill -f "solana-test-validator" 2>/dev/null || true
-        pkill -f "kora" 2>/dev/null || true
+        pkill -f "trezoa-test-validator" 2>/dev/null || true
+        pkill -f "trezoakora" 2>/dev/null || true
         sleep 1
         echo "✅ Cleanup completed"

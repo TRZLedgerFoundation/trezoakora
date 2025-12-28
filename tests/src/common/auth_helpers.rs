@@ -1,7 +1,7 @@
 #![cfg(test)]
 
 use hmac::{Hmac, Mac};
-use kora_lib::constant::{X_HMAC_SIGNATURE, X_TIMESTAMP};
+use trezoakora_lib::constant::{X_HMAC_SIGNATURE, X_TIMESTAMP};
 use once_cell::sync::Lazy;
 use serde_json::{json, Value};
 use sha2::Sha256;

@@ -1,11 +1,11 @@
-## Getting Started with Kora
+## Getting Started with TrezoaKora
 
-This sample code will help you get started with Kora and understand the core concepts and features.
+This sample code will help you get started with TrezoaKora and understand the core concepts and features.
 
 ### Quick Start
 
-The quickest way to get started with Kora is to use the [Quick Start Guide](https://launch.solana.com/docs/kora/getting-started/quick-start).
+The quickest way to get started with TrezoaKora is to use the [Quick Start Guide](https://launch.trezoa.com/docs/trezoakora/getting-started/quick-start).
 
 ## Full Demo
 
-A full demo of Kora is available [here](https://launch.solana.com/docs/kora/getting-started/full-demo).
+A full demo of TrezoaKora is available [here](https://launch.trezoa.com/docs/trezoakora/getting-started/full-demo).

@@ -4,19 +4,19 @@ use async_trait::async_trait;
 use deadpool_redis::{Connection, Pool};
 use redis::AsyncCommands;
 
-use crate::{error::KoraError, sanitize_error};
+use crate::{error::TrezoaKoraError, sanitize_error};
 
 /// Trait for storing and retrieving usage counts
 #[async_trait]
 pub trait UsageStore: Send + Sync {
     /// Increment usage count for a key and return the new value
-    async fn increment(&self, key: &str) -> Result<u32, KoraError>;
+    async fn increment(&self, key: &str) -> Result<u32, TrezoaKoraError>;
 
     /// Get current usage count for a key (returns 0 if not found)
-    async fn get(&self, key: &str) -> Result<u32, KoraError>;
+    async fn get(&self, key: &str) -> Result<u32, TrezoaKoraError>;
 
     /// Clear all usage data (mainly for testing)
-    async fn clear(&self) -> Result<(), KoraError>;
+    async fn clear(&self) -> Result<(), TrezoaKoraError>;
 }
 
 /// Redis-based implementation for production
@@ -29,9 +29,9 @@ impl RedisUsageStore {
         Self { pool }
     }
 
-    async fn get_connection(&self) -> Result<Connection, KoraError> {
+    async fn get_connection(&self) -> Result<Connection, TrezoaKoraError> {
         self.pool.get().await.map_err(|e| {
-            KoraError::InternalServerError(sanitize_error!(format!(
+            TrezoaKoraError::InternalServerError(sanitize_error!(format!(
                 "Failed to get Redis connection: {}",
                 e
             )))
@@ -41,10 +41,10 @@ impl RedisUsageStore {
 
 #[async_trait]
 impl UsageStore for RedisUsageStore {
-    async fn increment(&self, key: &str) -> Result<u32, KoraError> {
+    async fn increment(&self, key: &str) -> Result<u32, TrezoaKoraError> {
         let mut conn = self.get_connection().await?;
         let count: u32 = conn.incr(key, 1).await.map_err(|e| {
-            KoraError::InternalServerError(sanitize_error!(format!(
+            TrezoaKoraError::InternalServerError(sanitize_error!(format!(
                 "Failed to increment usage for {}: {}",
                 key, e
             )))
@@ -52,10 +52,10 @@ impl UsageStore for RedisUsageStore {
         Ok(count)
     }
 
-    async fn get(&self, key: &str) -> Result<u32, KoraError> {
+    async fn get(&self, key: &str) -> Result<u32, TrezoaKoraError> {
         let mut conn = self.get_connection().await?;
         let count: Option<u32> = conn.get(key).await.map_err(|e| {
-            KoraError::InternalServerError(sanitize_error!(format!(
+            TrezoaKoraError::InternalServerError(sanitize_error!(format!(
                 "Failed to get usage for {}: {}",
                 key, e
             )))
@@ -63,10 +63,10 @@ impl UsageStore for RedisUsageStore {
         Ok(count.unwrap_or(0))
     }
 
-    async fn clear(&self) -> Result<(), KoraError> {
+    async fn clear(&self) -> Result<(), TrezoaKoraError> {
         let mut conn = self.get_connection().await?;
         let _: () = conn.flushdb().await.map_err(|e| {
-            KoraError::InternalServerError(sanitize_error!(format!("Failed to clear Redis: {}", e)))
+            TrezoaKoraError::InternalServerError(sanitize_error!(format!("Failed to clear Redis: {}", e)))
         })?;
         Ok(())
     }
@@ -91,9 +91,9 @@ impl Default for InMemoryUsageStore {
 
 #[async_trait]
 impl UsageStore for InMemoryUsageStore {
-    async fn increment(&self, key: &str) -> Result<u32, KoraError> {
+    async fn increment(&self, key: &str) -> Result<u32, TrezoaKoraError> {
         let mut data = self.data.lock().map_err(|e| {
-            KoraError::InternalServerError(sanitize_error!(format!(
+            TrezoaKoraError::InternalServerError(sanitize_error!(format!(
                 "Failed to lock usage store: {}",
                 e
             )))
@@ -103,9 +103,9 @@ impl UsageStore for InMemoryUsageStore {
         Ok(*count)
     }
 
-    async fn get(&self, key: &str) -> Result<u32, KoraError> {
+    async fn get(&self, key: &str) -> Result<u32, TrezoaKoraError> {
         let data = self.data.lock().map_err(|e| {
-            KoraError::InternalServerError(sanitize_error!(format!(
+            TrezoaKoraError::InternalServerError(sanitize_error!(format!(
                 "Failed to lock usage store: {}",
                 e
             )))
@@ -113,9 +113,9 @@ impl UsageStore for InMemoryUsageStore {
         Ok(data.get(key).copied().unwrap_or(0))
     }
 
-    async fn clear(&self) -> Result<(), KoraError> {
+    async fn clear(&self) -> Result<(), TrezoaKoraError> {
         let mut data = self.data.lock().map_err(|e| {
-            KoraError::InternalServerError(sanitize_error!(format!(
+            TrezoaKoraError::InternalServerError(sanitize_error!(format!(
                 "Failed to lock usage store: {}",
                 e
             )))
@@ -142,23 +142,23 @@ impl ErrorUsageStore {
 #[cfg(test)]
 #[async_trait]
 impl UsageStore for ErrorUsageStore {
-    async fn increment(&self, _key: &str) -> Result<u32, KoraError> {
+    async fn increment(&self, _key: &str) -> Result<u32, TrezoaKoraError> {
         if self.should_error_increment {
-            Err(KoraError::InternalServerError("Redis connection failed".to_string()))
+            Err(TrezoaKoraError::InternalServerError("Redis connection failed".to_string()))
         } else {
             Ok(1)
         }
     }
 
-    async fn get(&self, _key: &str) -> Result<u32, KoraError> {
+    async fn get(&self, _key: &str) -> Result<u32, TrezoaKoraError> {
         if self.should_error_get {
-            Err(KoraError::InternalServerError("Redis connection failed".to_string()))
+            Err(TrezoaKoraError::InternalServerError("Redis connection failed".to_string()))
         } else {
             Ok(0)
         }
     }
 
-    async fn clear(&self) -> Result<(), KoraError> {
+    async fn clear(&self) -> Result<(), TrezoaKoraError> {
         Ok(())
     }
 }

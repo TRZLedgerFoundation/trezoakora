@@ -3,19 +3,19 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use kora_lib::Config;
+use trezoakora_lib::Config;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Get the current working directory
     let current_dir = env::current_dir()?;
 
-    // Find the project root by looking for kora.toml
+    // Find the project root by looking for trezoakora.toml
     let project_root = find_project_root(&current_dir)?;
-    let config_path = project_root.join("kora.toml");
+    let config_path = project_root.join("trezoakora.toml");
 
     if !config_path.exists() {
-        eprintln!("Error: kora.toml not found at {config_path:?}");
-        eprintln!("Please ensure you're in a Kora project directory");
+        eprintln!("Error: trezoakora.toml not found at {config_path:?}");
+        eprintln!("Please ensure you're in a TrezoaKora project directory");
         std::process::exit(1);
     }
 
@@ -23,7 +23,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = Config::load_config(&config_path)?;
     let metrics = &config.metrics;
 
-    println!("Reading configuration from kora.toml:");
+    println!("Reading configuration from trezoakora.toml:");
     println!("  Enabled: {}", metrics.enabled);
     println!("  Endpoint: {}", metrics.endpoint);
     println!("  Port: {}", metrics.port);
@@ -64,13 +64,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-/// Find the project root by traversing up until we find kora.toml or Cargo.toml with workspace
+/// Find the project root by traversing up until we find trezoakora.toml or Cargo.toml with workspace
 fn find_project_root(start_dir: &Path) -> Result<PathBuf, Box<dyn std::error::Error>> {
     let mut current = start_dir.to_path_buf();
 
     loop {
-        // Check if kora.toml exists in current directory
-        if current.join("kora.toml").exists() {
+        // Check if trezoakora.toml exists in current directory
+        if current.join("trezoakora.toml").exists() {
             return Ok(current);
         }
 
@@ -86,13 +86,13 @@ fn find_project_root(start_dir: &Path) -> Result<PathBuf, Box<dyn std::error::Er
         // Move up one directory
         if !current.pop() {
             return Err(
-                "Could not find project root (no kora.toml or workspace Cargo.toml found)".into()
+                "Could not find project root (no trezoakora.toml or workspace Cargo.toml found)".into()
             );
         }
     }
 }
 
-/// Update prometheus.yml with Kora server configuration
+/// Update prometheus.yml with TrezoaKora server configuration
 fn update_prometheus_yml(
     metrics_dir: &Path,
     port: u16,
@@ -131,8 +131,8 @@ fn update_prometheus_yml(
         }
     }
 
-    // Update kora target port - use host.docker.internal for Docker containers to access host
-    if let Ok(regex) = regex::Regex::new(r#""(kora|host\.docker\.internal):\d+""#) {
+    // Update trezoakora target port - use host.docker.internal for Docker containers to access host
+    if let Ok(regex) = regex::Regex::new(r#""(trezoakora|host\.docker\.internal):\d+""#) {
         let new_content =
             regex.replace_all(&updated_content, &format!("\"host.docker.internal:{port}\""));
         if new_content != updated_content {
@@ -141,7 +141,7 @@ fn update_prometheus_yml(
         }
     }
 
-    // Update metrics_path for kora job
+    // Update metrics_path for trezoakora job
     if let Ok(regex) = regex::Regex::new(r#"metrics_path:\s*"[^"]*""#) {
         let new_content =
             regex.replace_all(&updated_content, &format!("metrics_path: \"{endpoint}\""));
@@ -153,7 +153,7 @@ fn update_prometheus_yml(
 
     if changes_made {
         fs::write(&file_path, updated_content)?;
-        println!("  ✓ Updated Kora target: host.docker.internal:{port}");
+        println!("  ✓ Updated TrezoaKora target: host.docker.internal:{port}");
         println!("  ✓ Updated endpoint: {endpoint}");
         println!("  ✓ Updated intervals: {scrape_interval}s");
     } else {

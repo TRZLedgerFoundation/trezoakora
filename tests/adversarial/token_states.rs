@@ -1,11 +1,11 @@
 use crate::common::{assertions::RpcErrorAssertions, *};
 use jsonrpsee::rpc_params;
-use solana_sdk::{
+use trezoa_sdk::{
     program_pack::Pack, signature::Keypair, signer::Signer, transaction::Transaction,
 };
-use solana_system_interface::instruction::create_account;
-use spl_associated_token_account_interface::address::get_associated_token_address;
-use spl_token_interface::instruction as token_instruction;
+use trezoa_system_interface::instruction::create_account;
+use tpl_associated_token_account_interface::address::get_associated_token_address;
+use tpl_token_interface::instruction as token_instruction;
 
 #[tokio::test]
 async fn test_frozen_token_account_as_fee_payment() {
@@ -16,7 +16,7 @@ async fn test_frozen_token_account_as_fee_payment() {
 
     let rent = setup
         .rpc_client
-        .get_minimum_balance_for_rent_exemption(spl_token_interface::state::Account::LEN)
+        .get_minimum_balance_for_rent_exemption(tpl_token_interface::state::Account::LEN)
         .await
         .expect("Failed to get rent exemption");
 
@@ -24,12 +24,12 @@ async fn test_frozen_token_account_as_fee_payment() {
         &setup.sender_keypair.pubkey(),
         &frozen_token_account_keypair.pubkey(),
         rent,
-        spl_token_interface::state::Account::LEN as u64,
-        &spl_token_interface::id(),
+        tpl_token_interface::state::Account::LEN as u64,
+        &tpl_token_interface::id(),
     );
 
-    let create_frozen_token_account_ix = spl_token_interface::instruction::initialize_account(
-        &spl_token_interface::id(),
+    let create_frozen_token_account_ix = tpl_token_interface::instruction::initialize_account(
+        &tpl_token_interface::id(),
         &frozen_token_account_keypair.pubkey(),
         &setup.usdc_mint.pubkey(),
         &setup.sender_keypair.pubkey(),
@@ -37,7 +37,7 @@ async fn test_frozen_token_account_as_fee_payment() {
     .expect("Failed to create initialize account instruction");
 
     let mint_tokens_ix = token_instruction::mint_to(
-        &spl_token_interface::id(),
+        &tpl_token_interface::id(),
         &setup.usdc_mint.pubkey(),
         &frozen_token_account_keypair.pubkey(),
         &setup.sender_keypair.pubkey(),
@@ -47,7 +47,7 @@ async fn test_frozen_token_account_as_fee_payment() {
     .expect("Failed to create mint instruction");
 
     let freeze_instruction = token_instruction::freeze_account(
-        &spl_token_interface::id(),
+        &tpl_token_interface::id(),
         &frozen_token_account_keypair.pubkey(),
         &setup.usdc_mint.pubkey(),
         &setup.sender_keypair.pubkey(),
@@ -72,7 +72,7 @@ async fn test_frozen_token_account_as_fee_payment() {
     let malicious_tx = ctx
         .transaction_builder()
         .with_fee_payer(FeePayerTestHelper::get_fee_payer_pubkey())
-        .with_spl_payment_with_accounts(
+        .with_tpl_payment_with_accounts(
             &frozen_token_account_keypair.pubkey(),
             &get_associated_token_address(
                 &FeePayerTestHelper::get_fee_payer_pubkey(),

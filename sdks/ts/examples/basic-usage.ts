@@ -1,4 +1,4 @@
-import { KoraClient } from "../src";
+import { TrezoaKoraClient } from "../src";
 import {
   getBase64Encoder,
   getBase58Encoder,
@@ -8,7 +8,7 @@ import {
   Transaction,
   signTransaction,
   getBase64EncodedWireTransaction,
-} from "@solana/kit";
+} from "@trezoa/kit";
 
 function transactionFromBase64(base64: string): Transaction {
   const encoder = getBase64Encoder();
@@ -30,9 +30,9 @@ async function loadKeypairSignerFromEnvironmentBase58(
 
 async function main() {
   // Initialize the client with your RPC endpoint
-  const rpcUrl = process.env.KORA_RPC_URL!;
+  const rpcUrl = process.env.TREZOAKORA_RPC_URL!;
   const usdcMint = process.env.USDC_MINT!;
-  const client = new KoraClient({ rpcUrl });
+  const client = new TrezoaKoraClient({ rpcUrl });
 
   try {
     // Get supported tokens

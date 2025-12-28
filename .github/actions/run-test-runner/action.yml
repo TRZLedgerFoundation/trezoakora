@@ -1,5 +1,5 @@
 name: "Run Test Runner"
-description: "Execute Kora integration tests using the test runner with specified filters"
+description: "Execute TrezoaKora integration tests using the test runner with specified filters"
 
 inputs:
   filters:
@@ -10,7 +10,7 @@ inputs:
     required: false
     default: "true"
   rpc-url:
-    description: "Solana RPC URL to use"
+    description: "Trezoa RPC URL to use"
     required: false
     default: "http://127.0.0.1:8899"
   force-refresh:
