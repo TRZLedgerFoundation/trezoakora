@@ -17,7 +17,7 @@ pnpm run build
 ### Running Tests
 
 
-Start your local TrezoaKora RPC Server from the root project directory: 
+Start your local TrezoaKora RPC Server from the root trezoa directory: 
 
 ```bash
 trezoakora --config tests/src/common/fixtures/trezoakora-test.toml rpc start --signers-config tests/src/common/fixtures/signers.toml

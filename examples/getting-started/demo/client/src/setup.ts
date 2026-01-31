@@ -1,5 +1,5 @@
 /**
- * This file is used to setup the client for the TrezoaKora project.
+ * This file is used to setup the client for the TrezoaKora trezoa.
  * It creates the necessary keypairs and the mint account.
  * It airdrops TRZ to a Test Sender and TrezoaKora Private Key.
  * It initializes a fake/local USDC mint account.

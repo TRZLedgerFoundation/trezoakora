@@ -14,19 +14,19 @@ for (const line of lines) {
   const match = line.match(/^#{5}\s+(.+\(\))$/); // Match ##### method()
   if (match) {
     const methodName = match[1];
-    const anchor = methodName
+    const trezoaanchor = methodName
       .toLowerCase()
       .replace(/[^a-z0-9\s-]/g, '')
       .replace(/\s+/g, '-');
     
-    methodNames.push({ name: methodName, anchor });
+    methodNames.push({ name: methodName, trezoaanchor });
   }
 }
 
 // Generate TOC with only methods
 const toc = ['## Methods', ''];
 for (const method of methodNames) {
-  toc.push(`- [${method.name}](#${method.anchor})`);
+  toc.push(`- [${method.name}](#${method.trezoaanchor})`);
 }
 
 // Insert TOC in TrezoaKoraClient section, before Constructors

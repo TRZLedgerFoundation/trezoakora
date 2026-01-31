@@ -9,13 +9,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Get the current working directory
     let current_dir = env::current_dir()?;
 
-    // Find the project root by looking for trezoakora.toml
-    let project_root = find_project_root(&current_dir)?;
-    let config_path = project_root.join("trezoakora.toml");
+    // Find the trezoa root by looking for trezoakora.toml
+    let trezoa_root = find_project_root(&current_dir)?;
+    let config_path = trezoa_root.join("trezoakora.toml");
 
     if !config_path.exists() {
         eprintln!("Error: trezoakora.toml not found at {config_path:?}");
-        eprintln!("Please ensure you're in a TrezoaKora project directory");
+        eprintln!("Please ensure you're in a TrezoaKora trezoa directory");
         std::process::exit(1);
     }
 
@@ -30,8 +30,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("  Scrape Interval: {}s", metrics.scrape_interval);
     println!();
 
-    // Metrics directory is always relative to project root
-    let metrics_dir = project_root.join("crates/lib/src/metrics");
+    // Metrics directory is always relative to trezoa root
+    let metrics_dir = trezoa_root.join("crates/lib/src/metrics");
 
     let mut updated_files = 0;
 
@@ -64,7 +64,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-/// Find the project root by traversing up until we find trezoakora.toml or Cargo.toml with workspace
+/// Find the trezoa root by traversing up until we find trezoakora.toml or Cargo.toml with workspace
 fn find_project_root(start_dir: &Path) -> Result<PathBuf, Box<dyn std::error::Error>> {
     let mut current = start_dir.to_path_buf();
 
@@ -86,7 +86,7 @@ fn find_project_root(start_dir: &Path) -> Result<PathBuf, Box<dyn std::error::Er
         // Move up one directory
         if !current.pop() {
             return Err(
-                "Could not find project root (no trezoakora.toml or workspace Cargo.toml found)".into()
+                "Could not find trezoa root (no trezoakora.toml or workspace Cargo.toml found)".into()
             );
         }
     }

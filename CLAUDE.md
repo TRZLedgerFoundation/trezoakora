@@ -19,7 +19,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **CHANGELOG**: Auto-generated from conventional commits using git-cliff
 - **GitHub releases**: Auto-generated with commit-based release notes
 
-## Project Overview
+## Trezoa Overview
 
 TrezoaKora is a Trezoa paymaster node that provides a JSON-RPC interface for handling gasless transactions and fee abstractions. It enables developers to build applications where users can pay transaction fees in tokens other than TRZ.
 
@@ -680,7 +680,7 @@ Both skip `/liveness` endpoint and can be used simultaneously. Implementation us
 
 ## Test Runner Architecture
 
-The project uses a Rust-based test runner for integration testing:
+The trezoa uses a Rust-based test runner for integration testing:
 
 ```
 /tests/src/
